@@ -459,3 +459,115 @@ Stage Summary:
 - Could add: Multi-currency support, data import (CSV/OFX)
 - Could improve: Frontend zod validation, error boundaries per module
 - Could add: Annual summary with year-over-year charts
+
+---
+Task ID: 8-a
+Agent: API Developer
+Task: Create 3 new API routes (achievements, annual-summary, import)
+
+Work Log:
+- Created `/api/achievements/route.ts` — GET endpoint that computes 12 financial achievements on-the-fly from existing data (no new Prisma model). Uses parallel queries for performance. Achievements: First Income, First Expense, Saver Starter ($1k), Big Saver ($10k), Debt Free, Budget Master, Tracker Pro (100 transactions), Safety Net (emergency fund), Goal Setter, Recurring Planner, Income Diversifier, Prepared Planner.
+- Created `/api/annual-summary/route.ts` — GET endpoint returning comprehensive annual financial summary: monthly breakdown (12 months), top expense categories with percentages, income source breakdown, savings goals progress, month-over-month changes, best/worst month. Accepts `?accountId=xxx&year=2025`.
+- Created `/api/import/route.ts` — POST endpoint for CSV import via multipart form data. Supports income, expense, and auto-detect modes. Custom CSV parser handles quoted fields and escaped quotes. Auto-detects import type from column headers. Matches expense categories by name (case-insensitive). Returns `{ imported, errors }` response.
+- All routes follow existing patterns: `db` from `@/lib/db`, `NextRequest`/`NextResponse`, `accountId` param, try/catch error handling.
+- Zero lint errors.
+
+Stage Summary:
+- 3 new API routes created: achievements (computed), annual-summary (aggregated), import (CSV)
+- All use existing Prisma models with no schema changes
+- Zero lint errors
+
+---
+Task ID: 5/6/7
+Agent: Main Orchestrator
+Task: Major Styling Overhaul + New Features
+
+Work Log:
+- Added 12 new CSS utility classes to globals.css (before print section):
+  - .bg-dots (subtle dot pattern background)
+  - .noise-overlay::after (noise texture overlay)
+  - .module-header / .module-header::after (gradient accent underline)
+  - .card-accent / .card-accent::before (top gradient line via CSS custom properties)
+  - Enhanced input focus ring (emerald glow)
+  - .table-row-interactive (hover effect for table rows)
+  - .badge-glow-emerald, .badge-glow-rose, .badge-glow-amber (glowing badges)
+  - @keyframes numberPop / .number-pop (number animation)
+  - .fab-container (floating action button positioning)
+  - .status-dot variants (active/warning/danger/info with glow)
+  - .dialog-backdrop-enhanced (blurred backdrop)
+  - .scroll-progress (fixed top scroll indicator)
+- Added sticky footer to page.tsx with Heart icon and emerald branding
+- Added Heart import from lucide-react
+- Changed main to flex-col layout, content div to flex-1 with w-full
+- Applied module-header class to all 13 module components:
+  Dashboard, IncomeModule, ExpenseModule, UnexpectedModule, SavingsModule,
+  DebtModule, BudgetModule (2 locations), AIAssistant, NotificationsPanel,
+  DependentsModule, TransactionCenter, MonthlyReport, SettingsPanel
+- Applied card-accent class with CSS custom properties to:
+  - Dashboard 4 metric cards (Balance/Income/Expenses/Debt)
+  - SavingsModule 2 summary cards (Total Saved, Overall Progress)
+  - DebtModule 3 summary cards (Total Owed, Total Paid, Monthly Payments)
+  - MonthlyReport 4 key metrics cards (Income, Expenses, Net Savings, Savings Rate)
+- Added table-row-interactive class to table rows in:
+  - IncomeModule.tsx
+  - ExpenseModule.tsx (planned + unexpected tables via shared renderExpenseTable)
+  - UnexpectedModule.tsx
+  - MonthlyReport.tsx (income breakdown table)
+- Enhanced AppSidebar bottom section with status indicator dot (status-dot-active)
+- All changes are additive — no existing code removed
+- Zero lint errors
+
+Stage Summary:
+- 12 CSS utility classes added to globals.css
+- Sticky footer with branding added to page.tsx
+- module-header gradient accent applied to all 13 modules
+- card-accent top gradient applied to 13 summary/stat cards across 4 components
+- table-row-interactive hover applied to 4 table components
+- Sidebar status indicator added
+- Clean lint pass with zero errors
+---
+Task ID: 1/2/3
+Agent: Component Builder
+Task: Create AchievementsModule, AnnualSummary, and RecurringBills frontend components
+
+Work Log:
+- Created `/src/components/ahorrapp/AchievementsModule.tsx` (~280 lines)
+  - Financial achievements/badges system with 12 mock achievements
+  - Summary stats: circular SVG progress ring for unlock count, next milestone hint card
+  - Grid layout: 2 cols mobile, 3 tablet, 4 desktop with staggered mount animation (framer-motion + CSS stagger-children)
+  - Unlocked state: colored icon circle, checkmark badge, "Unlocked on [date]" text, card-glow effect
+  - Locked state: grayscale icon, lock badge, progress bar with percentage
+  - Category legend at bottom with counts
+  - Fetches from `/api/achievements?accountId=${user.id}` with mock fallback
+  - Icons: Trophy, Target, DollarSign, PiggyBank, Shield, BarChart3, TrendingUp, CheckCircle, Star, Award, Lock, PartyPopper, Repeat, Flag, ShoppingCart
+
+- Created `/src/components/ahorrapp/AnnualSummary.tsx` (~540 lines)
+  - Year selector with left/right arrows and "Current" badge
+  - 6 key metric cards in responsive grid: Total Income, Total Expenses, Net Savings, Savings Rate, Total Debt Paid, Unexpected Costs
+  - Each metric: colored icon circle, large formatted amount, % change indicator (green up / red down arrows)
+  - Monthly Overview: Recharts AreaChart with gradient fills for income vs expenses over 12 months
+  - Income Sources: Recharts PieChart (donut) with custom tooltip
+  - Top Expense Categories: Horizontal BarChart with amounts
+  - Savings Goals Progress: Mini progress bars with saved/target/remaining
+  - Month-over-Month Trends: Table with green/red arrow indicators
+  - Best & Worst Months: Two side-by-side cards with glow effects
+  - Fetches from `/api/annual-summary?accountId=${user.id}&year=${year}` with mock data generator fallback
+  - Uses CHART_COLORS array matching existing Dashboard pattern
+
+- Created `/src/components/ahorrapp/RecurringBills.tsx` (~460 lines)
+  - Summary stats: Monthly Recurring Total, Active Subscriptions count, Next Payment date
+  - Upcoming Bills list sorted by next payment date with:
+    - Category color dot, description, amount, frequency badge, days-until indicator (green/amber/rose coloring)
+    - Paid toggle, edit, delete actions per row
+    - income-row-hover class, max-h-96 overflow scroll
+  - Calendar View: Month grid showing payment dates with dots, month navigation
+  - Category Breakdown: Horizontal BarChart + legend list with percentages
+  - Add/Edit Dialog: Description, amount, category (from API), frequency (weekly/biweekly/monthly/quarterly/yearly), start date, next date
+  - Fetches from `/api/expenses` (filters isRecurring) and `/api/categories` with mock fallback
+  - Full CRUD operations with toast notifications
+
+Stage Summary:
+- 3 new components created following existing codebase patterns exactly
+- All use 'use client', useAppStore, toast/sonner, cn utility, framer-motion animations
+- CSS classes used: card-hover, card-glow, stat-card, text-gradient, animate-fade-in, empty-state, income-row-hover, stagger-children
+- Zero lint errors

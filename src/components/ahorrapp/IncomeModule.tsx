@@ -158,7 +158,7 @@ export default function IncomeModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Ingresos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Manage your income sources</p>
         </div>
@@ -254,7 +254,7 @@ export default function IncomeModule() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((inc, idx) => (
-                    <TableRow key={inc.id} className={cn('group income-row-hover', idx % 2 === 1 && 'bg-muted/30')}>
+                    <TableRow key={inc.id} className={cn('group income-row-hover table-row-interactive', idx % 2 === 1 && 'bg-muted/30')}>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(inc.date), 'MMM d, yyyy')}
                       </TableCell>

@@ -224,7 +224,7 @@ export default function DebtModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Deudas</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track and manage your debts</p>
         </div>
@@ -235,7 +235,7 @@ export default function DebtModule() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="stat-card card-hover">
+        <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#f59e0b', '--card-accent-to': '#fbbf24' } as React.CSSProperties}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10">
               <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
@@ -246,7 +246,7 @@ export default function DebtModule() {
             </div>
           </CardContent>
         </Card>
-        <Card className="stat-card card-hover">
+        <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#34d399' } as React.CSSProperties}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
               <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -257,7 +257,7 @@ export default function DebtModule() {
             </div>
           </CardContent>
         </Card>
-        <Card className="stat-card card-hover">
+        <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#06b6d4', '--card-accent-to': '#22d3ee' } as React.CSSProperties}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-cyan-50 dark:bg-cyan-500/10">
               <Clock className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />

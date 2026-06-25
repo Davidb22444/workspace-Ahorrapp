@@ -342,7 +342,7 @@ export default function MonthlyReport() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
-        <div>
+        <div className="module-header">
           <h2 className="text-2xl font-bold text-foreground">Monthly Report</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Comprehensive financial overview for a selected month
@@ -390,7 +390,7 @@ export default function MonthlyReport() {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
       >
-        <Card className="border-l-[3px] border-l-emerald-500">
+        <Card className="card-accent border-l-[3px] border-l-emerald-500" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#06b6d4' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
@@ -403,7 +403,7 @@ export default function MonthlyReport() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-[3px] border-l-rose-500">
+        <Card className="card-accent border-l-[3px] border-l-rose-500" style={{ '--card-accent-from': '#f43f5e', '--card-accent-to': '#fb7185' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
@@ -416,7 +416,7 @@ export default function MonthlyReport() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-[3px] border-l-cyan-500">
+        <Card className="card-accent border-l-[3px] border-l-cyan-500" style={{ '--card-accent-from': '#06b6d4', '--card-accent-to': '#22d3ee' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-500/15 flex items-center justify-center">
@@ -436,7 +436,7 @@ export default function MonthlyReport() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-[3px] border-l-violet-500">
+        <Card className="card-accent border-l-[3px] border-l-violet-500" style={{ '--card-accent-from': '#8b5cf6', '--card-accent-to': '#a78bfa' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/15 flex items-center justify-center">
@@ -488,7 +488,7 @@ export default function MonthlyReport() {
                         ? (inc.amount / currentMonthData.totalIncome) * 100
                         : 0
                       return (
-                        <TableRow key={inc.id}>
+                        <TableRow key={inc.id} className="table-row-interactive">
                           <TableCell>
                             <div>
                               <p className="text-sm font-medium text-foreground capitalize">{inc.source}</p>

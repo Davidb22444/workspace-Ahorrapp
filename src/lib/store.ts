@@ -4,16 +4,19 @@ export type Module =
   | 'dashboard'
   | 'income'
   | 'expenses'
+  | 'unexpected'
   | 'savings'
   | 'debts'
   | 'budget'
+  | 'recurring'
   | 'ai-assistant'
   | 'notifications'
-  | 'settings'
-  | 'unexpected'
   | 'dependents'
   | 'transactions'
   | 'report'
+  | 'achievements'
+  | 'annual-summary'
+  | 'settings'
 
 export interface User {
   id: string

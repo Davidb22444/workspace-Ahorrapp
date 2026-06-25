@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useAppStore, type Module } from '@/lib/store'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Menu } from 'lucide-react'
+import { Bell, Menu, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import AuthScreen from '@/components/ahorrapp/AuthScreen'
@@ -21,6 +21,9 @@ import SettingsPanel from '@/components/ahorrapp/SettingsPanel'
 import UnexpectedModule from '@/components/ahorrapp/UnexpectedModule'
 import TransactionCenter from '@/components/ahorrapp/TransactionCenter'
 import MonthlyReport from '@/components/ahorrapp/MonthlyReport'
+import AchievementsModule from '@/components/ahorrapp/AchievementsModule'
+import AnnualSummary from '@/components/ahorrapp/AnnualSummary'
+import RecurringBills from '@/components/ahorrapp/RecurringBills'
 
 const moduleComponents: Record<Module, React.ComponentType> = {
   dashboard: Dashboard,
@@ -35,6 +38,9 @@ const moduleComponents: Record<Module, React.ComponentType> = {
   dependents: DependentsModule,
   transactions: TransactionCenter,
   report: MonthlyReport,
+  recurring: RecurringBills,
+  achievements: AchievementsModule,
+  'annual-summary': AnnualSummary,
   settings: SettingsPanel,
 }
 
@@ -51,6 +57,9 @@ const moduleTitles: Record<Module, string> = {
   dependents: 'Dependientes',
   transactions: 'Transaction Center',
   report: 'Monthly Report',
+  recurring: 'Recurring Bills',
+  achievements: 'Achievements',
+  'annual-summary': 'Annual Summary',
   settings: 'Configuración',
 }
 
@@ -91,7 +100,7 @@ export default function Home() {
       <AppSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile Header */}
         <header className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="flex items-center justify-between px-4 h-14">
@@ -127,7 +136,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pl-4 lg:pl-8">
+        <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pl-4 lg:pl-8 w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeModule}
@@ -140,6 +149,12 @@ export default function Home() {
             </motion.div>
           </AnimatePresence>
         </div>
+        <footer className="border-t border-border/50 py-4 px-4 lg:px-8">
+          <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-muted-foreground">
+            <span>© 2025 AhorrApp</span>
+            <span className="flex items-center gap-1">Made with <Heart className="w-3 h-3 text-rose-400 fill-rose-400" /> for smart finances</span>
+          </div>
+        </footer>
       </main>
     </div>
   )

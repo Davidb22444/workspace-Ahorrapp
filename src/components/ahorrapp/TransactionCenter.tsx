@@ -221,7 +221,7 @@ export default function TransactionCenter() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between"
       >
-        <div>
+        <div className="module-header">
           <h2 className="text-2xl font-bold text-foreground">Transaction Center</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
             Search and filter all your transactions in one place

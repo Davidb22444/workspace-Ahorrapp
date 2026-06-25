@@ -1,0 +1,1551 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useEffect, useState } from 'react'
+     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→import {
+     6→     6→  DollarSign,
+     7→     7→  TrendingUp,
+     8→     8→  TrendingDown,
+     9→     9→  CreditCard,
+    10→    10→  ArrowUpRight,
+    11→    11→  ArrowDownRight,
+    12→    12→  RefreshCw,
+    13→    13→  Plus,
+    14→    14→  Calendar,
+    15→    15→  Trophy,
+    16→    16→  Tag,
+    17→    17→  Target,
+    18→    18→  BarChart3,
+    19→    19→  X,
+    20→    20→  Loader2,
+    21→    21→  Wallet,
+    22→    22→  PiggyBank,
+    23→    23→} from 'lucide-react'
+    24→    24→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    25→    25→import { Badge } from '@/components/ui/badge'
+    26→    26→import { Button } from '@/components/ui/button'
+    27→    27→import { Skeleton } from '@/components/ui/skeleton'
+    28→    28→import { Input } from '@/components/ui/input'
+    29→    29→import { Label } from '@/components/ui/label'
+    30→    30→import { Switch } from '@/components/ui/switch'
+    31→    31→import {
+    32→    32→  Dialog,
+    33→    33→  DialogContent,
+    34→    34→  DialogHeader,
+    35→    35→  DialogTitle,
+    36→    36→  DialogDescription,
+    37→    37→  DialogFooter,
+    38→    38→} from '@/components/ui/dialog'
+    39→    39→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    40→    40→import {
+    41→    41→  Select,
+    42→    42→  SelectContent,
+    43→    43→  SelectItem,
+    44→    44→  SelectTrigger,
+    45→    45→  SelectValue,
+    46→    46→} from '@/components/ui/select'
+    47→    47→import { useAppStore } from '@/lib/store'
+    48→    48→import { cn } from '@/lib/utils'
+    49→    49→import {
+    50→    50→  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    51→    51→  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
+    52→    52→} from 'recharts'
+    53→    53→import { format, startOfMonth, getDay, getDaysInMonth } from 'date-fns'
+    54→    54→
+    55→    55→const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
+    56→    56→
+    57→    57→function formatCurrency(amount: number): string {
+    58→    58→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    59→    59→}
+    60→    60→
+    61→    61→interface DashboardData {
+    62→    62→  balance: number
+    63→    63→  totalIncome: number
+    64→    64→  totalExpenses: number
+    65→    65→  totalDebt: number
+    66→    66→  monthlyCashFlow: Array<{ month: string; income: number; expenses: number }>
+    67→    67→  expenseCategories: Array<{ name: string; value: number; color: string }>
+    68→    68→  budgetVsActual: Array<{ name: string; planned: number; actual: number }>
+    69→    69→  recentTransactions: Array<{
+    70→    70→    id: string
+    71→    71→    type: string
+    72→    72→    description: string
+    73→    73→    amount: number
+    74→    74→    date: string
+    75→    75→    category?: string
+    76→    76→    categoryColor?: string
+    77→    77→  }>
+    78→    78→  savingsGoals: Array<{
+    79→    79→    id: string
+    80→    80→    name: string
+    81→    81→    saved: number
+    82→    82→    target: number
+    83→    83→    deadline?: string
+    84→    84→  }>
+    85→    85→}
+    86→    86→
+    87→    87→const mockData: DashboardData = {
+    88→    88→  balance: 12450.75,
+    89→    89→  totalIncome: 5200.0,
+    90→    90→  totalExpenses: 3420.5,
+    91→    91→  totalDebt: 8500.0,
+    92→    92→  monthlyCashFlow: [
+    93→    93→    { month: 'Jan', income: 4800, expenses: 3200 },
+    94→    94→    { month: 'Feb', income: 5100, expenses: 2900 },
+    95→    95→    { month: 'Mar', income: 4900, expenses: 3500 },
+    96→    96→    { month: 'Apr', income: 5300, expenses: 3100 },
+    97→    97→    { month: 'May', income: 5000, expenses: 3400 },
+    98→    98→    { month: 'Jun', income: 5200, expenses: 3420 },
+    99→    99→  ],
+   100→   100→  expenseCategories: [
+   101→   101→    { name: 'Housing', value: 1200, color: '#10b981' },
+   102→   102→    { name: 'Food', value: 680, color: '#f59e0b' },
+   103→   103→    { name: 'Transport', value: 450, color: '#f43f5e' },
+   104→   104→    { name: 'Entertainment', value: 320, color: '#6366f1' },
+   105→   105→    { name: 'Utilities', value: 380, color: '#06b6d4' },
+   106→   106→    { name: 'Other', value: 390.5, color: '#8b5cf6' },
+   107→   107→  ],
+   108→   108→  budgetVsActual: [
+   109→   109→    { name: 'Needs', planned: 2600, actual: 2510 },
+   110→   110→    { name: 'Wants', planned: 1560, actual: 1480 },
+   111→   111→    { name: 'Savings', planned: 1040, actual: 770 },
+   112→   112→  ],
+   113→   113→  recentTransactions: [
+   114→   114→    { id: '1', type: 'income', description: 'Monthly Salary', amount: 5200, date: '2025-06-01', category: 'Salary' },
+   115→   115→    { id: '2', type: 'expense', description: 'Rent Payment', amount: -1200, date: '2025-06-02', category: 'Housing', categoryColor: '#10b981' },
+   116→   116→    { id: '3', type: 'expense', description: 'Grocery Store', amount: -156.80, date: '2025-06-03', category: 'Food', categoryColor: '#f59e0b' },
+   117→   117→    { id: '4', type: 'expense', description: 'Electric Bill', amount: -120, date: '2025-06-04', category: 'Utilities', categoryColor: '#06b6d4' },
+   118→   118→    { id: '5', type: 'income', description: 'Freelance Project', amount: 800, date: '2025-06-05', category: 'Freelance' },
+   119→   119→    { id: '6', type: 'expense', description: 'Gas Station', amount: -65, date: '2025-06-06', category: 'Transport', categoryColor: '#f43f5e' },
+   120→   120→    { id: '7', type: 'expense', description: 'Netflix Subscription', amount: -15.99, date: '2025-06-07', category: 'Entertainment', categoryColor: '#6366f1' },
+   121→   121→    { id: '8', type: 'expense', description: 'Restaurant Dinner', amount: -85.50, date: '2025-06-08', category: 'Food', categoryColor: '#f59e0b' },
+   122→   122→    { id: '9', type: 'income', description: 'Investment Returns', amount: 150, date: '2025-06-09', category: 'Investment' },
+   123→   123→    { id: '10', type: 'expense', description: 'Phone Bill', amount: -55, date: '2025-06-10', category: 'Utilities', categoryColor: '#06b6d4' },
+   124→   124→  ],
+   125→   125→  savingsGoals: [
+   126→   126→    { id: '1', name: 'Emergency Fund', saved: 4500, target: 10000, deadline: '2025-12-31' },
+   127→   127→    { id: '2', name: 'Vacation', saved: 1200, target: 3000, deadline: '2025-08-15' },
+   128→   128→    { id: '3', name: 'New Laptop', saved: 800, target: 2000 },
+   129→   129→    { id: '4', name: 'Down Payment', saved: 15000, target: 50000, deadline: '2027-06-01' },
+   130→   130→  ],
+   131→   131→}
+   132→   132→
+   133→   133→// ── Enhanced Tooltip ──────────────────────────────────────────────
+   134→   134→function EnhancedChartTooltip({ active, payload, label }: any) {
+   135→   135→  if (active && payload && payload.length) {
+   136→   136→    const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0)
+   137→   137→    return (
+   138→   138→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   139→   139→        <p className="text-sm font-semibold text-foreground mb-1.5">{label}</p>
+   140→   140→        {payload.map((entry: any, idx: number) => (
+   141→   141→          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+   142→   142→            <div className="flex items-center gap-1.5">
+   143→   143→              <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+   144→   144→              <span className="text-muted-foreground">{entry.name}</span>
+   145→   145→            </div>
+   146→   146→            <span className="font-semibold tabular-nums">{formatCurrency(entry.value)}</span>
+   147→   147→          </div>
+   148→   148→        ))}
+   149→   149→        {payload.length > 1 && (
+   150→   150→          <div className="border-t border-border/50 mt-1.5 pt-1.5 flex items-center justify-between text-xs">
+   151→   151→            <span className="text-muted-foreground font-medium">Net</span>
+   152→   152→            <span className={cn('font-bold tabular-nums', total >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
+   153→   153→              {formatCurrency(total)}
+   154→   154→            </span>
+   155→   155→          </div>
+   156→   156→        )}
+   157→   157→      </div>
+   158→   158→    )
+   159→   159→  }
+   160→   160→  return null
+   161→   161→}
+   162→   162→
+   163→   163→// ── Emoji mapper for savings goals ─────────────────────────────────
+   164→   164→function getGoalEmoji(name: string): string {
+   165→   165→  const lower = name.toLowerCase()
+   166→   166→  if (lower.includes('emergency') || lower.includes('emergencia')) return '🛡️'
+   167→   167→  if (lower.includes('vacat') || lower.includes('viaje')) return '✈️'
+   168→   168→  if (lower.includes('laptop') || lower.includes('computer') || lower.includes('pc')) return '💻'
+   169→   169→  if (lower.includes('car') || lower.includes('auto') || lower.includes('coche')) return '🚗'
+   170→   170→  if (lower.includes('house') || lower.includes('home') || lower.includes('down') || lower.includes('casa')) return '🏠'
+   171→   171→  if (lower.includes('wedding') || lower.includes('boda')) return '💍'
+   172→   172→  if (lower.includes('education') || lower.includes('study') || lower.includes('college')) return '🎓'
+   173→   173→  if (lower.includes('retire') || lower.includes('jubil')) return '🌴'
+   174→   174→  if (lower.includes('gift') || lower.includes('regalo')) return '🎁'
+   175→   175→  if (lower.includes('invest') || lower.includes('inversion')) return '📈'
+   176→   176→  return '🎯'
+   177→   177→}
+   178→   178→
+   179→   179→// ── Quick Add Transaction Dialog ───────────────────────────────────
+   180→   180→function QuickAddDialog({
+   181→   181→  open,
+   182→   182→  onOpenChange,
+   183→   183→  type,
+   184→   184→  onTypeChange,
+   185→   185→  accountId,
+   186→   186→  onSaved,
+   187→   187→}: {
+   188→   188→  open: boolean
+   189→   189→  onOpenChange: (open: boolean) => void
+   190→   190→  type: 'income' | 'expense'
+   191→   191→  onTypeChange: (type: 'income' | 'expense') => void
+   192→   192→  accountId: string
+   193→   193→  onSaved: () => void
+   194→   194→}) {
+   195→   195→  const [amount, setAmount] = useState('')
+   196→   196→  const [description, setDescription] = useState('')
+   197→   197→  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+   198→   198→  const [source, setSource] = useState('Salary')
+   199→   199→  const [category, setCategory] = useState('')
+   200→   200→  const [isRecurring, setIsRecurring] = useState(false)
+   201→   201→  const [saving, setSaving] = useState(false)
+   202→   202→  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+   203→   203→
+   204→   204→  const incomeSources = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+   205→   205→
+   206→   206→  useEffect(() => {
+   207→   207→    if (type === 'expense' && accountId) {
+   208→   208→      fetch(`/api/categories?accountId=${accountId}`)
+   209→   209→        .then(r => r.json())
+   210→   210→        .then(data => {
+   211→   211→          const cats = data.categories || data || []
+   212→   212→          setCategories(Array.isArray(cats) ? cats.map((c: any) => ({ id: c.id, name: c.name })) : [])
+   213→   213→          if (cats.length > 0 && !category) setCategory(cats[0].name)
+   214→   214→        })
+   215→   215→        .catch(() => {
+   216→   216→          setCategories([
+   217→   217→            { id: '1', name: 'Housing' },
+   218→   218→            { id: '2', name: 'Food' },
+   219→   219→            { id: '3', name: 'Transport' },
+   220→   220→            { id: '4', name: 'Entertainment' },
+   221→   221→            { id: '5', name: 'Utilities' },
+   222→   222→            { id: '6', name: 'Healthcare' },
+   223→   223→            { id: '7', name: 'Education' },
+   224→   224→            { id: '8', name: 'Other' },
+   225→   225→          ])
+   226→   226→          if (!category) setCategory('Housing')
+   227→   227→        })
+   228→   228→    }
+   229→   229→  }, [type, accountId])
+   230→   230→
+   231→   231→  const handleSave = async () => {
+   232→   232→    const numAmount = parseFloat(amount)
+   233→   233→    if (!numAmount || numAmount <= 0 || !description.trim()) return
+   234→   234→    setSaving(true)
+   235→   235→
+   236→   236→    try {
+   237→   237→      if (type === 'income') {
+   238→   238→        await fetch('/api/income', {
+   239→   239→          method: 'POST',
+   240→   240→          headers: { 'Content-Type': 'application/json' },
+   241→   241→          body: JSON.stringify({
+   242→   242→            accountId,
+   243→   243→            amount: numAmount,
+   244→   244→            source,
+   245→   245→            description: description.trim(),
+   246→   246→            date,
+   247→   247→            isRecurring,
+   248→   248→          }),
+   249→   249→        })
+   250→   250→      } else {
+   251→   251→        await fetch('/api/expenses', {
+   252→   252→          method: 'POST',
+   253→   253→          headers: { 'Content-Type': 'application/json' },
+   254→   254→          body: JSON.stringify({
+   255→   255→            accountId,
+   256→   256→            amount: numAmount,
+   257→   257→            categoryId: categories.find(c => c.name === category)?.id || '1',
+   258→   258→            description: description.trim(),
+   259→   259→            date,
+   260→   260→            isRecurring,
+   261→   261→          }),
+   262→   262→        })
+   263→   263→      }
+   264→   264→      onSaved()
+   265→   265→      onOpenChange(false)
+   266→   266→      setAmount('')
+   267→   267→      setDescription('')
+   268→   268→      setDate(format(new Date(), 'yyyy-MM-dd'))
+   269→   269→      setIsRecurring(false)
+   270→   270→    } catch {
+   271→   271→      // silent fail
+   272→   272→    } finally {
+   273→   273→      setSaving(false)
+   274→   274→    }
+   275→   275→  }
+   276→   276→
+   277→   277→  const handleTabChange = (val: string) => {
+   278→   278→    onTypeChange(val as 'income' | 'expense')
+   279→   279→  }
+   280→   280→
+   281→   281→  return (
+   282→   282→    <Dialog open={open} onOpenChange={onOpenChange}>
+   283→   283→      <DialogContent className="sm:max-w-md">
+   284→   284→        <DialogHeader>
+   285→   285→          <DialogTitle>Add Transaction</DialogTitle>
+   286→   286→          <DialogDescription>Quickly add a new income or expense entry.</DialogDescription>
+   287→   287→        </DialogHeader>
+   288→   288→
+   289→   289→        <Tabs value={type} onValueChange={handleTabChange} className="w-full">
+   290→   290→          <TabsList className="w-full">
+   291→   291→            <TabsTrigger value="income" className="flex-1">
+   292→   292→              <ArrowUpRight className="w-4 h-4 mr-1.5 text-emerald-500" />
+   293→   293→              Income
+   294→   294→            </TabsTrigger>
+   295→   295→            <TabsTrigger value="expense" className="flex-1">
+   296→   296→              <ArrowDownRight className="w-4 h-4 mr-1.5 text-rose-500" />
+   297→   297→              Expense
+   298→   298→            </TabsTrigger>
+   299→   299→          </TabsList>
+   300→   300→
+   301→   301→          <TabsContent value="income" className="space-y-4 mt-4">
+   302→   302→            <div className="space-y-2">
+   303→   303→              <Label htmlFor="income-amount">Amount</Label>
+   304→   304→              <div className="relative">
+   305→   305→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   306→   306→                <Input
+   307→   307→                  id="income-amount"
+   308→   308→                  type="number"
+   309→   309→                  step="0.01"
+   310→   310→                  min="0"
+   311→   311→                  placeholder="0.00"
+   312→   312→                  value={amount}
+   313→   313→                  onChange={(e) => setAmount(e.target.value)}
+   314→   314→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   315→   315→                />
+   316→   316→              </div>
+   317→   317→            </div>
+   318→   318→            <div className="space-y-2">
+   319→   319→              <Label htmlFor="income-desc">Description</Label>
+   320→   320→              <Input
+   321→   321→                id="income-desc"
+   322→   322→                placeholder="e.g. Monthly salary"
+   323→   323→                value={description}
+   324→   324→                onChange={(e) => setDescription(e.target.value)}
+   325→   325→              />
+   326→   326→            </div>
+   327→   327→            <div className="grid grid-cols-2 gap-3">
+   328→   328→              <div className="space-y-2">
+   329→   329→                <Label>Source</Label>
+   330→   330→                <Select value={source} onValueChange={setSource}>
+   331→   331→                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+   332→   332→                  <SelectContent>
+   333→   333→                    {incomeSources.map(s => (
+   334→   334→                      <SelectItem key={s} value={s}>{s}</SelectItem>
+   335→   335→                    ))}
+   336→   336→                  </SelectContent>
+   337→   337→                </Select>
+   338→   338→              </div>
+   339→   339→              <div className="space-y-2">
+   340→   340→                <Label htmlFor="income-date">Date</Label>
+   341→   341→                <Input
+   342→   342→                  id="income-date"
+   343→   343→                  type="date"
+   344→   344→                  value={date}
+   345→   345→                  onChange={(e) => setDate(e.target.value)}
+   346→   346→                />
+   347→   347→              </div>
+   348→   348→            </div>
+   349→   349→            <div className="flex items-center justify-between">
+   350→   350→              <Label htmlFor="income-recurring">Recurring</Label>
+   351→   351→              <Switch id="income-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   352→   352→            </div>
+   353→   353→          </TabsContent>
+   354→   354→
+   355→   355→          <TabsContent value="expense" className="space-y-4 mt-4">
+   356→   356→            <div className="space-y-2">
+   357→   357→              <Label htmlFor="expense-amount">Amount</Label>
+   358→   358→              <div className="relative">
+   359→   359→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   360→   360→                <Input
+   361→   361→                  id="expense-amount"
+   362→   362→                  type="number"
+   363→   363→                  step="0.01"
+   364→   364→                  min="0"
+   365→   365→                  placeholder="0.00"
+   366→   366→                  value={amount}
+   367→   367→                  onChange={(e) => setAmount(e.target.value)}
+   368→   368→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   369→   369→                />
+   370→   370→              </div>
+   371→   371→            </div>
+   372→   372→            <div className="space-y-2">
+   373→   373→              <Label htmlFor="expense-desc">Description</Label>
+   374→   374→              <Input
+   375→   375→                id="expense-desc"
+   376→   376→                placeholder="e.g. Grocery shopping"
+   377→   377→                value={description}
+   378→   378→                onChange={(e) => setDescription(e.target.value)}
+   379→   379→              />
+   380→   380→            </div>
+   381→   381→            <div className="grid grid-cols-2 gap-3">
+   382→   382→              <div className="space-y-2">
+   383→   383→                <Label>Category</Label>
+   384→   384→                <Select value={category} onValueChange={setCategory}>
+   385→   385→                  <SelectTrigger className="w-full"><SelectValue placeholder="Select..." /></SelectTrigger>
+   386→   386→                  <SelectContent>
+   387→   387→                    {categories.map(c => (
+   388→   388→                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+   389→   389→                    ))}
+   390→   390→                  </SelectContent>
+   391→   391→                </Select>
+   392→   392→              </div>
+   393→   393→              <div className="space-y-2">
+   394→   394→                <Label htmlFor="expense-date">Date</Label>
+   395→   395→                <Input
+   396→   396→                  id="expense-date"
+   397→   397→                  type="date"
+   398→   398→                  value={date}
+   399→   399→                  onChange={(e) => setDate(e.target.value)}
+   400→   400→                />
+   401→   401→              </div>
+   402→   402→            </div>
+   403→   403→            <div className="flex items-center justify-between">
+   404→   404→              <Label htmlFor="expense-recurring">Recurring</Label>
+   405→   405→              <Switch id="expense-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   406→   406→            </div>
+   407→   407→          </TabsContent>
+   408→   408→        </Tabs>
+   409→   409→
+   410→   410→        <DialogFooter>
+   411→   411→          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+   412→   412→          <Button
+   413→   413→            onClick={handleSave}
+   414→   414→            disabled={!amount || parseFloat(amount) <= 0 || !description.trim() || saving}
+   415→   415→            className={cn(
+   416→   416→              'min-w-[100px]',
+   417→   417→              type === 'income'
+   418→   418→                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+   419→   419→                : 'bg-rose-600 hover:bg-rose-700 text-white'
+   420→   420→            )}
+   421→   421→          >
+   422→   422→            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+   423→   423→            {type === 'income' ? 'Add Income' : 'Add Expense'}
+   424→   424→          </Button>
+   425→   425→        </DialogFooter>
+   426→   426→      </DialogContent>
+   427→   427→    </Dialog>
+   428→   428→  )
+   429→   429→}
+   430→   430→
+   431→   431→// ── Main Dashboard Component ───────────────────────────────────────
+   432→   432→export default function Dashboard() {
+   433→   433→  const [data, setData] = useState<DashboardData | null>(null)
+   434→   434→  const [loading, setLoading] = useState(true)
+   435→   435→  const [dailySpendingData, setDailySpendingData] = useState<Array<{ date: string; amount: number }>>([])
+   436→   436→  const { user, dashboardData, setDashboardData, showQuickAdd, setShowQuickAdd, quickAddType, setQuickAddType, setActiveModule } = useAppStore()
+   437→   437→
+   438→   438→  const mapApiData = (api: any): DashboardData => ({
+   439→   439→    balance: api.balance ?? 0,
+   440→   440→    totalIncome: api.totalIncome ?? 0,
+   441→   441→    totalExpenses: api.totalExpenses ?? 0,
+   442→   442→    totalDebt: api.activeDebtPayments ?? 0,
+   443→   443→    monthlyCashFlow: (api.monthlyData ?? []).map((m: any) => ({
+   444→   444→      month: m.month?.split(' ')[0] || m.month,
+   445→   445→      income: m.income ?? 0,
+   446→   446→      expenses: m.expenses ?? 0,
+   447→   447→    })),
+   448→   448→    expenseCategories: (api.categoryBreakdown ?? []).map((c: any) => ({
+   449→   449→      name: c.name,
+   450→   450→      value: c.total ?? c.value ?? 0,
+   451→   451→      color: c.color || '#94a3b8',
+   452→   452→    })),
+   453→   453→    budgetVsActual: [] as DashboardData['budgetVsActual'],
+   454→   454→    recentTransactions: (api.recentMovements ?? []).map((m: any) => ({
+   455→   455→      id: m.id,
+   456→   456→      type: m.type || 'expense',
+   457→   457→      description: m.description,
+   458→   458→      amount: m.type === 'entrada' ? m.amount : -m.amount,
+   459→   459→      date: m.date,
+   460→   460→      category: m.category?.name,
+   461→   461→      categoryColor: m.category?.color,
+   462→   462→    })),
+   463→   463→    savingsGoals: (api.savingsProgress ?? []).map((g: any) => ({
+   464→   464→      id: g.id,
+   465→   465→      name: g.name,
+   466→   466→      saved: g.savedAmount ?? g.saved ?? 0,
+   467→   467→      target: g.targetAmount ?? g.target ?? 0,
+   468→   468→      deadline: g.deadline,
+   469→   469→    })),
+   470→   470→  })
+   471→   471→
+   472→   472→  const doFetchData = async () => {
+   473→   473→    setLoading(true)
+   474→   474→    try {
+   475→   475→      if (user?.id) {
+   476→   476→        const currentMonth = format(new Date(), 'yyyy-MM')
+   477→   477→        const [dashRes, budgetRes, dailyRes] = await Promise.all([
+   478→   478→          fetch(`/api/dashboard?accountId=${user.id}`),
+   479→   479→          fetch(`/api/budget?accountId=${user.id}`),
+   480→   480→          fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
+   481→   481→        ])
+   482→   482→        if (dailyRes.ok) {
+   483→   483→          const dailyJson = await dailyRes.json()
+   484→   484→          setDailySpendingData(dailyJson.days ?? [])
+   485→   485→        }
+   486→   486→        if (dashRes.ok) {
+   487→   487→          const json = await dashRes.json()
+   488→   488→          const mapped = mapApiData(json)
+   489→   489→
+   490→   490→          if (budgetRes.ok) {
+   491→   491→            try {
+   492→   492→              const budgetJson = await budgetRes.json()
+   493→   493→              const budgets = budgetJson.budgets || []
+   494→   494→              if (budgets.length > 0) {
+   495→   495→                const b = budgets[0]
+   496→   496→                const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   497→   497→                const needsPct = b.needsPercent ?? 50
+   498→   498→                const wantsPct = b.wantsPercent ?? 30
+   499→   499→                const savingsPct = b.savingsPercent ?? 20
+   500→   500→                mapped.budgetVsActual = [
+   501→   501→                  { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   502→   502→                  { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   503→   503→                  { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   504→   504→                ]
+   505→   505→              }
+   506→   506→            } catch { /* keep mock budgetVsActual */ }
+   507→   507→          }
+   508→   508→
+   509→   509→          setDashboardData(mapped)
+   510→   510→          setData(mapped)
+   511→   511→          setLoading(false)
+   512→   512→          return
+   513→   513→        }
+   514→   514→      }
+   515→   515→    } catch { /* fallback */ }
+   516→   516→    setData(dashboardData || mockData)
+   517→   517→    setLoading(false)
+   518→   518→  }
+   519→   519→
+   520→   520→  useEffect(() => {
+   521→   521→    let cancelled = false
+   522→   522→    const load = async () => {
+   523→   523→      try {
+   524→   524→        if (user?.id) {
+   525→   525→          const currentMonth = format(new Date(), 'yyyy-MM')
+   526→   526→          const [dashRes, budgetRes, dailyRes] = await Promise.all([
+   527→   527→            fetch(`/api/dashboard?accountId=${user.id}`),
+   528→   528→            fetch(`/api/budget?accountId=${user.id}`),
+   529→   529→            fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
+   530→   530→          ])
+   531→   531→          if (dailyRes.ok && !cancelled) {
+   532→   532→            const dailyJson = await dailyRes.json()
+   533→   533→            setDailySpendingData(dailyJson.days ?? [])
+   534→   534→          }
+   535→   535→          if (dashRes.ok && !cancelled) {
+   536→   536→            const json = await dashRes.json()
+   537→   537→            const mapped = mapApiData(json)
+   538→   538→
+   539→   539→            if (budgetRes.ok) {
+   540→   540→              try {
+   541→   541→                const budgetJson = await budgetRes.json()
+   542→   542→                const budgets = budgetJson.budgets || []
+   543→   543→                if (budgets.length > 0) {
+   544→   544→                  const b = budgets[0]
+   545→   545→                  const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   546→   546→                  const needsPct = b.needsPercent ?? 50
+   547→   547→                  const wantsPct = b.wantsPercent ?? 30
+   548→   548→                  const savingsPct = b.savingsPercent ?? 20
+   549→   549→                  mapped.budgetVsActual = [
+   550→   550→                    { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   551→   551→                    { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   552→   552→                    { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   553→   553→                  ]
+   554→   554→                }
+   555→   555→              } catch { /* keep mock budgetVsActual */ }
+   556→   556→            }
+   557→   557→
+   558→   558→            setDashboardData(mapped)
+   559→   559→            setData(mapped)
+   560→   560→            setLoading(false)
+   561→   561→            return
+   562→   562→          }
+   563→   563→        }
+   564→   564→      } catch { /* fallback */ }
+   565→   565→      if (!cancelled) { setData(dashboardData || mockData); setLoading(false) }
+   566→   566→    }
+   567→   567→    load()
+   568→   568→    return () => { cancelled = true }
+   569→   569→  }, [user?.id])
+   570→   570→
+   571→   571→  const d = data || mockData
+   572→   572→
+   573→   573→  // ── Calculate Financial Health Score ──
+   574→   574→  const healthScore = (() => {
+   575→   575→    let score = 0
+   576→   576→    // Savings rate (up to 40 points)
+   577→   577→    const savingsRate = d.totalIncome > 0 ? (d.totalIncome - d.totalExpenses) / d.totalIncome : 0
+   578→   578→    score += Math.min(40, Math.max(0, savingsRate * 100)) * (40 / 50) // 50% savings rate = full 40 pts
+   579→   579→
+   580→   580→    // Debt-to-income ratio (up to 30 points, lower is better)
+   581→   581→    const debtRatio = d.totalIncome > 0 ? d.totalDebt / d.totalIncome : 0
+   582→   582→    score += Math.max(0, 30 - (debtRatio * 15)) // 0 debt = 30 pts, high debt = 0
+   583→   583→
+   584→   584→    // Emergency fund coverage (up to 30 points)
+   585→   585→    const monthsCovered = d.totalExpenses > 0 ? d.balance / d.totalExpenses : 0
+   586→   586→    score += Math.min(30, monthsCovered * 6) // 5 months = full 30 pts
+   587→   587→
+   588→   588→    return Math.round(Math.max(0, Math.min(100, score)))
+   589→   589→  })()
+   590→   590→
+   591→   591→  // ── Calculate Insights ──
+   592→   592→  const insights = (() => {
+   593→   593→    const cashFlow = d.monthlyCashFlow || []
+   594→   594→    // Best saving month
+   595→   595→    let bestMonth = 'N/A'
+   596→   596→    let bestNet = -Infinity
+   597→   597→    cashFlow.forEach(m => {
+   598→   598→      const net = m.income - m.expenses
+   599→   599→      if (net > bestNet) { bestNet = net; bestMonth = m.month }
+   600→   600→    })
+   601→   601→
+   602→   602→    // Biggest expense category
+   603→   603→    const cats = d.expenseCategories || []
+   604→   604→    const biggestCat = cats.length > 0
+   605→   605→      ? cats.reduce((a, b) => a.value > b.value ? a : b)
+   606→   606→      : { name: 'N/A', value: 0 }
+   607→   607→
+   608→   608→    // Savings on track (>50% progress)
+   609→   609→    const onTrackCount = d.savingsGoals.filter(g => {
+   610→   610→      const pct = g.target > 0 ? g.saved / g.target : 0
+   611→   611→      return pct > 0.5
+   612→   612→    }).length
+   613→   613→
+   614→   614→    // Net worth trend (current vs last month)
+   615→   615→    let trend = 0
+   616→   616→    let trendLabel = 'N/A'
+   617→   617→    if (cashFlow.length >= 2) {
+   618→   618→      const current = cashFlow[cashFlow.length - 1]
+   619→   619→      const previous = cashFlow[cashFlow.length - 2]
+   620→   620→      trend = (current.income - current.expenses) - (previous.income - previous.expenses)
+   621→   621→      trendLabel = formatCurrency(Math.abs(trend))
+   622→   622→    }
+   623→   623→
+   624→   624→    return { bestMonth, bestNet, biggestCat, onTrackCount, trend, trendLabel, hasTrend: cashFlow.length >= 2 }
+   625→   625→  })()
+   626→   626→
+   627→   627→  // ── Generate daily spending sparkline data ──
+   628→   628→  const dailySpending = (() => {
+   629→   629→    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+   630→   630→    const today = new Date().getDate()
+   631→   631→    const data: Array<{ day: string; amount: number }> = []
+   632→   632→    for (let i = 1; i <= Math.min(today, daysInMonth); i++) {
+   633→   633→      // Distribute expenses across days with some randomness but deterministic
+   634→   634→      const baseDaily = d.totalExpenses / 30
+   635→   635→      const variation = Math.sin(i * 2.7 + 1.3) * baseDaily * 0.6
+   636→   636→      data.push({ day: `${i}`, amount: Math.max(0, Math.round((baseDaily + variation) * 100) / 100) })
+   637→   637→    }
+   638→   638→    return data
+   639→   639→  })()
+   640→   640→
+   641→   641→  // ── Spending Heatmap Calendar Data ──
+   642→   642→  const heatmapData = (() => {
+   643→   643→    const now = new Date()
+   644→   644→    const year = now.getFullYear()
+   645→   645→    const month = now.getMonth()
+   646→   646→    const daysInMonth = getDaysInMonth(now)
+   647→   647→    const firstDayOfWeek = getDay(startOfMonth(now)) // 0=Sun
+   648→   648→    // Adjust so Monday=0
+   649→   649→    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+   650→   650→    const today = now.getDate()
+   651→   651→
+   652→   652→    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+   653→   653→
+   654→   654→    const cells: Array<{
+   655→   655→      day: number | null
+   656→   656→      amount: number
+   657→   657→      isToday: boolean
+   658→   658→      isFuture: boolean
+   659→   659→      colorClass: string
+   660→   660→    }> = []
+   661→   661→
+   662→   662→    // Add empty cells for offset
+   663→   663→    for (let i = 0; i < startOffset; i++) {
+   664→   664→      cells.push({ day: null, amount: 0, isToday: false, isFuture: false, colorClass: '' })
+   665→   665→    }
+   666→   666→
+   667→   667→    // Add day cells
+   668→   668→    for (let day = 1; day <= daysInMonth; day++) {
+   669→   669→      const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd')
+   670→   670→      const match = dailySpendingData.find(d => d.date === dateStr)
+   671→   671→      const amount = match ? match.amount : 0
+   672→   672→      const isToday = day === today
+   673→   673→      const isFuture = day > today
+   674→   674→
+   675→   675→      let colorClass = 'bg-muted/40 dark:bg-muted/20' // No spending (gray)
+   676→   676→      if (!isFuture) {
+   677→   677→        if (amount > 500) colorClass = 'bg-rose-400 dark:bg-rose-500/80'
+   678→   678→        else if (amount > 200) colorClass = 'bg-amber-400 dark:bg-amber-500/80'
+   679→   679→        else if (amount > 50) colorClass = 'bg-emerald-500 dark:bg-emerald-500/80'
+   680→   680→        else if (amount >= 1) colorClass = 'bg-emerald-300 dark:bg-emerald-400/60'
+   681→   681→      } else {
+   682→   682→        colorClass = 'bg-muted/20 dark:bg-muted/10'
+   683→   683→      }
+   684→   684→
+   685→   685→      cells.push({ day, amount, isToday, isFuture, colorClass })
+   686→   686→    }
+   687→   687→
+   688→   688→    return { dayNames, cells, monthName: format(now, 'MMMM yyyy') }
+   689→   689→  })()
+   690→   690→
+   691→   691→  // ── Net Worth Trend Data ──
+   692→   692→  const netWorthData = (() => {
+   693→   693→    const cashFlow = d.monthlyCashFlow || []
+   694→   694→    if (cashFlow.length === 0) return []
+   695→   695→    // Cumulative net = running sum of (income - expenses)
+   696→   696→    let cumulative = d.balance - cashFlow.reduce((sum, m) => sum + m.income - m.expenses, 0)
+   697→   697→    return cashFlow.map(m => {
+   698→   698→      cumulative += m.income - m.expenses
+   699→   699→      return {
+   700→   700→        month: m.month?.split(' ')[0] || m.month,
+   701→   701→        netWorth: Number(cumulative.toFixed(2)),
+   702→   702→      }
+   703→   703→    })
+   704→   704→  })()
+   705→   705→
+   706→   706→  // ── Monthly Comparison Data ──
+   707→   707→  const monthlyComparison = (() => {
+   708→   708→    const cashFlow = d.monthlyCashFlow || []
+   709→   709→    if (cashFlow.length < 2) {
+   710→   710→      const curr = cashFlow.length === 1 ? cashFlow[0] : { income: 0, expenses: 0 }
+   711→   711→      return [
+   712→   712→        { label: 'Total Income', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   713→   713→        { label: 'Total Expenses', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   714→   714→        { label: 'Net Savings', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   715→   715→      ]
+   716→   716→    }
+   717→   717→    const curr = cashFlow[cashFlow.length - 1]
+   718→   718→    const prev = cashFlow[cashFlow.length - 2]
+   719→   719→
+   720→   720→    const calcChange = (currVal: number, prevVal: number) => {
+   721→   721→      if (prevVal === 0) return currVal > 0 ? 100 : 0
+   722→   722→      return Number(((currVal - prevVal) / Math.abs(prevVal) * 100).toFixed(1))
+   723→   723→    }
+   724→   724→
+   725→   725→    const currNet = curr.income - curr.expenses
+   726→   726→    const prevNet = prev.income - prev.expenses
+   727→   727→
+   728→   728→    return [
+   729→   729→      { label: 'Total Income', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   730→   730→      { label: 'Total Expenses', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   731→   731→      { label: 'Net Savings', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   732→   732→    ]
+   733→   733→  })()
+   734→   734→
+   735→   735→  // ── Metric cards ──
+   736→   736→  const metrics = [
+   737→   737→    {
+   738→   738→      title: 'Balance Actual',
+   739→   739→      value: formatCurrency(d.balance),
+   740→   740→      change: '+12.5%',
+   741→   741→      trend: 'up' as const,
+   742→   742→      icon: DollarSign,
+   743→   743→      accentColor: '#10b981',
+   744→   744→      gradientFrom: 'from-emerald-500/10',
+   745→   745→      gradientTo: 'to-teal-500/5',
+   746→   746→      iconBg: 'bg-emerald-100 dark:bg-emerald-500/15',
+   747→   747→      iconColor: 'text-emerald-600 dark:text-emerald-400',
+   748→   748→    },
+   749→   749→    {
+   750→   750→      title: 'Ingresos Totales',
+   751→   751→      value: formatCurrency(d.totalIncome),
+   752→   752→      change: '+4.2%',
+   753→   753→      trend: 'up' as const,
+   754→   754→      icon: TrendingUp,
+   755→   755→      accentColor: '#06b6d4',
+   756→   756→      gradientFrom: 'from-cyan-500/10',
+   757→   757→      gradientTo: 'to-sky-500/5',
+   758→   758→      iconBg: 'bg-cyan-100 dark:bg-cyan-500/15',
+   759→   759→      iconColor: 'text-cyan-600 dark:text-cyan-400',
+   760→   760→    },
+   761→   761→    {
+   762→   762→      title: 'Gastos Totales',
+   763→   763→      value: formatCurrency(d.totalExpenses),
+   764→   764→      change: '-2.1%',
+   765→   765→      trend: 'down' as const,
+   766→   766→      icon: TrendingDown,
+   767→   767→      accentColor: '#f43f5e',
+   768→   768→      gradientFrom: 'from-rose-500/10',
+   769→   769→      gradientTo: 'to-pink-500/5',
+   770→   770→      iconBg: 'bg-rose-100 dark:bg-rose-500/15',
+   771→   771→      iconColor: 'text-rose-600 dark:text-rose-400',
+   772→   772→    },
+   773→   773→    {
+   774→   774→      title: 'Deudas Activas',
+   775→   775→      value: formatCurrency(d.totalDebt),
+   776→   776→      change: '3 debts',
+   777→   777→      trend: 'neutral' as const,
+   778→   778→      icon: CreditCard,
+   779→   779→      accentColor: '#f59e0b',
+   780→   780→      gradientFrom: 'from-amber-500/10',
+   781→   781→      gradientTo: 'to-orange-500/5',
+   782→   782→      iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+   783→   783→      iconColor: 'text-amber-600 dark:text-amber-400',
+   784→   784→    },
+   785→   785→  ]
+   786→   786→
+   787→   787→  // ── Savings goal colors ──
+   788→   788→  const goalColors = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899']
+   789→   789→
+   790→   790→  return (
+   791→   791→    <div className="space-y-6 pb-20">
+   792→   792→      {/* Header */}
+   793→   793→      <div className="flex items-center justify-between">
+   794→   794→        <div>
+   795→   795→          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+   796→   796→          <p className="text-muted-foreground text-sm mt-0.5">
+   797→   797→            Overview of your financial health
+   798→   798→          </p>
+   799→   799→        </div>
+   800→   800→        <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
+   801→   801→          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+   802→   802→          Refresh
+   803→   803→        </Button>
+   804→   804→      </div>
+   805→   805→
+   806→   806→      {/* ── A. Financial Health Score ── */}
+   807→   807→      <motion.div
+   808→   808→        initial={{ opacity: 0, y: 16 }}
+   809→   809→        animate={{ opacity: 1, y: 0 }}
+   810→   810→        transition={{ duration: 0.5, ease: 'easeOut' }}
+   811→   811→      >
+   812→   812→        {/* Inline the gauge content since we can't pass data to a sub-component easily */}
+   813→   813→        <Card className="overflow-hidden border-0 shadow-lg">
+   814→   814→          <div className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-6">
+   815→   815→            <div className="flex flex-col sm:flex-row items-center gap-6">
+   816→   816→              {/* Gauge Circle */}
+   817→   817→              <div className="relative w-36 h-36 shrink-0">
+   818→   818→                <div
+   819→   819→                  className="w-full h-full rounded-full flex items-center justify-center"
+   820→   820→                  style={{
+   821→   821→                    background: `conic-gradient(${healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981'} ${(healthScore / 100) * 360}deg, var(--muted) ${(healthScore / 100) * 360}deg)`,
+   822→   822→                    transition: 'all 0.8s ease-out',
+   823→   823→                  }}
+   824→   824→                >
+   825→   825→                  <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-inner">
+   826→   826→                    <span className="text-3xl font-bold tabular-nums" style={{ color: healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981' }}>
+   827→   827→                      {healthScore}
+   828→   828→                    </span>
+   829→   829→                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">of 100</span>
+   830→   830→                  </div>
+   831→   831→                </div>
+   832→   832→              </div>
+   833→   833→
+   834→   834→              {/* Details */}
+   835→   835→              <div className="flex-1 text-center sm:text-left space-y-3">
+   836→   836→                <div>
+   837→   837→                  <h3 className="text-lg font-bold text-foreground">Financial Health Score</h3>
+   838→   838→                  <p className={cn(
+   839→   839→                    'text-sm font-semibold',
+   840→   840→                    healthScore <= 40 ? 'text-red-500' : healthScore <= 70 ? 'text-amber-500' : 'text-emerald-500'
+   841→   841→                  )}>
+   842→   842→                    {healthScore <= 40 ? 'Needs Work' : healthScore <= 70 ? 'Fair' : 'Excellent'}
+   843→   843→                  </p>
+   844→   844→                </div>
+   845→   845→                <div className="grid grid-cols-3 gap-3 text-center">
+   846→   846→                  <div className="space-y-0.5">
+   847→   847→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Savings Rate</p>
+   848→   848→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   849→   849→                      {d.totalIncome > 0 ? `${Math.max(0, Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100))}%` : '0%'}
+   850→   850→                    </p>
+   851→   851→                  </div>
+   852→   852→                  <div className="space-y-0.5">
+   853→   853→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Debt Ratio</p>
+   854→   854→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   855→   855→                      {d.totalIncome > 0 ? `${Math.round(d.totalDebt / d.totalIncome * 100)}%` : '0%'}
+   856→   856→                    </p>
+   857→   857→                  </div>
+   858→   858→                  <div className="space-y-0.5">
+   859→   859→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergency</p>
+   860→   860→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   861→   861→                      {d.totalExpenses > 0 ? `${(d.balance / d.totalExpenses).toFixed(1)}mo` : '0mo'}
+   862→   862→                    </p>
+   863→   863→                  </div>
+   864→   864→                </div>
+   865→   865→              </div>
+   866→   866→            </div>
+   867→   867→          </div>
+   868→   868→        </Card>
+   869→   869→      </motion.div>
+   870→   870→
+   871→   871→      {/* ── B. Enhanced Metric Cards with Gradients ── */}
+   872→   872→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   873→   873→        {metrics.map((m, idx) => (
+   874→   874→          <motion.div
+   875→   875→            key={m.title}
+   876→   876→            initial={{ opacity: 0, y: 20 }}
+   877→   877→            animate={{ opacity: 1, y: 0 }}
+   878→   878→            transition={{ duration: 0.4, delay: idx * 0.08, ease: 'easeOut' }}
+   879→   879→          >
+   880→   880→            <Card className="card-hover overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px' }}>
+   881→   881→              <CardContent className="p-4">
+   882→   882→                <div className="flex items-start justify-between">
+   883→   883→                  <div className="space-y-1">
+   884→   884→                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.title}</p>
+   885→   885→                    <p className={cn(
+   886→   886→                      'text-2xl font-bold tabular-nums',
+   887→   887→                      d.balance >= 0 && m.title === 'Balance Actual' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+   888→   888→                    )}>
+   889→   889→                      {m.value}
+   890→   890→                    </p>
+   891→   891→                  </div>
+   892→   892→                  <div className={cn(
+   893→   893→                    'p-2.5 rounded-xl bg-gradient-to-br',
+   894→   894→                    m.gradientFrom,
+   895→   895→                    m.gradientTo
+   896→   896→                  )}>
+   897→   897→                    <m.icon className={cn('w-5 h-5', m.iconColor)} />
+   898→   898→                  </div>
+   899→   899→                </div>
+   900→   900→                <div className="flex items-center gap-1 mt-2">
+   901→   901→                  {m.trend === 'up' && <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />}
+   902→   902→                  {m.trend === 'down' && <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />}
+   903→   903→                  <span className={cn(
+   904→   904→                    'text-xs font-medium',
+   905→   905→                    m.trend === 'up' ? 'text-emerald-500' : m.trend === 'down' ? 'text-rose-500' : 'text-muted-foreground'
+   906→   906→                  )}>
+   907→   907→                    {m.change}
+   908→   908→                  </span>
+   909→   909→                  <span className="text-xs text-muted-foreground ml-1">vs last month</span>
+   910→   910→                </div>
+   911→   911→              </CardContent>
+   912→   912→            </Card>
+   913→   913→          </motion.div>
+   914→   914→        ))}
+   915→   915→      </div>
+   916→   916→
+   917→   917→      {/* ── Charts ── */}
+   918→   918→      {loading ? (
+   919→   919→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   920→   920→          {[1, 2, 3].map((i) => (
+   921→   921→            <Card key={i}>
+   922→   922→              <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+   923→   923→              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+   924→   924→            </Card>
+   925→   925→          ))}
+   926→   926→        </div>
+   927→   927→      ) : (
+   928→   928→        <>
+   929→   929→          {/* ── E. Enhanced Charts Row 1 ── */}
+   930→   930→          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   931→   931→            {/* Cash Flow Chart */}
+   932→   932→            <motion.div
+   933→   933→              initial={{ opacity: 0, y: 20 }}
+   934→   934→              animate={{ opacity: 1, y: 0 }}
+   935→   935→              transition={{ duration: 0.5, delay: 0.35 }}
+   936→   936→              className="lg:col-span-2"
+   937→   937→            >
+   938→   938→              <Card className="overflow-hidden">
+   939→   939→                <div className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 px-6 pt-5 pb-0">
+   940→   940→                  <CardTitle className="text-base font-semibold">Monthly Cash Flow</CardTitle>
+   941→   941→                  <CardDescription>Income vs Expenses over the last 6 months</CardDescription>
+   942→   942→                </div>
+   943→   943→                <CardContent className="pt-4">
+   944→   944→                  <div className="h-[300px]">
+   945→   945→                    <ResponsiveContainer width="100%" height="100%">
+   946→   946→                      <AreaChart data={d.monthlyCashFlow} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+   947→   947→                        <defs>
+   948→   948→                          <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   949→   949→                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   950→   950→                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   951→   951→                          </linearGradient>
+   952→   952→                          <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   953→   953→                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   954→   954→                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   955→   955→                          </linearGradient>
+   956→   956→                        </defs>
+   957→   957→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+   958→   958→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+   959→   959→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+   960→   960→                        <RechartsTooltip content={EnhancedChartTooltip} />
+   961→   961→                        <Legend />
+   962→   962→                        <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   963→   963→                        <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   964→   964→                      </AreaChart>
+   965→   965→                    </ResponsiveContainer>
+   966→   966→                  </div>
+   967→   967→                </CardContent>
+   968→   968→              </Card>
+   969→   969→            </motion.div>
+   970→   970→
+   971→   971→            {/* Expense Distribution */}
+   972→   972→            <motion.div
+   973→   973→              initial={{ opacity: 0, y: 20 }}
+   974→   974→              animate={{ opacity: 1, y: 0 }}
+   975→   975→              transition={{ duration: 0.5, delay: 0.4 }}
+   976→   976→            >
+   977→   977→              <Card className="overflow-hidden">
+   978→   978→                <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 px-6 pt-5 pb-0">
+   979→   979→                  <CardTitle className="text-base font-semibold">Expense Breakdown</CardTitle>
+   980→   980→                  <CardDescription>This month by category</CardDescription>
+   981→   981→                </div>
+   982→   982→                <CardContent className="pt-4">
+   983→   983→                  <div className="h-[300px]">
+   984→   984→                    <ResponsiveContainer width="100%" height="100%">
+   985→   985→                      <PieChart>
+   986→   986→                        <Pie
+   987→   987→                          data={d.expenseCategories || []}
+   988→   988→                          cx="50%"
+   989→   989→                          cy="42%"
+   990→   990→                          innerRadius={50}
+   991→   991→                          outerRadius={82}
+   992→   992→                          paddingAngle={3}
+   993→   993→                          dataKey="value"
+   994→   994→                        >
+   995→   995→                          {(d.expenseCategories || []).map((entry, idx) => (
+   996→   996→                            <Cell key={idx} fill={entry.color || CHART_COLORS[idx % CHART_COLORS.length]} />
+   997→   997→                          ))}
+   998→   998→                        </Pie>
+   999→   999→                        <RechartsTooltip
+  1000→  1000→                          formatter={(value: number, name: string, props: any) => {
+  1001→  1001→                            const total = (d.expenseCategories || []).reduce((s, c) => s + c.value, 0)
+  1002→  1002→                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+  1003→  1003→                            return [`${formatCurrency(value)} (${pct}%)`, props.payload.name]
+  1004→  1004→                          }}
+  1005→  1005→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1006→  1006→                        />
+  1007→  1007→                      </PieChart>
+  1008→  1008→                    </ResponsiveContainer>
+  1009→  1009→                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+  1010→  1010→                      {(d.expenseCategories || []).slice(0, 4).map((cat) => (
+  1011→  1011→                        <div key={cat.name} className="flex items-center gap-2 text-xs">
+  1012→  1012→                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+  1013→  1013→                          <span className="text-muted-foreground truncate">{cat.name}</span>
+  1014→  1014→                        </div>
+  1015→  1015→                      ))}
+  1016→  1016→                    </div>
+  1017→  1017→                  </div>
+  1018→  1018→                </CardContent>
+  1019→  1019→              </Card>
+  1020→  1020→            </motion.div>
+  1021→  1021→          </div>
+  1022→  1022→
+  1023→  1023→          {/* ── D. Financial Insights Section ── */}
+  1024→  1024→          <motion.div
+  1025→  1025→            initial={{ opacity: 0, y: 20 }}
+  1026→  1026→            animate={{ opacity: 1, y: 0 }}
+  1027→  1027→            transition={{ duration: 0.5, delay: 0.45 }}
+  1028→  1028→          >
+  1029→  1029→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1030→  1030→              {/* Best Saving Month */}
+  1031→  1031→              <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-500/5 dark:to-teal-500/3 border-emerald-200/50 dark:border-emerald-500/10">
+  1032→  1032→                <CardContent className="p-4">
+  1033→  1033→                  <div className="flex items-center gap-2 mb-2">
+  1034→  1034→                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+  1035→  1035→                      <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+  1036→  1036→                    </div>
+  1037→  1037→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Best Saving Month</p>
+  1038→  1038→                  </div>
+  1039→  1039→                  <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
+  1040→  1040→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+  1041→  1041→                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} net` : 'No data'}
+  1042→  1042→                  </p>
+  1043→  1043→                </CardContent>
+  1044→  1044→              </Card>
+  1045→  1045→
+  1046→  1046→              {/* Biggest Expense Category */}
+  1047→  1047→              <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/30 dark:from-rose-500/5 dark:to-pink-500/3 border-rose-200/50 dark:border-rose-500/10">
+  1048→  1048→                <CardContent className="p-4">
+  1049→  1049→                  <div className="flex items-center gap-2 mb-2">
+  1050→  1050→                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
+  1051→  1051→                      <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+  1052→  1052→                    </div>
+  1053→  1053→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Top Expense</p>
+  1054→  1054→                  </div>
+  1055→  1055→                  <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
+  1056→  1056→                  <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+  1057→  1057→                    {formatCurrency(insights.biggestCat.value)}
+  1058→  1058→                  </p>
+  1059→  1059→                </CardContent>
+  1060→  1060→              </Card>
+  1061→  1061→
+  1062→  1062→              {/* Savings On Track */}
+  1063→  1063→              <Card className="bg-gradient-to-br from-cyan-50/50 to-sky-50/30 dark:from-cyan-500/5 dark:to-sky-500/3 border-cyan-200/50 dark:border-cyan-500/10">
+  1064→  1064→                <CardContent className="p-4">
+  1065→  1065→                  <div className="flex items-center gap-2 mb-2">
+  1066→  1066→                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
+  1067→  1067→                      <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+  1068→  1068→                    </div>
+  1069→  1069→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">On Track</p>
+  1070→  1070→                  </div>
+  1071→  1071→                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">of {d.savingsGoals.length}</span></p>
+  1072→  1072→                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+  1073→  1073→                    Goals &gt;50% complete
+  1074→  1074→                  </p>
+  1075→  1075→                </CardContent>
+  1076→  1076→              </Card>
+  1077→  1077→
+  1078→  1078→              {/* Net Worth Trend */}
+  1079→  1079→              <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-500/5 dark:to-purple-500/3 border-violet-200/50 dark:border-violet-500/10">
+  1080→  1080→                <CardContent className="p-4">
+  1081→  1081→                  <div className="flex items-center gap-2 mb-2">
+  1082→  1082→                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
+  1083→  1083→                      <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+  1084→  1084→                    </div>
+  1085→  1085→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cash Flow Trend</p>
+  1086→  1086→                  </div>
+  1087→  1087→                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
+  1088→  1088→                    {insights.hasTrend && (
+  1089→  1089→                      insights.trend >= 0
+  1090→  1090→                        ? <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+  1091→  1091→                        : <ArrowDownRight className="w-5 h-5 text-rose-500" />
+  1092→  1092→                    )}
+  1093→  1093→                    {insights.hasTrend ? insights.trendLabel : 'N/A'}
+  1094→  1094→                  </p>
+  1095→  1095→                  <p className={cn('text-xs font-medium', insights.trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
+  1096→  1096→                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs last month' : 'vs last month') : 'No comparison data'}
+  1097→  1097→                  </p>
+  1098→  1098→                </CardContent>
+  1099→  1099→              </Card>
+  1100→  1100→            </div>
+  1101→  1101→          </motion.div>
+  1102→  1102→
+  1103→  1103→          {/* ── Monthly Comparison Cards (This Month vs Last Month) ── */}
+  1104→  1104→          <motion.div
+  1105→  1105→            initial={{ opacity: 0, y: 20 }}
+  1106→  1106→            animate={{ opacity: 1, y: 0 }}
+  1107→  1107→            transition={{ duration: 0.5, delay: 0.48 }}
+  1108→  1108→          >
+  1109→  1109→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  1110→  1110→              {monthlyComparison.map((item) => {
+  1111→  1111→                const IconComp = item.icon
+  1112→  1112→                const isExpense = item.label === 'Total Expenses'
+  1113→  1113→                const isPositive = isExpense ? item.change <= 0 : item.change >= 0
+  1114→  1114→                return (
+  1115→  1115→                  <Card key={item.label} className={cn('border-l-4', item.color)}>
+  1116→  1116→                    <CardContent className="p-4">
+  1117→  1117→                      <div className="flex items-center justify-between mb-2">
+  1118→  1118→                        <div className="flex items-center gap-2">
+  1119→  1119→                          <IconComp className={cn('w-4 h-4', item.textColor)} />
+  1120→  1120→                          <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+  1121→  1121→                        </div>
+  1122→  1122→                        {item.change !== 0 && (
+  1123→  1123→                          <div className={cn(
+  1124→  1124→                            'flex items-center gap-0.5 text-xs font-semibold',
+  1125→  1125→                            isPositive ? 'text-emerald-500' : 'text-rose-500'
+  1126→  1126→                          )}>
+  1127→  1127→                            {item.change > 0 ? (
+  1128→  1128→                              <ArrowUpRight className="w-3.5 h-3.5" />
+  1129→  1129→                            ) : (
+  1130→  1130→                              <ArrowDownRight className="w-3.5 h-3.5" />
+  1131→  1131→                            )}
+  1132→  1132→                            {Math.abs(item.change)}%
+  1133→  1133→                          </div>
+  1134→  1134→                        )}
+  1135→  1135→                      </div>
+  1136→  1136→                      <p className="text-xl font-bold tabular-nums text-foreground">
+  1137→  1137→                        {formatCurrency(item.current)}
+  1138→  1138→                      </p>
+  1139→  1139→                      <p className="text-xs text-muted-foreground mt-1">
+  1140→  1140→                        Last month: {formatCurrency(item.previous)}
+  1141→  1141→                      </p>
+  1142→  1142→                    </CardContent>
+  1143→  1143→                  </Card>
+  1144→  1144→                )
+  1145→  1145→              })}
+  1146→  1146→            </div>
+  1147→  1147→          </motion.div>
+  1148→  1148→
+  1149→  1149→          {/* ── Spending Heatmap Calendar ── */}
+  1150→  1150→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1151→  1151→            <motion.div
+  1152→  1152→              initial={{ opacity: 0, y: 20 }}
+  1153→  1153→              animate={{ opacity: 1, y: 0 }}
+  1154→  1154→              transition={{ duration: 0.5, delay: 0.50 }}
+  1155→  1155→            >
+  1156→  1156→              <Card className="overflow-hidden">
+  1157→  1157→                <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 px-6 pt-5 pb-3">
+  1158→  1158→                  <div className="flex items-center justify-between">
+  1159→  1159→                    <div>
+  1160→  1160→                      <CardTitle className="text-base font-semibold">Spending Heatmap</CardTitle>
+  1161→  1161→                      <CardDescription>Daily spending for {heatmapData.monthName}</CardDescription>
+  1162→  1162→                    </div>
+  1163→  1163→                    <Calendar className="w-4 h-4 text-muted-foreground" />
+  1164→  1164→                  </div>
+  1165→  1165→                  <div className="flex items-center gap-2 mt-2">
+  1166→  1166→                    <span className="text-[10px] text-muted-foreground">Less</span>
+  1167→  1167→                    <div className="w-3.5 h-3.5 rounded-sm bg-muted/40 dark:bg-muted/20" />
+  1168→  1168→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-300 dark:bg-emerald-400/60" />
+  1169→  1169→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500 dark:bg-emerald-500/80" />
+  1170→  1170→                    <div className="w-3.5 h-3.5 rounded-sm bg-amber-400 dark:bg-amber-500/80" />
+  1171→  1171→                    <div className="w-3.5 h-3.5 rounded-sm bg-rose-400 dark:bg-rose-500/80" />
+  1172→  1172→                    <span className="text-[10px] text-muted-foreground">More</span>
+  1173→  1173→                  </div>
+  1174→  1174→                </div>
+  1175→  1175→                <CardContent className="pt-3 pb-4">
+  1176→  1176→                  <div className="grid grid-cols-7 gap-1">
+  1177→  1177→                    {heatmapData.dayNames.map((name) => (
+  1178→  1178→                      <div key={name} className="text-[10px] font-medium text-muted-foreground text-center pb-1">
+  1179→  1179→                        {name}
+  1180→  1180→                      </div>
+  1181→  1181→                    ))}
+  1182→  1182→                    {heatmapData.cells.map((cell, idx) => (
+  1183→  1183→                      <div
+  1184→  1184→                        key={idx}
+  1185→  1185→                        className={cn(
+  1186→  1186→                          'aspect-square rounded-sm flex items-center justify-center text-[10px] font-medium transition-colors relative group',
+  1187→  1187→                          cell.colorClass,
+  1188→  1188→                          cell.isFuture && 'opacity-40',
+  1189→  1189→                          !cell.day && 'invisible'
+  1190→  1190→                        )}
+  1191→  1191→                        title={cell.day ? `${formatCurrency(cell.amount)}` : undefined}
+  1192→  1192→                      >
+  1193→  1193→                        {cell.day && (
+  1194→  1194→                          <>
+  1195→  1195→                            <span className={cn(
+  1196→  1196→                              'tabular-nums',
+  1197→  1197→                              cell.amount > 50 ? 'text-white dark:text-white' : 'text-muted-foreground dark:text-muted-foreground'
+  1198→  1198→                            )}>
+  1199→  1199→                              {cell.day}
+  1200→  1200→                            </span>
+  1201→  1201→                            {cell.isToday && (
+  1202→  1202→                              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+  1203→  1203→                            )}
+  1204→  1204→                          </>
+  1205→  1205→                        )}
+  1206→  1206→                      </div>
+  1207→  1207→                    ))}
+  1208→  1208→                  </div>
+  1209→  1209→                </CardContent>
+  1210→  1210→              </Card>
+  1211→  1211→            </motion.div>
+  1212→  1212→
+  1213→  1213→            {/* ── Net Worth Trend Chart ── */}
+  1214→  1214→            <motion.div
+  1215→  1215→              initial={{ opacity: 0, y: 20 }}
+  1216→  1216→              animate={{ opacity: 1, y: 0 }}
+  1217→  1217→              transition={{ duration: 0.5, delay: 0.52 }}
+  1218→  1218→            >
+  1219→  1219→              <Card className="overflow-hidden">
+  1220→  1220→                <div className="bg-gradient-to-r from-teal-500/5 to-emerald-500/5 dark:from-teal-500/10 dark:to-emerald-500/10 px-6 pt-5 pb-0">
+  1221→  1221→                  <div className="flex items-center gap-2">
+  1222→  1222→                    <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+  1223→  1223→                    <div>
+  1224→  1224→                      <CardTitle className="text-base font-semibold">Net Worth Trend</CardTitle>
+  1225→  1225→                      <CardDescription>Cumulative net position over 6 months</CardDescription>
+  1226→  1226→                    </div>
+  1227→  1227→                  </div>
+  1228→  1228→                </div>
+  1229→  1229→                <CardContent className="pt-4">
+  1230→  1230→                  <div className="h-[240px]">
+  1231→  1231→                    <ResponsiveContainer width="100%" height="100%">
+  1232→  1232→                      <AreaChart data={netWorthData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1233→  1233→                        <defs>
+  1234→  1234→                          <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
+  1235→  1235→                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+  1236→  1236→                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+  1237→  1237→                          </linearGradient>
+  1238→  1238→                        </defs>
+  1239→  1239→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1240→  1240→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1241→  1241→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1242→  1242→                        <RechartsTooltip
+  1243→  1243→                          formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
+  1244→  1244→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1245→  1245→                        />
+  1246→  1246→                        <Area
+  1247→  1247→                          type="monotone"
+  1248→  1248→                          dataKey="netWorth"
+  1249→  1249→                          name="Net Worth"
+  1250→  1250→                          stroke="#14b8a6"
+  1251→  1251→                          fill="url(#netWorthGrad)"
+  1252→  1252→                          strokeWidth={2}
+  1253→  1253→                          dot={{ r: 3, strokeWidth: 0, fill: '#14b8a6' }}
+  1254→  1254→                          activeDot={{ r: 5, strokeWidth: 0, fill: '#14b8a6' }}
+  1255→  1255→                        />
+  1256→  1256→                      </AreaChart>
+  1257→  1257→                    </ResponsiveContainer>
+  1258→  1258→                  </div>
+  1259→  1259→                </CardContent>
+  1260→  1260→              </Card>
+  1261→  1261→            </motion.div>
+  1262→  1262→          </div>
+  1263→  1263→
+  1264→  1264→          {/* ── Budget vs Actual ── */}
+  1265→  1265→          <motion.div
+  1266→  1266→            initial={{ opacity: 0, y: 20 }}
+  1267→  1267→            animate={{ opacity: 1, y: 0 }}
+  1268→  1268→            transition={{ duration: 0.5, delay: 0.54 }}
+  1269→  1269→          >
+  1270→  1270→            <Card className="overflow-hidden">
+  1271→  1271→              <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
+  1272→  1272→                <CardTitle className="text-base font-semibold">Budget vs Actual (50/30/20 Rule)</CardTitle>
+  1273→  1273→                <CardDescription>Comparing your planned budget with actual spending</CardDescription>
+  1274→  1274→              </div>
+  1275→  1275→              <CardContent className="pt-4">
+  1276→  1276→                <div className="h-[240px]">
+  1277→  1277→                  <ResponsiveContainer width="100%" height="100%">
+  1278→  1278→                    <BarChart data={d.budgetVsActual} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1279→  1279→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1280→  1280→                      <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1281→  1281→                      <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1282→  1282→                      <RechartsTooltip content={EnhancedChartTooltip} />
+  1283→  1283→                      <Legend />
+  1284→  1284→                      <Bar dataKey="planned" name="Planned" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+  1285→  1285→                      <Bar dataKey="actual" name="Actual" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+  1286→  1286→                    </BarChart>
+  1287→  1287→                  </ResponsiveContainer>
+  1288→  1288→                </div>
+  1289→  1289→              </CardContent>
+  1290→  1290→            </Card>
+  1291→  1291→          </motion.div>
+  1292→  1292→
+  1293→  1293→          {/* ── E. Spending Trend Sparkline ── */}
+  1294→  1294→          <motion.div
+  1295→  1295→            initial={{ opacity: 0, y: 20 }}
+  1296→  1296→            animate={{ opacity: 1, y: 0 }}
+  1297→  1297→            transition={{ duration: 0.5, delay: 0.58 }}
+  1298→  1298→          >
+  1299→  1299→            <Card className="overflow-hidden">
+  1300→  1300→              <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
+  1301→  1301→                <CardTitle className="text-base font-semibold">Daily Spending Trend</CardTitle>
+  1302→  1302→                <CardDescription>Your spending pattern this month</CardDescription>
+  1303→  1303→              </div>
+  1304→  1304→              <CardContent className="pt-4">
+  1305→  1305→                <div className="h-[200px]">
+  1306→  1306→                  <ResponsiveContainer width="100%" height="100%">
+  1307→  1307→                    <AreaChart data={dailySpending} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1308→  1308→                      <defs>
+  1309→  1309→                        <linearGradient id="dailySpendGrad" x1="0" y1="0" x2="0" y2="1">
+  1310→  1310→                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+  1311→  1311→                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+  1312→  1312→                        </linearGradient>
+  1313→  1313→                      </defs>
+  1314→  1314→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1315→  1315→                      <XAxis
+  1316→  1316→                        dataKey="day"
+  1317→  1317→                        tick={{ fontSize: 10 }}
+  1318→  1318→                        stroke="var(--muted-foreground)"
+  1319→  1319→                        interval="preserveStartEnd"
+  1320→  1320→                      />
+  1321→  1321→                      <YAxis
+  1322→  1322→                        tick={{ fontSize: 10 }}
+  1323→  1323→                        stroke="var(--muted-foreground)"
+  1324→  1324→                        tickFormatter={(v) => `$${v}`}
+  1325→  1325→                      />
+  1326→  1326→                      <RechartsTooltip
+  1327→  1327→                        formatter={(value: number) => [formatCurrency(value), 'Spending']}
+  1328→  1328→                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1329→  1329→                      />
+  1330→  1330→                      <Area
+  1331→  1331→                        type="monotone"
+  1332→  1332→                        dataKey="amount"
+  1333→  1333→                        name="Spending"
+  1334→  1334→                        stroke="#f59e0b"
+  1335→  1335→                        fill="url(#dailySpendGrad)"
+  1336→  1336→                        strokeWidth={2}
+  1337→  1337→                        dot={false}
+  1338→  1338→                        activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }}
+  1339→  1339→                      />
+  1340→  1340→                    </AreaChart>
+  1341→  1341→                  </ResponsiveContainer>
+  1342→  1342→                </div>
+  1343→  1343→              </CardContent>
+  1344→  1344→            </Card>
+  1345→  1345→          </motion.div>
+  1346→  1346→
+  1347→  1347→          {/* ── Bottom Row ── */}
+  1348→  1348→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1349→  1349→            {/* Recent Transactions */}
+  1350→  1350→            <motion.div
+  1351→  1351→              initial={{ opacity: 0, y: 20 }}
+  1352→  1352→              animate={{ opacity: 1, y: 0 }}
+  1353→  1353→              transition={{ duration: 0.5, delay: 0.62 }}
+  1354→  1354→            >
+  1355→  1355→              <Card>
+  1356→  1356→                <CardHeader className="pb-2">
+  1357→  1357→                  <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
+  1358→  1358→                  <CardDescription>Your latest financial movements</CardDescription>
+  1359→  1359→                </CardHeader>
+  1360→  1360→                <CardContent>
+  1361→  1361→                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+  1362→  1362→                    {d.recentTransactions.map((tx) => (
+  1363→  1363→                      <motion.div
+  1364→  1364→                        key={tx.id}
+  1365→  1365→                        initial={{ opacity: 0, x: -10 }}
+  1366→  1366→                        animate={{ opacity: 1, x: 0 }}
+  1367→  1367→                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+  1368→  1368→                      >
+  1369→  1369→                        <div className="flex items-center gap-3 min-w-0">
+  1370→  1370→                          <div className={cn(
+  1371→  1371→                            'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+  1372→  1372→                            tx.type === 'income'
+  1373→  1373→                              ? 'bg-emerald-50 dark:bg-emerald-500/10'
+  1374→  1374→                              : 'bg-rose-50 dark:bg-rose-500/10'
+  1375→  1375→                          )}>
+  1376→  1376→                            {tx.type === 'income'
+  1377→  1377→                              ? <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+  1378→  1378→                              : <ArrowDownRight className="w-4 h-4 text-rose-500" />
+  1379→  1379→                            }
+  1380→  1380→                          </div>
+  1381→  1381→                          <div className="min-w-0">
+  1382→  1382→                            <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
+  1383→  1383→                            <div className="flex items-center gap-2">
+  1384→  1384→                              <span className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</span>
+  1385→  1385→                              {tx.category && (
+  1386→  1386→                                <Badge
+  1387→  1387→                                  variant="secondary"
+  1388→  1388→                                  className="text-[10px] h-4 px-1.5"
+  1389→  1389→                                  style={{ backgroundColor: (tx.categoryColor || '#64748b') + '20', color: tx.categoryColor || '#64748b' }}
+  1390→  1390→                                >
+  1391→  1391→                                  {tx.category}
+  1392→  1392→                                </Badge>
+  1393→  1393→                              )}
+  1394→  1394→                            </div>
+  1395→  1395→                          </div>
+  1396→  1396→                        </div>
+  1397→  1397→                        <span className={cn(
+  1398→  1398→                          'text-sm font-semibold tabular-nums shrink-0',
+  1399→  1399→                          tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+  1400→  1400→                        )}>
+  1401→  1401→                          {tx.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+  1402→  1402→                        </span>
+  1403→  1403→                      </motion.div>
+  1404→  1404→                    ))}
+  1405→  1405→                  </div>
+  1406→  1406→                </CardContent>
+  1407→  1407→              </Card>
+  1408→  1408→            </motion.div>
+  1409→  1409→
+  1410→  1410→            {/* ── F. Enhanced Savings Section ── */}
+  1411→  1411→            <motion.div
+  1412→  1412→              initial={{ opacity: 0, y: 20 }}
+  1413→  1413→              animate={{ opacity: 1, y: 0 }}
+  1414→  1414→              transition={{ duration: 0.5, delay: 0.67 }}
+  1415→  1415→            >
+  1416→  1416→              <Card>
+  1417→  1417→                <CardHeader className="pb-2">
+  1418→  1418→                  <div className="flex items-center justify-between">
+  1419→  1419→                    <div>
+  1420→  1420→                      <CardTitle className="text-base font-semibold">Savings Goals</CardTitle>
+  1421→  1421→                      <CardDescription>Track your savings progress</CardDescription>
+  1422→  1422→                    </div>
+  1423→  1423→                    <Button
+  1424→  1424→                      variant="ghost"
+  1425→  1425→                      size="sm"
+  1426→  1426→                      className="text-xs text-primary hover:text-primary"
+  1427→  1427→                      onClick={() => setActiveModule('savings')}
+  1428→  1428→                    >
+  1429→  1429→                      View All
+  1430→  1430→                      <ArrowUpRight className="w-3 h-3 ml-1" />
+  1431→  1431→                    </Button>
+  1432→  1432→                  </div>
+  1433→  1433→                </CardHeader>
+  1434→  1434→                <CardContent>
+  1435→  1435→                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+  1436→  1436→                    {d.savingsGoals.map((goal, idx) => {
+  1437→  1437→                      const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+  1438→  1438→                      const goalColor = goalColors[idx % goalColors.length]
+  1439→  1439→                      return (
+  1440→  1440→                        <motion.div
+  1441→  1441→                          key={goal.id}
+  1442→  1442→                          initial={{ opacity: 0, y: 10 }}
+  1443→  1443→                          animate={{ opacity: 1, y: 0 }}
+  1444→  1444→                          transition={{ delay: 0.05 * idx }}
+  1445→  1445→                          className="space-y-2 rounded-lg border-l-[3px] pl-3"
+  1446→  1446→                          style={{ borderLeftColor: goalColor }}
+  1447→  1447→                        >
+  1448→  1448→                          <div className="flex items-center justify-between">
+  1449→  1449→                            <div className="flex items-center gap-2">
+  1450→  1450→                              <span className="text-base">{getGoalEmoji(goal.name)}</span>
+  1451→  1451→                              <span className="text-sm font-medium text-foreground">{goal.name}</span>
+  1452→  1452→                            </div>
+  1453→  1453→                            <span className="text-xs font-semibold tabular-nums" style={{ color: goalColor }}>
+  1454→  1454→                              {pct}%
+  1455→  1455→                            </span>
+  1456→  1456→                          </div>
+  1457→  1457→                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+  1458→  1458→                            <motion.div
+  1459→  1459→                              className="h-full rounded-full"
+  1460→  1460→                              style={{ background: goalColor }}
+  1461→  1461→                              initial={{ width: 0 }}
+  1462→  1462→                              animate={{ width: `${pct}%` }}
+  1463→  1463→                              transition={{ duration: 0.8, delay: 0.2 + idx * 0.1, ease: 'easeOut' }}
+  1464→  1464→                            />
+  1465→  1465→                          </div>
+  1466→  1466→                          <div className="flex justify-between text-xs text-muted-foreground">
+  1467→  1467→                            <span>{formatCurrency(goal.saved)} saved</span>
+  1468→  1468→                            <span>Goal: {formatCurrency(goal.target)}</span>
+  1469→  1469→                          </div>
+  1470→  1470→                          {goal.deadline && (
+  1471→  1471→                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+  1472→  1472→                              <Calendar className="w-3 h-3" />
+  1473→  1473→                              {format(new Date(goal.deadline), 'MMM d, yyyy')}
+  1474→  1474→                            </p>
+  1475→  1475→                          )}
+  1476→  1476→                        </motion.div>
+  1477→  1477→                      )
+  1478→  1478→                    })}
+  1479→  1479→                  </div>
+  1480→  1480→                </CardContent>
+  1481→  1481→              </Card>
+  1482→  1482→            </motion.div>
+  1483→  1483→          </div>
+  1484→  1484→        </>
+  1485→  1485→      )}
+  1486→  1486→
+  1487→  1487→      {/* ── C. Quick Transaction FAB ── */}
+  1488→  1488→      <AnimatePresence>
+  1489→  1489→        {showQuickAdd && (
+  1490→  1490→          <motion.div
+  1491→  1491→            className="fixed bottom-6 right-6 z-50 flex items-end gap-3"
+  1492→  1492→            initial={{ opacity: 0, scale: 0.8 }}
+  1493→  1493→            animate={{ opacity: 1, scale: 1 }}
+  1494→  1494→            exit={{ opacity: 0, scale: 0.8 }}
+  1495→  1495→            transition={{ duration: 0.2 }}
+  1496→  1496→          >
+  1497→  1497→            <motion.button
+  1498→  1498→              whileHover={{ scale: 1.05 }}
+  1499→  1499→              whileTap={{ scale: 0.95 }}
+  1500→  1500→              onClick={() => { setQuickAddType('income'); setShowQuickAdd(true) }}
+  1501→  1501→              className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center justify-center"
+  1502→  1502→            >
+  1503→  1503→              <ArrowUpRight className="w-5 h-5" />
+  1504→  1504→            </motion.button>
+  1505→  1505→            <motion.button
+  1506→  1506→              whileHover={{ scale: 1.05 }}
+  1507→  1507→              whileTap={{ scale: 0.95 }}
+  1508→  1508→              onClick={() => { setQuickAddType('expense'); setShowQuickAdd(true) }}
+  1509→  1509→              className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg flex items-center justify-center"
+  1510→  1510→            >
+  1511→  1511→              <ArrowDownRight className="w-5 h-5" />
+  1512→  1512→            </motion.button>
+  1513→  1513→            <motion.button
+  1514→  1514→              whileHover={{ scale: 1.05 }}
+  1515→  1515→              whileTap={{ scale: 0.95 }}
+  1516→  1516→              onClick={() => setShowQuickAdd(false)}
+  1517→  1517→              className="w-10 h-10 rounded-full bg-muted text-muted-foreground shadow-md flex items-center justify-center"
+  1518→  1518→            >
+  1519→  1519→              <X className="w-4 h-4" />
+  1520→  1520→            </motion.button>
+  1521→  1521→          </motion.div>
+  1522→  1522→        )}
+  1523→  1523→      </AnimatePresence>
+  1524→  1524→
+  1525→  1525→      {/* Main FAB */}
+  1526→  1526→      {!showQuickAdd && (
+  1527→  1527→        <motion.button
+  1528→  1528→          initial={{ opacity: 0, scale: 0 }}
+  1529→  1529→          animate={{ opacity: 1, scale: 1 }}
+  1530→  1530→          whileHover={{ scale: 1.08 }}
+  1531→  1531→          whileTap={{ scale: 0.92 }}
+  1532→  1532→          onClick={() => setShowQuickAdd(true)}
+  1533→  1533→          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl flex items-center justify-center"
+  1534→  1534→          title="Add Transaction"
+  1535→  1535→        >
+  1536→  1536→          <Plus className="w-6 h-6" />
+  1537→  1537→        </motion.button>
+  1538→  1538→      )}
+  1539→  1539→
+  1540→  1540→      {/* Quick Add Dialog */}
+  1541→  1541→      <QuickAddDialog
+  1542→  1542→        open={showQuickAdd}
+  1543→  1543→        onOpenChange={setShowQuickAdd}
+  1544→  1544→        type={quickAddType}
+  1545→  1545→        onTypeChange={setQuickAddType}
+  1546→  1546→        accountId={user?.id || ''}
+  1547→  1547→        onSaved={doFetchData}
+  1548→  1548→      />
+  1549→  1549→    </div>
+  1550→  1550→  )
+  1551→  1551→}

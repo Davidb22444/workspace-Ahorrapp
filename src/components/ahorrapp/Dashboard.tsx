@@ -745,6 +745,8 @@ export default function Dashboard() {
       gradientTo: 'to-teal-500/5',
       iconBg: 'bg-emerald-100 dark:bg-emerald-500/15',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
+      cardAccentFrom: '#10b981',
+      cardAccentTo: '#06b6d4',
     },
     {
       title: 'Ingresos Totales',
@@ -757,6 +759,8 @@ export default function Dashboard() {
       gradientTo: 'to-sky-500/5',
       iconBg: 'bg-cyan-100 dark:bg-cyan-500/15',
       iconColor: 'text-cyan-600 dark:text-cyan-400',
+      cardAccentFrom: '#10b981',
+      cardAccentTo: '#34d399',
     },
     {
       title: 'Gastos Totales',
@@ -769,6 +773,8 @@ export default function Dashboard() {
       gradientTo: 'to-pink-500/5',
       iconBg: 'bg-rose-100 dark:bg-rose-500/15',
       iconColor: 'text-rose-600 dark:text-rose-400',
+      cardAccentFrom: '#f43f5e',
+      cardAccentTo: '#fb7185',
     },
     {
       title: 'Deudas Activas',
@@ -781,6 +787,8 @@ export default function Dashboard() {
       gradientTo: 'to-orange-500/5',
       iconBg: 'bg-amber-100 dark:bg-amber-500/15',
       iconColor: 'text-amber-600 dark:text-amber-400',
+      cardAccentFrom: '#f59e0b',
+      cardAccentTo: '#fbbf24',
     },
   ]
 
@@ -791,7 +799,7 @@ export default function Dashboard() {
     <div className="space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             Overview of your financial health
@@ -877,7 +885,7 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: idx * 0.08, ease: 'easeOut' }}
           >
-            <Card className="card-hover overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px' }}>
+            <Card className="card-hover card-accent overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px', '--card-accent-from': m.cardAccentFrom, '--card-accent-to': m.cardAccentTo } as React.CSSProperties}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">

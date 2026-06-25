@@ -207,7 +207,7 @@ export default function SavingsModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Ahorros</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track your savings goals</p>
         </div>
@@ -218,7 +218,7 @@ export default function SavingsModule() {
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="stat-card card-hover">
+        <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#06b6d4' } as React.CSSProperties}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
               <PiggyBank className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -230,7 +230,7 @@ export default function SavingsModule() {
             </div>
           </CardContent>
         </Card>
-        <Card className="stat-card card-hover">
+        <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#34d399' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-muted-foreground">Overall Progress</span>

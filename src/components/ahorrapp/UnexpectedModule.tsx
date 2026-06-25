@@ -165,7 +165,7 @@ export default function UnexpectedModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Imprevistos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track unexpected expenses for better planning</p>
         </div>
@@ -233,7 +233,7 @@ export default function UnexpectedModule() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((exp) => (
-                    <TableRow key={exp.id} className="group">
+                    <TableRow key={exp.id} className="group table-row-interactive">
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(exp.date), 'MMM d, yyyy')}
                       </TableCell>

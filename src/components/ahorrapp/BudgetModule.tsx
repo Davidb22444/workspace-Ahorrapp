@@ -178,7 +178,7 @@ export default function BudgetModule() {
   if (!budget) {
     return (
       <div className="space-y-6">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Set up your 50/30/20 budget rule</p>
         </div>
@@ -264,7 +264,7 @@ export default function BudgetModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
           <p className="text-muted-foreground text-sm mt-0.5">50/30/20 budget rule</p>
         </div>

@@ -113,7 +113,7 @@ export default function NotificationsPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Notificaciones</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}

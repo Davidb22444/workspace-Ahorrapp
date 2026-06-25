@@ -279,7 +279,7 @@ export default function ExpenseModule() {
             </TableHeader>
             <TableBody>
               {items.map((exp) => (
-                <TableRow key={exp.id} className="group">
+                <TableRow key={exp.id} className="group table-row-interactive">
                   <TableCell className="text-sm text-muted-foreground">
                     {format(new Date(exp.date), 'MMM d, yyyy')}
                   </TableCell>
@@ -327,7 +327,7 @@ export default function ExpenseModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Gastos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track and manage your expenses</p>
         </div>

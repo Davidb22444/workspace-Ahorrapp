@@ -10,6 +10,7 @@ import {
   PiggyBank,
   CreditCard,
   PieChart,
+  Repeat,
   Bot,
   Bell,
   Users,
@@ -19,6 +20,8 @@ import {
   Wallet,
   Search,
   FileBarChart,
+  Trophy,
+  CalendarDays,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -44,11 +47,14 @@ const navItems: NavItem[] = [
   { id: 'savings', label: 'Ahorros', icon: PiggyBank },
   { id: 'debts', label: 'Deudas', icon: CreditCard },
   { id: 'budget', label: 'Presupuesto', icon: PieChart },
+  { id: 'recurring', label: 'Recurring Bills', icon: Repeat },
   { id: 'ai-assistant', label: 'Asistente IA', icon: Bot },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, badge: true },
   { id: 'dependents', label: 'Dependientes', icon: Users },
   { id: 'transactions', label: 'Transaction Center', icon: Search },
   { id: 'report', label: 'Monthly Report', icon: FileBarChart },
+  { id: 'achievements', label: 'Achievements', icon: Trophy },
+  { id: 'annual-summary', label: 'Annual Summary', icon: CalendarDays },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ]
 
@@ -161,6 +167,15 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
       {/* Bottom actions */}
       <div className="px-3 py-3 space-y-1">
+        {/* Quick Stats */}
+        {!collapsed && (
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="status-dot status-dot-active" />
+              <span>All systems operational</span>
+            </div>
+          </div>
+        )}
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className={cn(

@@ -188,8 +188,10 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex-shrink-0 mb-4">
-        <h1 className="text-2xl font-bold text-gradient">Asistente IA</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Your AI-powered financial advisor</p>
+        <div className="module-header">
+          <h1 className="text-2xl font-bold text-gradient">Asistente IA</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Your AI-powered financial advisor</p>
+        </div>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">

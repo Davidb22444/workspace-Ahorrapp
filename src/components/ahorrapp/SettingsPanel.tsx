@@ -179,7 +179,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
+      <div className="module-header">
         <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Manage your account and preferences</p>
       </div>

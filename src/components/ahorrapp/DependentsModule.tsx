@@ -131,7 +131,7 @@ export default function DependentsModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Dependientes</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Manage family members and their economic impact</p>
         </div>
