@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAppStore, type Module } from '@/lib/store'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Menu, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import SupabaseSetupScreen from '@/components/ahorrapp/SupabaseSetupScreen'
 import AuthScreen from '@/components/ahorrapp/AuthScreen'
 import AppSidebar from '@/components/ahorrapp/AppSidebar'
 import Dashboard from '@/components/ahorrapp/Dashboard'
@@ -67,33 +66,8 @@ const moduleTitles: Record<Module, string> = {
   settings: 'Configuración',
 }
 
-type AppPhase = 'checking-db' | 'setup-db' | 'auth' | 'app'
-
 export default function Home() {
   const { isAuthenticated, activeModule, setUnreadCount, user, unreadCount, setSidebarOpen } = useAppStore()
-  const [phase, setPhase] = useState<AppPhase>('checking-db')
-
-  // Check database status on mount
-  useEffect(() => {
-    async function checkDb() {
-      try {
-        const res = await fetch('/api/setup-db')
-        const data = await res.json()
-        if (data.status === 'ready') {
-          setPhase('auth')
-        } else if (data.status === 'needs_seed') {
-          setPhase('setup-db')
-        } else {
-          setPhase('setup-db')
-        }
-      } catch {
-        // If setup-db fails, try to proceed to auth anyway
-        // (in case Supabase is temporarily unreachable)
-        setPhase('auth')
-      }
-    }
-    checkDb()
-  }, [])
 
   // Fetch notification count periodically
   useEffect(() => {
@@ -115,22 +89,6 @@ export default function Home() {
 
     return () => { clearInterval(interval); clearTimeout(timeout) }
   }, [isAuthenticated, setUnreadCount, user?.id])
-
-  // Database setup phase
-  if (phase === 'checking-db') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin" />
-          <p className="text-gray-500 text-sm">Conectando con Supabase...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (phase === 'setup-db') {
-    return <SupabaseSetupScreen onReady={() => setPhase('auth')} />
-  }
 
   if (!isAuthenticated) {
     return <AuthScreen />
