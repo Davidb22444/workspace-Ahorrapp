@@ -81,6 +81,25 @@ export default function BudgetModule() {
   const [mounted, setMounted] = useState(false)
   const { user } = useAppStore()
 
+  function mapApiBudget(raw: Record<string, unknown>): BudgetData | null {
+    const periods = (raw.periods as Array<Record<string, unknown>>) || []
+    const latest = periods[0] || {}
+    const totalIncome = (raw.totalAmount as number) || 0
+    const needsPct = (raw.needsPercent as number) || 50
+    const wantsPct = (raw.wantsPercent as number) || 30
+    const savingsPct = (raw.savingsPercent as number) || 20
+    return {
+      id: raw.id as string,
+      totalIncome,
+      needsPct,
+      wantsPct,
+      savingsPct,
+      needs: { planned: totalIncome * needsPct / 100, actual: (latest.actualNeeds as number) || 0 },
+      wants: { planned: totalIncome * wantsPct / 100, actual: (latest.actualWants as number) || 0 },
+      savings: { planned: totalIncome * savingsPct / 100, actual: (latest.actualSavings as number) || 0 },
+    }
+  }
+
   useEffect(() => {
     let cancelled = false
     const fetchBudget = async () => {
@@ -88,7 +107,13 @@ export default function BudgetModule() {
         const res = await fetch(`/api/budget?accountId=${user?.id}`)
         if (res.ok && !cancelled) {
           const data = await res.json()
-          setBudget(data.budget || data || null)
+          const list = Array.isArray(data.budgets) ? data.budgets : Array.isArray(data.budget) ? [data.budget] : Array.isArray(data) ? data : []
+          const active = list.find((b: Record<string, unknown>) => b.isActive) || list[0]
+          if (active) {
+            setBudget(mapApiBudget(active))
+          } else {
+            setBudget(null)
+          }
           setLoading(false)
           return
         }

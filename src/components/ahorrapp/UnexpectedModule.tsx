@@ -29,6 +29,13 @@ const CATEGORIES = [
   { id: 'other', name: 'Other', color: '#64748b' },
 ]
 
+interface ApiCategory {
+  id: string
+  name: string
+  icon?: string
+  color: string
+}
+
 interface UnexpectedExpense {
   id: string
   amount: number
@@ -36,6 +43,18 @@ interface UnexpectedExpense {
   date: string
   category: string
   categoryColor?: string
+}
+
+function mapApiUnexpected(raw: Record<string, unknown>): UnexpectedExpense {
+  const cat = raw.category as ApiCategory | null | undefined
+  return {
+    id: raw.id as string,
+    amount: raw.amount as number,
+    description: raw.description as string,
+    date: raw.date ? new Date(raw.date as string).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    category: cat?.name?.toLowerCase() || (raw.categoryId as string) || 'other',
+    categoryColor: cat?.color || '#64748b',
+  }
 }
 
 const mockUnexpected: UnexpectedExpense[] = [
@@ -72,7 +91,8 @@ export default function UnexpectedModule() {
         const res = await fetch(`/api/unexpected?accountId=${user?.id}`)
         if (res.ok && !cancelled) {
           const data = await res.json()
-          setExpenses(data.expenses || data || [])
+          const rawList = Array.isArray(data.unexpecteds) ? data.unexpecteds : Array.isArray(data.expenses) ? data.expenses : Array.isArray(data) ? data : []
+          setExpenses(rawList.map(mapApiUnexpected))
           setLoading(false)
           return
         }

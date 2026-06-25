@@ -290,3 +290,172 @@ Stage Summary:
 - All charts enhanced with gradient headers, better tooltips, and daily spending sparkline
 - Savings section enriched with emojis, colored borders, and animated progress bars
 - Zero lint errors
+
+---
+Task ID: 6-a
+Agent: full-stack-developer
+Task: Add spending heatmap, net worth chart, monthly comparison cards to Dashboard
+
+Work Log:
+- Created `/api/dashboard/daily-spending/route.ts` GET endpoint: accepts `accountId` and optional `month` (YYYY-MM) query params, queries Expense and Unexpected tables grouped by date, returns `{ days: [{ date, amount }] }` with all days of the month populated
+- Added `dailySpendingData` state and fetch logic to Dashboard.tsx: parallel fetch alongside dashboard and budget APIs in both `doFetchData()` and initial `useEffect` load
+- Added 3 new computed data blocks: `heatmapData` (calendar grid with color-coded cells based on spending tiers), `netWorthData` (cumulative net position from 6-month cash flow), `monthlyComparison` (this month vs last month for income/expenses/net savings with % change)
+- Added Spending Heatmap Calendar: 7-column Mon-Sun grid with proper day offset, 5-tier color coding (gray/none → emerald/low → emerald/medium → amber/high → rose/very-high), today indicator dot, future day dimming, gradient header with legend
+- Added Net Worth Trend Chart: gradient area chart (teal #14b8a6) showing cumulative net position over 6 months, matching existing cash flow chart style with custom tooltip
+- Added Monthly Comparison Cards: 3 cards with colored left borders (emerald/income, rose/expenses, cyan/savings), trend arrows with % change, current vs previous month amounts, smart direction logic (expense increase = negative)
+- Added `Wallet` and `PiggyBank` lucide icon imports, `startOfMonth`/`getDay`/`getDaysInMonth` date-fns imports
+- Adjusted all subsequent animation delays for proper staggered mount sequence
+- All 3 new sections placed between Financial Insights and Budget vs Actual sections
+- Ran `bun run lint` — zero errors
+
+Stage Summary:
+- New API endpoint `/api/dashboard/daily-spending` returns per-day spending data for heatmap
+- Spending Heatmap Calendar shows current month with color-coded daily spending cells and legend
+- Net Worth Trend Chart shows cumulative financial position over 6 months as gradient area chart
+- Monthly Comparison Cards show this vs last month for income, expenses, and net savings with trend arrows
+- All features use existing theme (emerald/teal), framer-motion animations, and are responsive
+- Zero lint errors
+
+---
+Task ID: 6-b
+Agent: full-stack-developer
+Task: Styling polish across all modules
+
+Work Log:
+- **globals.css enhancements** (6 new utilities + 3 keyframes + reduced-motion):
+  - `.card-glow` — hover box-shadow glow using `--card-glow-color` CSS variable, smooth 300ms transition, dark mode variant
+  - `@keyframes countUp` + `.animate-count-up` — subtle scale-bounce on numbers (0.85 → 1.05 → 1)
+  - `@keyframes pulseDot` + `.animate-pulse-dot` — pulsing scale (0.8→1.2) with opacity for notification dots
+  - `.gradient-border` — emerald-to-cyan gradient border using mask-composite technique
+  - `.skeleton-shimmer` — refined wider shimmer sweep (300% background-size, 2.5s, subtle emerald tint)
+  - `.tooltip-arrow` — CSS triangle tooltip arrow using `::after` pseudo-element
+  - `@keyframes blobMove1/2/3` — 3 unique floating blob movement patterns for auth screen
+  - `@keyframes rotateGradient` — gradient position animation for demo button border
+  - `@keyframes progressShimmer` + `.progress-shimmer` — moving light reflection on progress bars
+  - `.income-row-hover` — table row with transparent left border that shows emerald on hover + subtle bg
+  - `@media (prefers-reduced-motion: reduce)` — disables ALL animations, transitions, and hover transforms globally
+- **AppSidebar.tsx enhancements**:
+  - Active sidebar item now has pulsing dot indicator (`.animate-pulse-dot`) on both expanded (left bar) and collapsed (top-right dot) states
+  - Added `transform: scale(1.02)` on `.sidebar-item:hover` in CSS for subtle hover scale effect
+  - Collapse/expand chevron now uses single `ChevronLeft` icon with `rotate-180` transition (300ms) when collapsed
+  - Replaced `Separator` above bottom actions with gradient line (`from-transparent via-emerald-400/50 to-transparent`)
+  - Removed unused `ChevronRight` import
+- **AuthScreen.tsx enhancements**:
+  - Replaced simple floating circles with 3 animated gradient blobs (emerald, teal, cyan) using unique movement keyframes at different sizes (420px, 360px, 300px) and speeds (20s, 18s, 22s)
+  - Login card now has proper glassmorphism: `bg-white/70 backdrop-blur-xl border-white/30` with dark mode variant
+  - "Try Demo Account" button wrapped in gradient border container with `rotateGradient` animation (3s, infinite) using emerald→teal→cyan gradient
+  - Added `animate-fade-in` to root auth screen div for fade-in on mount
+- **IncomeModule.tsx table improvements**:
+  - Alternating row backgrounds: odd rows get `bg-muted/30` via `idx % 2 === 1`
+  - Row hover shows 3px emerald left accent border via `.income-row-hover` CSS class
+  - Action buttons now slide in from right (`translate-x-2 → translate-x-0`) with `transition-all duration-200 ease-out` for smoother appearance
+  - Added `cn` import for conditional class joining
+- **SavingsModule.tsx progress bar & card enhancements**:
+  - Progress bars now have `.progress-shimmer` overlay — a moving light reflection effect using `::after` pseudo-element
+  - Goal cards use framer-motion `whileHover={{ y: -2 }}` for subtle hover lift effect (on top of existing `card-hover` shadow)
+  - Quick-contribute button now uses named group (`group/prog`) for proper hover scoping
+
+Stage Summary:
+- 6 new CSS utility classes, 7 new keyframe animations added to globals.css
+- Comprehensive `prefers-reduced-motion` media query disables all animations and transitions
+- AppSidebar: pulsing active indicator, hover scale, rotating chevron, gradient divider
+- AuthScreen: animated gradient blobs, glassmorphism card, rotating gradient demo button, fade-in
+- IncomeModule: alternating rows, hover accent border, smooth action button slide-in
+- SavingsModule: progress bar shimmer overlay, hover lift on goal cards
+- Zero lint errors
+
+---
+Task ID: 6-c
+Agent: full-stack-developer
+Task: Add Transaction Center and Monthly Report modules
+
+Work Log:
+- Read worklog.md, store.ts, AppSidebar.tsx, page.tsx, API routes (income, expenses, unexpected, categories, savings, debts), and Prisma schema for full context
+- Created `/home/z/my-project/src/components/ahorrapp/TransactionCenter.tsx` (329 lines):
+  - Unified timeline merging income + expenses + unexpected into single sorted list
+  - Each transaction shows: date, type icon (green ArrowUpRight for income, red ArrowDownRight for expense/unexpected), description, category badge with color dot, amount (colored green/red/amber), and type-specific meta (source/frequency for income, recurring badge for expenses, resolved status for unexpected)
+  - Advanced Filters Panel (Collapsible): date range (from/to inputs), amount range (min/max), type filter (All/Income/Expense/Unexpected tab buttons), category dropdown (fetched from /api/categories), search text input
+  - Active filter count badge on filter toggle button
+  - Summary bar: "Showing X transactions | Total Income: $Y | Total Expenses: $Z | Net: $W"
+  - Pagination: 20 items per page with Previous/Next + numbered page buttons (up to 5 visible)
+  - Type-colored left borders: emerald=income, rose=expense, amber=unexpected
+  - Empty state with clear-filters CTA when filters active
+  - Loading skeleton state
+  - Carefully handled API response mapping (income returns array directly, expenses/unexpected wrapped)
+- Created `/home/z/my-project/src/components/ahorrapp/MonthlyReport.tsx` (397 lines):
+  - Month/Year navigator with left/right arrows, current month badge, future month disabled
+  - Key Metrics Summary Card: 4 cards (Total Income, Total Expenses, Net Savings, Savings Rate) with colored left borders, icon badges, and Delta comparison to previous month (percentage change with TrendingUp/TrendingDown icons)
+  - Income Breakdown: Table with source, amount, % of total for all income in selected month
+  - Expense Breakdown: Grouped by category with category totals, animated horizontal bar (% of total expenses), individual items listed per category
+  - Savings Progress: Grouped contributions by goal with emoji icons, contribution count, per-goal and total amounts
+  - Debt Payments: Grouped by debt with per-debt payment total and count
+  - Top 5 Expenses: Ranked list (1-5) with category color dots, highlighted top 3
+  - Print/Export button with `window.print()` and comprehensive `@media print` CSS
+- Updated `src/lib/store.ts`: Added `'transactions'` and `'report'` to Module type union
+- Updated `src/components/ahorrapp/AppSidebar.tsx`: Added Search and FileBarChart icon imports, two new nav items (Transaction Center, Monthly Report) before Settings
+- Updated `src/app/page.tsx`: Added component imports and moduleComponents/moduleTitles entries for transactions and report
+- Added `@media print` CSS to `src/app/globals.css` for print-optimized Monthly Report layout (hides sidebar/nav, preserves colors, break-inside: avoid on cards)
+- Cleaned unused imports (Loader2, DollarSign, Wallet, Progress) from both new components
+- Ran `bun run lint` — zero errors
+
+Stage Summary:
+- Two new modules fully integrated: Transaction Center (advanced search & filters) and Monthly Report (comprehensive financial overview)
+- Both use existing emerald/teal fintech theme, shadcn/ui components, framer-motion animations
+- All API response format differences handled (income returns array, expenses/unexpected/savings/debts return wrapped objects)
+- Zero lint errors
+
+---
+Task ID: 7
+Agent: Main Orchestrator
+Task: Bug fixes, QA testing, new features, styling polish (Round 3)
+
+Work Log:
+- **QA via agent-browser**: Tested all modules end-to-end, discovered 3 critical runtime bugs
+- **Bug Fix 1 - ExpenseModule crash**: `unexpected.filter is not a function` — API returns `{unexpecteds:[], total}` but code read `data.expenses`. Fixed by checking `data.unexpecteds` first with `Array.isArray()` guards
+- **Bug Fix 2 - Data mapping**: API returns nested `category: {name, color}` objects but components expected flat `category: string`. Added `mapApiExpense()` and `mapApiUnexpected()` mapper functions to properly transform API responses
+- **Bug Fix 3 - BudgetModule crash**: `Cannot read properties of undefined (reading 'planned')` — API returns `{budgets: [...]}` with Prisma schema fields but component expected transformed `BudgetData`. Added `mapApiBudget()` mapper
+- **Bug Fix 4 - UnexpectedModule**: Same API response format issue. Fixed with `mapApiUnexpected()` mapper
+- **Bug Fix 5 - CSS parsing error**: `@media print` block used escaped Tailwind class selector. Replaced with `[class*="..."]` attribute selectors
+- **New Feature - Spending Heatmap Calendar**: Daily spending visualization on Dashboard with 5-tier color coding, tooltip, today indicator
+- **New Feature - Net Worth Trend Chart**: Gradient area chart showing cumulative net position over 6 months
+- **New Feature - Monthly Comparison Cards**: 3 cards comparing this month vs last month for Income, Expenses, Net Savings
+- **New Feature - Transaction Center**: Unified timeline with advanced filters (date/amount range, type, category, search), summary bar, pagination
+- **New Feature - Monthly Report**: Comprehensive financial report with month navigation, key metrics, breakdowns, print support
+- **Styling Polish**: 7 new CSS utilities, 7 keyframes, sidebar active pulse dot + hover scale, auth floating blobs + glassmorphism, income table alternating rows, savings progress shimmer
+- **API**: Created `/api/dashboard/daily-spending/route.ts`
+- All 13 modules verified with zero JS errors via agent-browser
+
+Stage Summary:
+- 5 critical bugs fixed (3 runtime crashes, 1 data mapping, 1 CSS parsing)
+- 5 new features added (heatmap, net worth, comparison cards, transaction center, monthly report)
+- 15 component files, ~8400 lines total, zero lint errors
+- All modules pass QA
+
+## Current Project Status (as of Round 3)
+- **Phase**: Post-MVP feature expansion complete, all bugs fixed
+- **Architecture**: Next.js 16 SPA with Prisma/SQLite, 15 component files (~8400 lines)
+- **Auth**: Login/register with bcrypt, demo account
+- **Modules**: 13 total (Dashboard, Income, Expenses, Unexpected, Savings, Debts, Budget, AI Assistant, Notifications, Dependents, Settings, Transaction Center, Monthly Report)
+- **UI**: Emerald/teal fintech theme, glassmorphism, dark/light mode, animations
+
+## Completed Modules (13)
+1. ✅ Auth (login, register, demo, floating gradient blobs, glassmorphism)
+2. ✅ Dashboard (health score, 6+ charts, insights, heatmap, net worth, comparison cards, FAB)
+3. ✅ Income CRUD (table, filters, alternating rows, hover effects, CSV export)
+4. ✅ Expenses CRUD (planned + unexpected tabs, category badges, CSV export)
+5. ✅ Savings Goals (progress shimmer, hover lift, contribution timeline)
+6. ✅ Debts (status glow dots, payment timeline, summary stats)
+7. ✅ Budget Planning (50/30/20 rule, health indicator, period comparison)
+8. ✅ AI Assistant (chat, typing indicator, quick questions)
+9. ✅ Notifications (colored borders, timeAgo, swipe effect)
+10. ✅ Dependents (family member cards)
+11. ✅ Settings (theme, profile, category CRUD)
+12. ✅ Transaction Center (unified timeline, advanced filters, pagination)
+13. ✅ Monthly Report (comprehensive report, print support)
+
+## Unresolved / Next Phase Recommendations
+- Dev server instability in sandbox (environment issue, not code)
+- Could add: WebSocket real-time updates, investment portfolio, PDF reports
+- Could add: Multi-currency support, data import (CSV/OFX)
+- Could improve: Frontend zod validation, error boundaries per module
+- Could add: Annual summary with year-over-year charts

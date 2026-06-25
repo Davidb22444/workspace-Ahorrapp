@@ -1,0 +1,724 @@
+   100→ GET / 200 in 72ms (compile: 3ms, render: 69ms)
+   101→ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+   102→ GET / 200 in 34ms (compile: 4ms, render: 30ms)
+   103→ GET / 200 in 41ms (compile: 4ms, render: 37ms)
+   104→ GET / 200 in 43ms (compile: 6ms, render: 36ms)
+   105→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   106→ GET / 200 in 26ms (compile: 5ms, render: 21ms)
+   107→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   108→prisma:query SELECT 1
+   109→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   110→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   111→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 13ms (compile: 1846µs, render: 11ms)
+   112→ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+   113→ GET / 200 in 42ms (compile: 9ms, render: 33ms)
+   114→ GET / 200 in 50ms (compile: 3ms, render: 47ms)
+   115→ GET / 200 in 45ms (compile: 5ms, render: 41ms)
+   116→ GET / 200 in 35ms (compile: 3ms, render: 32ms)
+   117→ GET / 200 in 42ms (compile: 7ms, render: 35ms)
+   118→ GET / 200 in 50ms (compile: 4ms, render: 47ms)
+   119→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   120→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   121→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   122→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   123→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   124→ GET / 200 in 38ms (compile: 3ms, render: 36ms)
+   125→ GET / 200 in 25ms (compile: 2ms, render: 22ms)
+   126→prisma:query SELECT 1
+   127→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   128→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   129→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 1988µs, render: 6ms)
+   130→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   131→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   132→ GET / 200 in 24ms (compile: 3ms, render: 22ms)
+   133→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   134→ POST /api/auth/login 200 in 301ms (compile: 2ms, render: 299ms)
+   135→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 12ms (compile: 3ms, render: 9ms)
+   136→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   137→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   138→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   139→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   140→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 13ms (compile: 7ms, render: 6ms)
+   141→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   142→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   143→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   144→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   145→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   146→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   147→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   148→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   149→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   150→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   151→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   152→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   153→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   154→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   155→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   156→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   157→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   158→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   159→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   160→prisma:query SELECT SUM(`main`.`Expense`.`amount`) AS `_sum$amount`, `main`.`Expense`.`categoryId` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? GROUP BY `main`.`Expense`.`categoryId` LIMIT ? OFFSET ?
+   161→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   162→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?
+   163→ GET /api/dashboard?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 39ms (compile: 5ms, render: 34ms)
+   164→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   165→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   166→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 6ms (compile: 1717µs, render: 5ms)
+   167→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   168→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   169→ GET / 200 in 25ms (compile: 2ms, render: 22ms)
+   170→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   171→ GET / 200 in 38ms (compile: 3ms, render: 35ms)
+   172→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   173→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   174→ GET / 200 in 34ms (compile: 2ms, render: 32ms)
+   175→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   176→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   177→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   178→prisma:query SELECT 1
+   179→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   180→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   181→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 12ms (compile: 1637µs, render: 11ms)
+   182→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   183→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   184→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   185→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   186→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 7ms (compile: 1775µs, render: 5ms)
+   187→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   188→ GET / 200 in 22ms (compile: 3ms, render: 20ms)
+   189→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   190→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`source`, `main`.`Income`.`amount`, `main`.`Income`.`description`, `main`.`Income`.`frequency`, `main`.`Income`.`date`, `main`.`Income`.`categoryId`, `main`.`Income`.`accountId`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   191→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   192→ GET /api/income?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 7ms (compile: 1723µs, render: 6ms)
+   193→ GET / 200 in 22ms (compile: 3ms, render: 20ms)
+   194→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   195→ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+   196→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   197→prisma:query SELECT 1
+   198→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   199→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   200→ GET /api/expenses?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 10ms (compile: 2ms, render: 8ms)
+   201→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 11ms (compile: 5ms, render: 6ms)
+   202→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   203→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   204→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   205→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   206→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   207→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   208→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   209→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1914µs, render: 5ms)
+   210→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   211→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   212→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   213→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   214→ GET / 200 in 49ms (compile: 3ms, render: 46ms)
+   215→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   216→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   217→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   218→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   219→ GET / 200 in 43ms (compile: 5ms, render: 38ms)
+   220→ GET / 200 in 31ms (compile: 2ms, render: 28ms)
+   221→ GET / 200 in 36ms (compile: 4ms, render: 33ms)
+   222→ GET / 200 in 28ms (compile: 6ms, render: 23ms)
+   223→Debugger listening on ws://127.0.0.1:9229/0e8a3364-af51-4676-989f-b54d5cf54a86
+   224→For help, see: https://nodejs.org/learn/getting-started/debugging
+   225→ GET / 200 in 30ms (compile: 4ms, render: 26ms)
+   226→ GET / 200 in 34ms (compile: 2ms, render: 32ms)
+   227→prisma:query SELECT 1
+   228→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   229→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   230→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 1853µs, render: 6ms)
+   231→ GET / 200 in 43ms (compile: 6ms, render: 37ms)
+   232→ GET / 200 in 71ms (compile: 3ms, render: 68ms)
+   233→ GET / 200 in 33ms (compile: 3ms, render: 31ms)
+   234→ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+   235→ GET / 200 in 37ms (compile: 6ms, render: 31ms)
+   236→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   237→ POST /api/auth/login 200 in 303ms (compile: 3ms, render: 300ms)
+   238→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 8ms (compile: 2ms, render: 6ms)
+   239→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   240→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   241→prisma:query SELECT 1
+   242→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   243→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   244→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   245→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   246→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 15ms (compile: 6ms, render: 10ms)
+   247→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   248→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   249→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   250→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   251→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   252→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 6ms (compile: 1573µs, render: 4ms)
+   253→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   254→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   255→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   256→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   257→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   258→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   259→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   260→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   261→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   262→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   263→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   264→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   265→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   266→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   267→prisma:query SELECT SUM(`main`.`Expense`.`amount`) AS `_sum$amount`, `main`.`Expense`.`categoryId` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? GROUP BY `main`.`Expense`.`categoryId` LIMIT ? OFFSET ?
+   268→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   269→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?
+   270→ GET /api/dashboard?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 41ms (compile: 4ms, render: 36ms)
+   271→ GET / 200 in 27ms (compile: 3ms, render: 24ms)
+   272→ GET / 200 in 38ms (compile: 4ms, render: 34ms)
+   273→ GET / 200 in 41ms (compile: 4ms, render: 37ms)
+   274→ GET / 200 in 26ms (compile: 2ms, render: 23ms)
+   275→ GET / 200 in 25ms (compile: 5ms, render: 20ms)
+   276→ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+   277→ GET / 200 in 26ms (compile: 6ms, render: 20ms)
+   278→ GET /api/expenses?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 9ms (compile: 1748µs, render: 7ms)
+   279→prisma:query SELECT 1
+   280→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   281→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   282→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   283→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   284→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 10ms (compile: 5ms, render: 6ms)
+   285→ GET / 200 in 30ms (compile: 2ms, render: 28ms)
+   286→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   287→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   288→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1959µs, render: 5ms)
+   289→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   290→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   291→ GET / 200 in 44ms (compile: 3ms, render: 41ms)
+   292→ GET / 200 in 39ms (compile: 7ms, render: 32ms)
+   293→ GET / 200 in 37ms (compile: 3ms, render: 33ms)
+   294→ GET / 200 in 38ms (compile: 6ms, render: 31ms)
+   295→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   296→ GET / 200 in 37ms (compile: 6ms, render: 31ms)
+   297→ GET / 200 in 37ms (compile: 4ms, render: 33ms)
+   298→ GET / 200 in 37ms (compile: 4ms, render: 33ms)
+   299→ GET / 200 in 44ms (compile: 4ms, render: 41ms)
+   300→ GET / 200 in 38ms (compile: 3ms, render: 35ms)
+   301→ GET / 200 in 33ms (compile: 3ms, render: 31ms)
+   302→ GET / 200 in 81ms (compile: 3ms, render: 78ms)
+   303→prisma:query SELECT 1
+   304→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   305→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   306→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1760µs, render: 5ms)
+   307→ GET / 200 in 35ms (compile: 3ms, render: 32ms)
+   308→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   309→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   310→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   311→ GET / 200 in 28ms (compile: 6ms, render: 22ms)
+   312→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   313→ GET / 200 in 26ms (compile: 3ms, render: 24ms)
+   314→ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+   315→ GET / 200 in 27ms (compile: 3ms, render: 24ms)
+   316→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   317→prisma:query SELECT 1
+   318→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   319→ POST /api/auth/login 200 in 298ms (compile: 1730µs, render: 297ms)
+   320→ GET / 200 in 63ms (compile: 2ms, render: 61ms)
+   321→ GET / 200 in 69ms (compile: 12ms, render: 57ms)
+   322→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 26ms (compile: 14ms, render: 12ms)
+   323→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   324→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   325→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   326→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   327→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 19ms (compile: 10ms, render: 9ms)
+   328→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   329→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   330→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 16ms (compile: 7ms, render: 9ms)
+   331→prisma:query SELECT 1
+   332→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   333→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   334→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   335→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   336→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   337→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   338→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   339→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   340→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   341→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   342→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   343→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   344→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   345→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   346→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   347→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   348→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   349→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   350→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   351→prisma:query SELECT SUM(`main`.`Expense`.`amount`) AS `_sum$amount`, `main`.`Expense`.`categoryId` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? GROUP BY `main`.`Expense`.`categoryId` LIMIT ? OFFSET ?
+   352→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   353→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?
+   354→ GET /api/dashboard?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 65ms (compile: 10ms, render: 55ms)
+   355→ GET / 200 in 37ms (compile: 6ms, render: 31ms)
+   356→ GET / 200 in 36ms (compile: 4ms, render: 32ms)
+   357→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   358→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   359→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   360→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 9ms (compile: 2ms, render: 7ms)
+   361→ GET /api/expenses?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 11ms (compile: 3ms, render: 8ms)
+   362→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   363→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   364→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   365→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   366→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 13ms (compile: 6ms, render: 7ms)
+   367→ GET / 200 in 46ms (compile: 4ms, render: 42ms)
+   368→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   369→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   370→ GET / 200 in 24ms (compile: 5ms, render: 19ms)
+   371→ GET / 200 in 33ms (compile: 2ms, render: 30ms)
+   372→ GET / 200 in 33ms (compile: 3ms, render: 30ms)
+   373→ GET / 200 in 42ms (compile: 4ms, render: 38ms)
+   374→ GET / 200 in 34ms (compile: 4ms, render: 30ms)
+   375→ GET / 200 in 38ms (compile: 6ms, render: 32ms)
+   376→ GET / 200 in 35ms (compile: 3ms, render: 32ms)
+   377→ GET / 200 in 46ms (compile: 3ms, render: 43ms)
+   378→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   379→ GET / 200 in 25ms (compile: 5ms, render: 19ms)
+   380→prisma:query SELECT 1
+   381→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   382→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   383→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 6ms (compile: 1645µs, render: 5ms)
+   384→ GET / 200 in 41ms (compile: 7ms, render: 34ms)
+   385→ GET / 200 in 36ms (compile: 3ms, render: 33ms)
+   386→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   387→ GET / 200 in 27ms (compile: 6ms, render: 20ms)
+   388→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   389→ GET / 200 in 27ms (compile: 7ms, render: 20ms)
+   390→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   391→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   392→ GET / 200 in 56ms (compile: 2ms, render: 54ms)
+   393→ GET / 200 in 29ms (compile: 6ms, render: 23ms)
+   394→ GET / 200 in 30ms (compile: 4ms, render: 26ms)
+   395→ GET / 200 in 29ms (compile: 3ms, render: 27ms)
+   396→ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+   397→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   398→prisma:query SELECT 1
+   399→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   400→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1589µs, render: 5ms)
+   401→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   402→ GET / 200 in 29ms (compile: 3ms, render: 26ms)
+   403→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   404→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   405→ POST /api/auth/login 200 in 296ms (compile: 1927µs, render: 294ms)
+   406→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   407→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 5ms (compile: 1754µs, render: 4ms)
+   408→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   409→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   410→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   411→prisma:query SELECT 1
+   412→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   413→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   414→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   415→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 5ms (compile: 1488µs, render: 4ms)
+   416→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   417→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   418→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   419→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   420→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   421→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   422→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   423→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   424→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   425→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   426→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   427→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   428→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   429→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   430→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   431→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   432→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   433→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 6ms (compile: 1511µs, render: 5ms)
+   434→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   435→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   436→prisma:query SELECT SUM(`main`.`Expense`.`amount`) AS `_sum$amount`, `main`.`Expense`.`categoryId` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? GROUP BY `main`.`Expense`.`categoryId` LIMIT ? OFFSET ?
+   437→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   438→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?
+   439→ GET /api/dashboard?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 31ms (compile: 2ms, render: 28ms)
+   440→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   441→ GET / 200 in 24ms (compile: 5ms, render: 19ms)
+   442→ GET / 200 in 43ms (compile: 6ms, render: 37ms)
+   443→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   444→ GET / 200 in 25ms (compile: 5ms, render: 19ms)
+   445→ GET / 200 in 27ms (compile: 3ms, render: 24ms)
+   446→ GET / 200 in 25ms (compile: 5ms, render: 19ms)
+   447→ GET /api/expenses?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 10ms (compile: 1815µs, render: 8ms)
+   448→prisma:query SELECT 1
+   449→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   450→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   451→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   452→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   453→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 11ms (compile: 6ms, render: 5ms)
+   454→ GET / 200 in 29ms (compile: 3ms, render: 26ms)
+   455→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   456→ GET / 200 in 24ms (compile: 5ms, render: 19ms)
+   457→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   458→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   459→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   460→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1923µs, render: 5ms)
+   461→ GET / 200 in 27ms (compile: 5ms, render: 21ms)
+   462→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   463→ GET / 200 in 25ms (compile: 6ms, render: 19ms)
+   464→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   465→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   466→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   467→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   468→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   469→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   470→ GET / 200 in 28ms (compile: 6ms, render: 22ms)
+   471→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   472→prisma:query SELECT 1
+   473→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   474→ GET /api/unexpected?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 2ms, render: 5ms)
+   475→ GET / 200 in 40ms (compile: 2ms, render: 37ms)
+   476→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   477→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   478→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   479→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 3ms, render: 5ms)
+   480→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   481→ GET / 200 in 24ms (compile: 6ms, render: 19ms)
+   482→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   483→ GET /api/expenses?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1657µs, render: 6ms)
+   484→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   485→ GET / 200 in 48ms (compile: 5ms, render: 43ms)
+   486→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   487→ GET /api/expenses?accountId=cmqst5k430000t0844owm4zio 200 in 10ms (compile: 4ms, render: 6ms)
+   488→ GET / 200 in 34ms (compile: 3ms, render: 32ms)
+   489→ GET / 200 in 37ms (compile: 6ms, render: 32ms)
+   490→ GET / 200 in 33ms (compile: 4ms, render: 29ms)
+   491→prisma:query SELECT 1
+   492→prisma:query SELECT `main`.`Income`.`id`, `main`.`Income`.`source`, `main`.`Income`.`amount`, `main`.`Income`.`description`, `main`.`Income`.`frequency`, `main`.`Income`.`date`, `main`.`Income`.`categoryId`, `main`.`Income`.`accountId`, `main`.`Income`.`createdAt`, `main`.`Income`.`updatedAt` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? ORDER BY `main`.`Income`.`date` DESC LIMIT ? OFFSET ?
+   493→ GET /api/income?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 1815µs, render: 7ms)
+   494→ GET / 200 in 27ms (compile: 2ms, render: 24ms)
+   495→ GET / 200 in 41ms (compile: 6ms, render: 35ms)
+   496→ GET / 200 in 29ms (compile: 2ms, render: 26ms)
+   497→ GET / 200 in 32ms (compile: 4ms, render: 28ms)
+   498→ GET / 200 in 29ms (compile: 5ms, render: 24ms)
+   499→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   500→ GET / 200 in 38ms (compile: 6ms, render: 32ms)
+   501→prisma:query SELECT 1
+   502→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   503→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   504→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1712µs, render: 6ms)
+   505→ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+   506→ GET / 200 in 39ms (compile: 7ms, render: 32ms)
+   507→ GET / 200 in 37ms (compile: 7ms, render: 30ms)
+   508→ GET / 200 in 26ms (compile: 2ms, render: 23ms)
+   509→ GET / 200 in 40ms (compile: 7ms, render: 33ms)
+   510→ GET / 200 in 29ms (compile: 3ms, render: 26ms)
+   511→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   512→ GET / 200 in 30ms (compile: 3ms, render: 27ms)
+   513→ GET / 200 in 42ms (compile: 7ms, render: 35ms)
+   514→ GET / 200 in 28ms (compile: 3ms, render: 25ms)
+   515→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   516→ GET / 200 in 31ms (compile: 2ms, render: 29ms)
+   517→ GET / 200 in 25ms (compile: 6ms, render: 20ms)
+   518→prisma:query SELECT 1
+   519→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   520→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   521→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1693µs, render: 5ms)
+   522→ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+   523→ GET / 200 in 39ms (compile: 7ms, render: 32ms)
+   524→ GET / 200 in 38ms (compile: 4ms, render: 34ms)
+   525→ GET / 200 in 39ms (compile: 3ms, render: 35ms)
+   526→ GET / 200 in 25ms (compile: 5ms, render: 19ms)
+   527→ GET / 200 in 25ms (compile: 6ms, render: 19ms)
+   528→ GET / 200 in 30ms (compile: 2ms, render: 28ms)
+   529→ GET / 200 in 34ms (compile: 4ms, render: 31ms)
+   530→ GET / 200 in 44ms (compile: 8ms, render: 36ms)
+   531→ GET / 200 in 40ms (compile: 6ms, render: 34ms)
+   532→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   533→⚠ Fast Refresh had to perform a full reload due to a runtime error.
+   534→✓ Compiled in 135ms
+   535→ GET / 200 in 380ms (compile: 73ms, render: 306ms)
+   536→⚠ Fast Refresh had to perform a full reload due to a runtime error.
+   537→✓ Compiled in 5ms
+   538→ GET / 200 in 286ms (compile: 52ms, render: 235ms)
+   539→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   540→prisma:query SELECT 1
+   541→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   542→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   543→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 9ms (compile: 2ms, render: 6ms)
+   544→ GET / 200 in 37ms (compile: 3ms, render: 34ms)
+   545→ GET / 200 in 37ms (compile: 3ms, render: 33ms)
+   546→ GET / 200 in 44ms (compile: 3ms, render: 41ms)
+   547→ GET / 200 in 30ms (compile: 2ms, render: 27ms)
+   548→ GET / 200 in 27ms (compile: 3ms, render: 24ms)
+   549→ GET / 200 in 38ms (compile: 3ms, render: 35ms)
+   550→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   551→ GET / 200 in 30ms (compile: 2ms, render: 27ms)
+   552→ GET / 200 in 41ms (compile: 3ms, render: 38ms)
+   553→✓ Compiled in 161ms
+   554→✓ Compiled in 70ms
+   555→ GET / 200 in 403ms (compile: 76ms, render: 327ms)
+   556→ GET / 200 in 26ms (compile: 2ms, render: 23ms)
+   557→ GET / 200 in 29ms (compile: 4ms, render: 25ms)
+   558→ GET / 200 in 31ms (compile: 3ms, render: 28ms)
+   559→ GET / 200 in 40ms (compile: 2ms, render: 37ms)
+   560→prisma:query SELECT 1
+   561→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   562→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   563→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 9ms (compile: 2ms, render: 7ms)
+   564→ GET / 200 in 36ms (compile: 3ms, render: 33ms)
+   565→ GET / 200 in 44ms (compile: 3ms, render: 41ms)
+   566→ GET / 200 in 48ms (compile: 5ms, render: 43ms)
+   567→ GET / 200 in 51ms (compile: 4ms, render: 47ms)
+   568→ GET / 200 in 56ms (compile: 5ms, render: 51ms)
+   569→ GET / 200 in 36ms (compile: 3ms, render: 33ms)
+   570→ GET / 200 in 36ms (compile: 3ms, render: 32ms)
+   571→ GET / 200 in 38ms (compile: 4ms, render: 34ms)
+   572→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   573→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   574→ GET / 200 in 27ms (compile: 5ms, render: 21ms)
+   575→ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+   576→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   577→ GET / 200 in 24ms (compile: 3ms, render: 22ms)
+   578→prisma:query SELECT 1
+   579→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   580→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   581→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 2ms, render: 5ms)
+   582→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   583→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   584→ POST /api/auth/login 200 in 296ms (compile: 1608µs, render: 295ms)
+   585→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 13ms (compile: 5ms, render: 8ms)
+   586→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   587→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   588→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   589→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   590→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   591→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   592→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 6ms (compile: 1807µs, render: 5ms)
+   593→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   594→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   595→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   596→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   597→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   598→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   599→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   600→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   601→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 6ms (compile: 1530µs, render: 5ms)
+   602→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   603→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   604→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   605→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   606→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   607→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   608→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   609→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   610→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   611→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   612→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   613→prisma:query SELECT SUM(`main`.`Expense`.`amount`) AS `_sum$amount`, `main`.`Expense`.`categoryId` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? GROUP BY `main`.`Expense`.`categoryId` LIMIT ? OFFSET ?
+   614→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   615→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?
+   616→ GET /api/dashboard?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 41ms (compile: 8ms, render: 32ms)
+   617→ GET / 200 in 30ms (compile: 3ms, render: 28ms)
+   618→ GET / 200 in 26ms (compile: 2ms, render: 23ms)
+   619→ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+   620→ GET / 200 in 28ms (compile: 5ms, render: 23ms)
+   621→ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+   622→ GET / 200 in 50ms (compile: 2ms, render: 47ms)
+   623→ GET / 200 in 28ms (compile: 5ms, render: 23ms)
+   624→ GET / 200 in 24ms (compile: 4ms, render: 21ms)
+   625→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   626→ GET / 200 in 49ms (compile: 5ms, render: 44ms)
+   627→ GET / 200 in 34ms (compile: 5ms, render: 29ms)
+   628→prisma:query SELECT 1
+   629→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   630→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   631→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1746µs, render: 5ms)
+   632→ GET / 200 in 34ms (compile: 6ms, render: 28ms)
+   633→ GET / 200 in 34ms (compile: 2ms, render: 31ms)
+   634→ GET /api/expenses?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 10ms (compile: 1863µs, render: 8ms)
+   635→prisma:query SELECT `main`.`Expense`.`id`, `main`.`Expense`.`amount`, `main`.`Expense`.`description`, `main`.`Expense`.`date`, `main`.`Expense`.`categoryId`, `main`.`Expense`.`dependentId`, `main`.`Expense`.`isRecurring`, `main`.`Expense`.`frequency`, `main`.`Expense`.`accountId`, `main`.`Expense`.`createdAt`, `main`.`Expense`.`updatedAt` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? ORDER BY `main`.`Expense`.`date` DESC LIMIT ? OFFSET ?
+   636→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?,?,?,?,?,?) LIMIT ? OFFSET ?
+   637→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   638→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   639→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 12ms (compile: 5ms, render: 7ms)
+   640→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   641→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   642→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 8ms (compile: 2ms, render: 6ms)
+   643→ GET / 200 in 36ms (compile: 2ms, render: 34ms)
+   644→ GET / 200 in 34ms (compile: 2ms, render: 31ms)
+   645→ GET / 200 in 45ms (compile: 7ms, render: 38ms)
+   646→ GET / 200 in 32ms (compile: 3ms, render: 30ms)
+   647→ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+   648→ GET /api/unexpected?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 13ms (compile: 2ms, render: 11ms)
+   649→prisma:query SELECT `main`.`Unexpected`.`id`, `main`.`Unexpected`.`amount`, `main`.`Unexpected`.`description`, `main`.`Unexpected`.`date`, `main`.`Unexpected`.`categoryId`, `main`.`Unexpected`.`dependentId`, `main`.`Unexpected`.`resolved`, `main`.`Unexpected`.`accountId`, `main`.`Unexpected`.`createdAt`, `main`.`Unexpected`.`updatedAt` FROM `main`.`Unexpected` WHERE `main`.`Unexpected`.`accountId` = ? ORDER BY `main`.`Unexpected`.`date` DESC LIMIT ? OFFSET ?
+   650→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   651→ GET / 200 in 29ms (compile: 6ms, render: 23ms)
+   652→ GET / 200 in 33ms (compile: 3ms, render: 30ms)
+   653→ GET / 200 in 44ms (compile: 7ms, render: 37ms)
+   654→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   655→ GET / 200 in 40ms (compile: 6ms, render: 34ms)
+   656→ GET / 200 in 37ms (compile: 4ms, render: 33ms)
+   657→ GET / 200 in 27ms (compile: 5ms, render: 22ms)
+   658→ GET / 200 in 31ms (compile: 8ms, render: 23ms)
+   659→prisma:query SELECT 1
+   660→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   661→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   662→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 13ms (compile: 1968µs, render: 11ms)
+   663→ GET / 200 in 25ms (compile: 2ms, render: 22ms)
+   664→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   665→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   666→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 7ms (compile: 1634µs, render: 6ms)
+   667→ GET / 200 in 35ms (compile: 8ms, render: 27ms)
+   668→ GET / 200 in 24ms (compile: 3ms, render: 21ms)
+   669→ GET / 200 in 26ms (compile: 6ms, render: 20ms)
+   670→ GET / 200 in 22ms (compile: 3ms, render: 19ms)
+   671→ GET / 200 in 36ms (compile: 3ms, render: 33ms)
+   672→ GET / 200 in 24ms (compile: 5ms, render: 19ms)
+   673→ GET / 200 in 22ms (compile: 3ms, render: 19ms)
+   674→ GET / 200 in 37ms (compile: 6ms, render: 31ms)
+   675→ GET / 200 in 37ms (compile: 3ms, render: 33ms)
+   676→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   677→ GET / 200 in 31ms (compile: 11ms, render: 20ms)
+   678→prisma:query SELECT 1
+   679→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   680→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   681→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 1482µs, render: 6ms)
+   682→ GET / 200 in 23ms (compile: 3ms, render: 21ms)
+   683→ GET / 200 in 32ms (compile: 2ms, render: 30ms)
+   684→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   685→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   686→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 8ms (compile: 2ms, render: 6ms)
+   687→ GET / 200 in 38ms (compile: 6ms, render: 32ms)
+   688→ GET / 200 in 42ms (compile: 4ms, render: 39ms)
+   689→ GET / 200 in 26ms (compile: 6ms, render: 21ms)
+   690→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   691→ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+   692→ GET / 200 in 22ms (compile: 3ms, render: 20ms)
+   693→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   694→ GET /api/savings?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 45ms (compile: 26ms, render: 20ms)
+   695→prisma:query SELECT 1
+   696→prisma:query SELECT `main`.`SavingsGoal`.`id`, `main`.`SavingsGoal`.`name`, `main`.`SavingsGoal`.`targetAmount`, `main`.`SavingsGoal`.`savedAmount`, `main`.`SavingsGoal`.`icon`, `main`.`SavingsGoal`.`color`, `main`.`SavingsGoal`.`deadline`, `main`.`SavingsGoal`.`status`, `main`.`SavingsGoal`.`accountId`, `main`.`SavingsGoal`.`createdAt`, `main`.`SavingsGoal`.`updatedAt` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? ORDER BY `main`.`SavingsGoal`.`createdAt` DESC LIMIT ? OFFSET ?
+   697→prisma:query SELECT `main`.`SavingsContribution`.`id`, `main`.`SavingsContribution`.`amount`, `main`.`SavingsContribution`.`date`, `main`.`SavingsContribution`.`note`, `main`.`SavingsContribution`.`goalId`, `main`.`SavingsContribution`.`accountId`, `main`.`SavingsContribution`.`createdAt`, `main`.`SavingsContribution`.`updatedAt` FROM `main`.`SavingsContribution` WHERE `main`.`SavingsContribution`.`goalId` IN (?,?,?,?) ORDER BY `main`.`SavingsContribution`.`date` DESC LIMIT ? OFFSET ?
+   698→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   699→ GET / 200 in 23ms (compile: 3ms, render: 20ms)
+   700→prisma:query SELECT `main`.`Debt`.`id`, `main`.`Debt`.`name`, `main`.`Debt`.`totalAmount`, `main`.`Debt`.`paidAmount`, `main`.`Debt`.`interestRate`, `main`.`Debt`.`startDate`, `main`.`Debt`.`dueDate`, `main`.`Debt`.`status`, `main`.`Debt`.`type`, `main`.`Debt`.`installments`, `main`.`Debt`.`accountId`, `main`.`Debt`.`createdAt`, `main`.`Debt`.`updatedAt` FROM `main`.`Debt` WHERE `main`.`Debt`.`accountId` = ? ORDER BY `main`.`Debt`.`createdAt` DESC LIMIT ? OFFSET ?
+   701→prisma:query SELECT `main`.`DebtPayment`.`id`, `main`.`DebtPayment`.`amount`, `main`.`DebtPayment`.`date`, `main`.`DebtPayment`.`note`, `main`.`DebtPayment`.`debtId`, `main`.`DebtPayment`.`accountId`, `main`.`DebtPayment`.`createdAt`, `main`.`DebtPayment`.`updatedAt` FROM `main`.`DebtPayment` WHERE `main`.`DebtPayment`.`debtId` IN (?,?,?) ORDER BY `main`.`DebtPayment`.`date` DESC LIMIT ? OFFSET ?
+   702→ GET /api/debts?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 26ms (compile: 20ms, render: 6ms)
+   703→ GET / 200 in 25ms (compile: 6ms, render: 18ms)
+   704→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   705→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   706→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   707→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 7ms (compile: 1807µs, render: 5ms)
+   708→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   709→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   710→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   711→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 6ms (compile: 1788µs, render: 5ms)
+   712→ GET / 200 in 37ms (compile: 2ms, render: 35ms)
+   713→ GET / 200 in 21ms (compile: 2ms, render: 18ms)
+   714→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   715→ GET / 200 in 24ms (compile: 6ms, render: 19ms)
+   716→ GET / 200 in 22ms (compile: 1987µs, render: 20ms)
+   717→ GET / 200 in 34ms (compile: 3ms, render: 30ms)
+   718→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   719→ GET / 200 in 33ms (compile: 3ms, render: 30ms)
+   720→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   721→ GET / 200 in 33ms (compile: 3ms, render: 30ms)
+   722→ GET / 200 in 34ms (compile: 3ms, render: 30ms)
+   723→ GET / 200 in 42ms (compile: 3ms, render: 39ms)
+   724→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   725→prisma:query SELECT 1
+   726→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   727→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   728→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1868µs, render: 5ms)
+   729→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   730→ GET / 200 in 21ms (compile: 2ms, render: 18ms)
+   731→ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+   732→ GET / 200 in 35ms (compile: 4ms, render: 31ms)
+   733→ GET / 200 in 34ms (compile: 3ms, render: 31ms)
+   734→ GET / 200 in 36ms (compile: 4ms, render: 32ms)
+   735→ GET / 200 in 35ms (compile: 3ms, render: 32ms)
+   736→ GET / 200 in 34ms (compile: 4ms, render: 30ms)
+   737→ GET / 200 in 48ms (compile: 4ms, render: 44ms)
+   738→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   739→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   740→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   741→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   742→prisma:query SELECT 1
+   743→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   744→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   745→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 8ms (compile: 1800µs, render: 6ms)
+   746→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   747→ GET / 200 in 23ms (compile: 2ms, render: 21ms)
+   748→ GET / 200 in 32ms (compile: 2ms, render: 30ms)
+   749→ GET / 200 in 23ms (compile: 2ms, render: 20ms)
+   750→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   751→ GET / 200 in 21ms (compile: 2ms, render: 18ms)
+   752→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   753→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   754→ GET / 200 in 20ms (compile: 1874µs, render: 18ms)
+   755→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   756→ GET / 200 in 22ms (compile: 2ms, render: 19ms)
+   757→ GET / 200 in 24ms (compile: 2ms, render: 22ms)
+   758→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   759→ GET / 200 in 26ms (compile: 6ms, render: 20ms)
+   760→prisma:query SELECT 1
+   761→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   762→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   763→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1793µs, render: 5ms)
+   764→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   765→ GET / 200 in 32ms (compile: 3ms, render: 29ms)
+   766→ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+   767→ GET / 200 in 24ms (compile: 6ms, render: 18ms)
+   768→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   769→ GET / 200 in 30ms (compile: 5ms, render: 25ms)
+   770→ GET / 200 in 24ms (compile: 5ms, render: 19ms)
+   771→ GET / 200 in 22ms (compile: 3ms, render: 19ms)
+   772→ GET / 200 in 22ms (compile: 2ms, render: 20ms)
+   773→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   774→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   775→✓ Compiled in 122ms
+   776→⚠ Fast Refresh had to perform a full reload due to a runtime error.
+   777→ GET / 200 in 338ms (compile: 62ms, render: 276ms)
+   778→ GET / 200 in 27ms (compile: 3ms, render: 24ms)
+   779→ GET / 200 in 25ms (compile: 3ms, render: 22ms)
+   780→prisma:query SELECT 1
+   781→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   782→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 7ms (compile: 1727µs, render: 5ms)
+   783→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   784→ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+   785→ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+   786→ GET / 200 in 32ms (compile: 3ms, render: 29ms)
+   787→ GET / 200 in 27ms (compile: 2ms, render: 25ms)
+   788→ GET / 200 in 21ms (compile: 2ms, render: 19ms)
+   789→ GET / 200 in 25ms (compile: 2ms, render: 23ms)
+   790→ GET / 200 in 47ms (compile: 3ms, render: 44ms)
+   791→ GET / 200 in 32ms (compile: 3ms, render: 29ms)
+   792→ GET / 200 in 45ms (compile: 6ms, render: 39ms)
+   793→ GET / 200 in 33ms (compile: 4ms, render: 29ms)
+   794→ GET / 200 in 27ms (compile: 2ms, render: 24ms)
+   795→ GET / 200 in 41ms (compile: 3ms, render: 38ms)
+   796→ GET / 200 in 32ms (compile: 4ms, render: 28ms)
+   797→ GET / 200 in 26ms (compile: 2ms, render: 24ms)
+   798→ GET / 200 in 29ms (compile: 2ms, render: 27ms)
+   799→prisma:query SELECT 1
+   800→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   801→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   802→ GET /api/notifications?accountId=cmqst5k430000t0844owm4zio 200 in 9ms (compile: 1892µs, render: 7ms)
+   803→prisma:query SELECT `main`.`Account`.`id`, `main`.`Account`.`email`, `main`.`Account`.`name`, `main`.`Account`.`password`, `main`.`Account`.`role`, `main`.`Account`.`avatar`, `main`.`Account`.`createdAt`, `main`.`Account`.`updatedAt` FROM `main`.`Account` WHERE (`main`.`Account`.`email` = ? AND 1=1) LIMIT ? OFFSET ?
+   804→ POST /api/auth/login 200 in 302ms (compile: 2ms, render: 300ms)
+   805→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color`, `main`.`Category`.`type`, `main`.`Category`.`isDefault`, `main`.`Category`.`accountId`, `main`.`Category`.`createdAt`, `main`.`Category`.`updatedAt` FROM `main`.`Category` WHERE `main`.`Category`.`accountId` = ? ORDER BY `main`.`Category`.`isDefault` DESC, `main`.`Category`.`name` ASC LIMIT ? OFFSET ?
+   806→ GET /api/categories?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 8ms (compile: 2ms, render: 5ms)
+   807→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE `main`.`Income`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   808→prisma:query SELECT `main`.`Budget`.`id`, `main`.`Budget`.`name`, `main`.`Budget`.`totalAmount`, `main`.`Budget`.`needsPercent`, `main`.`Budget`.`wantsPercent`, `main`.`Budget`.`savingsPercent`, `main`.`Budget`.`cycle`, `main`.`Budget`.`isActive`, `main`.`Budget`.`accountId`, `main`.`Budget`.`createdAt`, `main`.`Budget`.`updatedAt` FROM `main`.`Budget` WHERE `main`.`Budget`.`accountId` = ? ORDER BY `main`.`Budget`.`createdAt` DESC LIMIT ? OFFSET ?
+   809→prisma:query SELECT `main`.`BudgetPeriod`.`id`, `main`.`BudgetPeriod`.`startDate`, `main`.`BudgetPeriod`.`endDate`, `main`.`BudgetPeriod`.`plannedIncome`, `main`.`BudgetPeriod`.`plannedNeeds`, `main`.`BudgetPeriod`.`plannedWants`, `main`.`BudgetPeriod`.`plannedSavings`, `main`.`BudgetPeriod`.`actualIncome`, `main`.`BudgetPeriod`.`actualNeeds`, `main`.`BudgetPeriod`.`actualWants`, `main`.`BudgetPeriod`.`actualSavings`, `main`.`BudgetPeriod`.`budgetId`, `main`.`BudgetPeriod`.`accountId`, `main`.`BudgetPeriod`.`createdAt`, `main`.`BudgetPeriod`.`updatedAt` FROM `main`.`BudgetPeriod` WHERE `main`.`BudgetPeriod`.`budgetId` IN (?) ORDER BY `main`.`BudgetPeriod`.`startDate` DESC LIMIT ? OFFSET ?
+   810→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE `main`.`Expense`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   811→ GET /api/budget?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 9ms (compile: 4ms, render: 4ms)
+   812→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Unexpected`.`amount` FROM `main`.`Unexpected` WHERE (`main`.`Unexpected`.`accountId` = ? AND `main`.`Unexpected`.`resolved` = ?) LIMIT ? OFFSET ?) AS `sub`
+   813→prisma:query SELECT SUM(`savedAmount`) AS `_sum$savedAmount` FROM (SELECT `main`.`SavingsGoal`.`savedAmount` FROM `main`.`SavingsGoal` WHERE `main`.`SavingsGoal`.`accountId` = ? LIMIT ? OFFSET ?) AS `sub`
+   814→prisma:query SELECT SUM(`paidAmount`) AS `_sum$paidAmount` FROM (SELECT `main`.`Debt`.`paidAmount` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   815→prisma:query SELECT `main`.`Notification`.`id`, `main`.`Notification`.`title`, `main`.`Notification`.`message`, `main`.`Notification`.`type`, `main`.`Notification`.`isRead`, `main`.`Notification`.`link`, `main`.`Notification`.`accountId`, `main`.`Notification`.`createdAt` FROM `main`.`Notification` WHERE `main`.`Notification`.`accountId` = ? ORDER BY `main`.`Notification`.`createdAt` DESC LIMIT ? OFFSET ?
+   816→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Debt`.`id` FROM `main`.`Debt` WHERE (`main`.`Debt`.`accountId` = ? AND `main`.`Debt`.`status` IN (?,?)) LIMIT ? OFFSET ?) AS `sub`
+   817→prisma:query SELECT COUNT(*) AS `_count$_all` FROM (SELECT `main`.`Notification`.`id` FROM `main`.`Notification` WHERE (`main`.`Notification`.`accountId` = ? AND `main`.`Notification`.`isRead` = ?) LIMIT ? OFFSET ?) AS `sub`
+   818→ GET /api/notifications?accountId=cmqsryvtj0000t0uzf0cfthm5 200 in 8ms (compile: 2ms, render: 6ms)
+   819→prisma:query SELECT `main`.`Movement`.`id`, `main`.`Movement`.`type`, `main`.`Movement`.`amount`, `main`.`Movement`.`description`, `main`.`Movement`.`date`, `main`.`Movement`.`categoryId`, `main`.`Movement`.`accountId`, `main`.`Movement`.`createdAt`, `main`.`Movement`.`updatedAt` FROM `main`.`Movement` WHERE `main`.`Movement`.`accountId` = ? ORDER BY `main`.`Movement`.`date` DESC LIMIT ? OFFSET ?
+   820→prisma:query SELECT `main`.`Category`.`id`, `main`.`Category`.`name`, `main`.`Category`.`icon`, `main`.`Category`.`color` FROM `main`.`Category` WHERE `main`.`Category`.`id` IN (?,?,?) LIMIT ? OFFSET ?
+   821→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Income`.`amount` FROM `main`.`Income` WHERE (`main`.`Income`.`accountId` = ? AND `main`.`Income`.`date` >= ? AND `main`.`Income`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   822→prisma:query SELECT SUM(`amount`) AS `_sum$amount` FROM (SELECT `main`.`Expense`.`amount` FROM `main`.`Expense` WHERE (`main`.`Expense`.`accountId` = ? AND `main`.`Expense`.`date` >= ? AND `main`.`Expense`.`date` <= ?) LIMIT ? OFFSET ?) AS `sub`
+   823→

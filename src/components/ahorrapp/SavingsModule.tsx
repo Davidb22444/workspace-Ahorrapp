@@ -285,6 +285,7 @@ export default function SavingsModule() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
+                  whileHover={{ y: -2 }}
                 >
                   <Card
                     className="card-hover cursor-pointer overflow-hidden"
@@ -315,11 +316,12 @@ export default function SavingsModule() {
                           <span className="text-muted-foreground">Saved</span>
                           <span className="font-semibold tabular-nums text-foreground">{formatCurrency(goal.saved)}</span>
                         </div>
-                        <div className="relative group">
+                        <div className="relative group/prog">
                           <Progress value={pct} className="h-2.5" />
+                          <div className="progress-shimmer absolute inset-0 rounded-full pointer-events-none" />
                           <button
                             onClick={(e) => openQuickContribute(e, goal)}
-                            className="absolute -right-1 -top-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:scale-110"
+                            className="absolute -right-1 -top-1 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center opacity-0 group-hover/prog:opacity-100 transition-opacity shadow-md hover:scale-110"
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </button>

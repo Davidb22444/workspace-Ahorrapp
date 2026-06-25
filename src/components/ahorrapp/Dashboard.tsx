@@ -18,6 +18,8 @@ import {
   BarChart3,
   X,
   Loader2,
+  Wallet,
+  PiggyBank,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -48,7 +50,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
 } from 'recharts'
-import { format } from 'date-fns'
+import { format, startOfMonth, getDay, getDaysInMonth } from 'date-fns'
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
 
@@ -430,6 +432,7 @@ function QuickAddDialog({
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dailySpendingData, setDailySpendingData] = useState<Array<{ date: string; amount: number }>>([])
   const { user, dashboardData, setDashboardData, showQuickAdd, setShowQuickAdd, quickAddType, setQuickAddType, setActiveModule } = useAppStore()
 
   const mapApiData = (api: any): DashboardData => ({
@@ -470,10 +473,16 @@ export default function Dashboard() {
     setLoading(true)
     try {
       if (user?.id) {
-        const [dashRes, budgetRes] = await Promise.all([
+        const currentMonth = format(new Date(), 'yyyy-MM')
+        const [dashRes, budgetRes, dailyRes] = await Promise.all([
           fetch(`/api/dashboard?accountId=${user.id}`),
           fetch(`/api/budget?accountId=${user.id}`),
+          fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
         ])
+        if (dailyRes.ok) {
+          const dailyJson = await dailyRes.json()
+          setDailySpendingData(dailyJson.days ?? [])
+        }
         if (dashRes.ok) {
           const json = await dashRes.json()
           const mapped = mapApiData(json)
@@ -513,10 +522,16 @@ export default function Dashboard() {
     const load = async () => {
       try {
         if (user?.id) {
-          const [dashRes, budgetRes] = await Promise.all([
+          const currentMonth = format(new Date(), 'yyyy-MM')
+          const [dashRes, budgetRes, dailyRes] = await Promise.all([
             fetch(`/api/dashboard?accountId=${user.id}`),
             fetch(`/api/budget?accountId=${user.id}`),
+            fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
           ])
+          if (dailyRes.ok && !cancelled) {
+            const dailyJson = await dailyRes.json()
+            setDailySpendingData(dailyJson.days ?? [])
+          }
           if (dashRes.ok && !cancelled) {
             const json = await dashRes.json()
             const mapped = mapApiData(json)
@@ -621,6 +636,100 @@ export default function Dashboard() {
       data.push({ day: `${i}`, amount: Math.max(0, Math.round((baseDaily + variation) * 100) / 100) })
     }
     return data
+  })()
+
+  // ── Spending Heatmap Calendar Data ──
+  const heatmapData = (() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    const daysInMonth = getDaysInMonth(now)
+    const firstDayOfWeek = getDay(startOfMonth(now)) // 0=Sun
+    // Adjust so Monday=0
+    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+    const today = now.getDate()
+
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    const cells: Array<{
+      day: number | null
+      amount: number
+      isToday: boolean
+      isFuture: boolean
+      colorClass: string
+    }> = []
+
+    // Add empty cells for offset
+    for (let i = 0; i < startOffset; i++) {
+      cells.push({ day: null, amount: 0, isToday: false, isFuture: false, colorClass: '' })
+    }
+
+    // Add day cells
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd')
+      const match = dailySpendingData.find(d => d.date === dateStr)
+      const amount = match ? match.amount : 0
+      const isToday = day === today
+      const isFuture = day > today
+
+      let colorClass = 'bg-muted/40 dark:bg-muted/20' // No spending (gray)
+      if (!isFuture) {
+        if (amount > 500) colorClass = 'bg-rose-400 dark:bg-rose-500/80'
+        else if (amount > 200) colorClass = 'bg-amber-400 dark:bg-amber-500/80'
+        else if (amount > 50) colorClass = 'bg-emerald-500 dark:bg-emerald-500/80'
+        else if (amount >= 1) colorClass = 'bg-emerald-300 dark:bg-emerald-400/60'
+      } else {
+        colorClass = 'bg-muted/20 dark:bg-muted/10'
+      }
+
+      cells.push({ day, amount, isToday, isFuture, colorClass })
+    }
+
+    return { dayNames, cells, monthName: format(now, 'MMMM yyyy') }
+  })()
+
+  // ── Net Worth Trend Data ──
+  const netWorthData = (() => {
+    const cashFlow = d.monthlyCashFlow || []
+    if (cashFlow.length === 0) return []
+    // Cumulative net = running sum of (income - expenses)
+    let cumulative = d.balance - cashFlow.reduce((sum, m) => sum + m.income - m.expenses, 0)
+    return cashFlow.map(m => {
+      cumulative += m.income - m.expenses
+      return {
+        month: m.month?.split(' ')[0] || m.month,
+        netWorth: Number(cumulative.toFixed(2)),
+      }
+    })
+  })()
+
+  // ── Monthly Comparison Data ──
+  const monthlyComparison = (() => {
+    const cashFlow = d.monthlyCashFlow || []
+    if (cashFlow.length < 2) {
+      const curr = cashFlow.length === 1 ? cashFlow[0] : { income: 0, expenses: 0 }
+      return [
+        { label: 'Total Income', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+        { label: 'Total Expenses', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+        { label: 'Net Savings', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+      ]
+    }
+    const curr = cashFlow[cashFlow.length - 1]
+    const prev = cashFlow[cashFlow.length - 2]
+
+    const calcChange = (currVal: number, prevVal: number) => {
+      if (prevVal === 0) return currVal > 0 ? 100 : 0
+      return Number(((currVal - prevVal) / Math.abs(prevVal) * 100).toFixed(1))
+    }
+
+    const currNet = curr.income - curr.expenses
+    const prevNet = prev.income - prev.expenses
+
+    return [
+      { label: 'Total Income', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+      { label: 'Total Expenses', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+      { label: 'Net Savings', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+    ]
   })()
 
   // ── Metric cards ──
@@ -991,11 +1100,172 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
+          {/* ── Monthly Comparison Cards (This Month vs Last Month) ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.48 }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {monthlyComparison.map((item) => {
+                const IconComp = item.icon
+                const isExpense = item.label === 'Total Expenses'
+                const isPositive = isExpense ? item.change <= 0 : item.change >= 0
+                return (
+                  <Card key={item.label} className={cn('border-l-4', item.color)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <IconComp className={cn('w-4 h-4', item.textColor)} />
+                          <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+                        </div>
+                        {item.change !== 0 && (
+                          <div className={cn(
+                            'flex items-center gap-0.5 text-xs font-semibold',
+                            isPositive ? 'text-emerald-500' : 'text-rose-500'
+                          )}>
+                            {item.change > 0 ? (
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            ) : (
+                              <ArrowDownRight className="w-3.5 h-3.5" />
+                            )}
+                            {Math.abs(item.change)}%
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xl font-bold tabular-nums text-foreground">
+                        {formatCurrency(item.current)}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Last month: {formatCurrency(item.previous)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          </motion.div>
+
+          {/* ── Spending Heatmap Calendar ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.50 }}
+            >
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 px-6 pt-5 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base font-semibold">Spending Heatmap</CardTitle>
+                      <CardDescription>Daily spending for {heatmapData.monthName}</CardDescription>
+                    </div>
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] text-muted-foreground">Less</span>
+                    <div className="w-3.5 h-3.5 rounded-sm bg-muted/40 dark:bg-muted/20" />
+                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-300 dark:bg-emerald-400/60" />
+                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500 dark:bg-emerald-500/80" />
+                    <div className="w-3.5 h-3.5 rounded-sm bg-amber-400 dark:bg-amber-500/80" />
+                    <div className="w-3.5 h-3.5 rounded-sm bg-rose-400 dark:bg-rose-500/80" />
+                    <span className="text-[10px] text-muted-foreground">More</span>
+                  </div>
+                </div>
+                <CardContent className="pt-3 pb-4">
+                  <div className="grid grid-cols-7 gap-1">
+                    {heatmapData.dayNames.map((name) => (
+                      <div key={name} className="text-[10px] font-medium text-muted-foreground text-center pb-1">
+                        {name}
+                      </div>
+                    ))}
+                    {heatmapData.cells.map((cell, idx) => (
+                      <div
+                        key={idx}
+                        className={cn(
+                          'aspect-square rounded-sm flex items-center justify-center text-[10px] font-medium transition-colors relative group',
+                          cell.colorClass,
+                          cell.isFuture && 'opacity-40',
+                          !cell.day && 'invisible'
+                        )}
+                        title={cell.day ? `${formatCurrency(cell.amount)}` : undefined}
+                      >
+                        {cell.day && (
+                          <>
+                            <span className={cn(
+                              'tabular-nums',
+                              cell.amount > 50 ? 'text-white dark:text-white' : 'text-muted-foreground dark:text-muted-foreground'
+                            )}>
+                              {cell.day}
+                            </span>
+                            {cell.isToday && (
+                              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* ── Net Worth Trend Chart ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.52 }}
+            >
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-teal-500/5 to-emerald-500/5 dark:from-teal-500/10 dark:to-emerald-500/10 px-6 pt-5 pb-0">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <div>
+                      <CardTitle className="text-base font-semibold">Net Worth Trend</CardTitle>
+                      <CardDescription>Cumulative net position over 6 months</CardDescription>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="pt-4">
+                  <div className="h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={netWorthData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+                        <RechartsTooltip
+                          formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
+                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="netWorth"
+                          name="Net Worth"
+                          stroke="#14b8a6"
+                          fill="url(#netWorthGrad)"
+                          strokeWidth={2}
+                          dot={{ r: 3, strokeWidth: 0, fill: '#14b8a6' }}
+                          activeDot={{ r: 5, strokeWidth: 0, fill: '#14b8a6' }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
           {/* ── Budget vs Actual ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: 0.54 }}
           >
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
@@ -1024,7 +1294,7 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.55 }}
+            transition={{ duration: 0.5, delay: 0.58 }}
           >
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
@@ -1080,7 +1350,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
+              transition={{ duration: 0.5, delay: 0.62 }}
             >
               <Card>
                 <CardHeader className="pb-2">
@@ -1141,7 +1411,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.65 }}
+              transition={{ duration: 0.5, delay: 0.67 }}
             >
               <Card>
                 <CardHeader className="pb-2">

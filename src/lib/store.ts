@@ -12,6 +12,8 @@ export type Module =
   | 'settings'
   | 'unexpected'
   | 'dependents'
+  | 'transactions'
+  | 'report'
 
 export interface User {
   id: string

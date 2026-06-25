@@ -230,6 +230,34 @@
   50% { transform: translateY(-6px); }
 }
 
+/* Auth blob movement animations */
+@keyframes blobMove1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(60px, 40px) scale(1.1); }
+  50% { transform: translate(30px, 80px) scale(0.95); }
+  75% { transform: translate(-40px, 50px) scale(1.05); }
+}
+
+@keyframes blobMove2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-50px, -30px) scale(1.08); }
+  50% { transform: translate(-20px, -70px) scale(0.92); }
+  75% { transform: translate(40px, -40px) scale(1.03); }
+}
+
+@keyframes blobMove3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50px, -50px) scale(1.12); }
+  66% { transform: translate(-60px, 30px) scale(0.9); }
+}
+
+/* Rotating gradient for demo button border */
+@keyframes rotateGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
@@ -301,6 +329,7 @@
 
 .sidebar-item:hover {
   background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.02);
 }
 
 .sidebar-item.active {
@@ -345,4 +374,248 @@
 .empty-state {
   background: linear-gradient(135deg, var(--muted) 0%, transparent 100%);
   border: 2px dashed var(--border);
+}
+
+/* Card hover glow effect */
+.card-glow {
+  --card-glow-color: rgba(16, 185, 129, 0.35);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 20px 2px var(--card-glow-color), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-glow:hover {
+  box-shadow: 0 0 24px 2px var(--card-glow-color), 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Number counter animation */
+@keyframes countUp {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-count-up {
+  animation: countUp 0.5s ease-out forwards;
+}
+
+/* Pulse dot animation (notification / unread indicator) */
+@keyframes pulseDot {
+  0%, 100% { transform: scale(0.8); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+.animate-pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* Gradient border utility (emerald-to-cyan) */
+.gradient-border {
+  position: relative;
+  border: none !important;
+  background-clip: padding-box;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, #059669, #10b981, #06b6d4);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Skeleton shimmer refinement — wider, more subtle sweep */
+@keyframes shimmerRefined {
+  0% { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 0%,
+    rgba(16, 185, 129, 0.06) 30%,
+    rgba(16, 185, 129, 0.1) 50%,
+    rgba(16, 185, 129, 0.06) 70%,
+    var(--muted) 100%
+  );
+  background-size: 300% 100%;
+  animation: shimmerRefined 2.5s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+/* Tooltip arrow utility */
+.tooltip-arrow {
+  position: relative;
+}
+
+.tooltip-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--popover);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+  pointer-events: none;
+}
+
+/* Income table row hover accent */
+.income-row-hover {
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.income-row-hover:hover {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.dark .income-row-hover:hover {
+  background: rgba(16, 185, 129, 0.06);
+}
+
+/* Savings progress bar shimmer */
+@keyframes progressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progressShimmer 2.5s ease-in-out infinite;
+}
+
+/* Reduced motion — disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fade-in,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-scale-in,
+  .animate-shimmer,
+  .animate-pulse-emerald,
+  .animate-float,
+  .animate-count-up,
+  .animate-pulse-dot {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-glow:hover {
+    box-shadow: none !important;
+  }
+
+  .card-hover:hover {
+    transform: none !important;
+  }
+
+  .stat-card::before {
+    display: none !important;
+  }
+
+  .skeleton-shimmer {
+    animation: none !important;
+    background: var(--muted);
+  }
+}
+
+/* Print-optimized layout for Monthly Report */
+@media print {
+  /* Hide everything except the report */
+  body * {
+    visibility: hidden;
+  }
+
+  .monthly-report,
+  .monthly-report * {
+    visibility: visible !important;
+  }
+
+  .monthly-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  /* Ensure colors render properly in print */
+  .monthly-report {
+    color: #000 !important;
+    background: #fff !important;
+  }
+
+  .monthly-report .text-foreground {
+    color: #000 !important;
+  }
+
+  .monthly-report .text-muted-foreground {
+    color: #555 !important;
+  }
+
+  .monthly-report [class*="text-rose-"] {
+    color: #dc2626 !important;
+  }
+
+  .monthly-report [class*="text-emerald-"] {
+    color: #059669 !important;
+  }
+
+  .monthly-report [class*="text-amber-"] {
+    color: #d97706 !important;
+  }
+
+  .monthly-report [class*="text-cyan-"] {
+    color: #0891b2 !important;
+  }
+
+  .monthly-report [class*="text-violet-"] {
+    color: #7c3aed !important;
+  }
+
+  /* Card borders */
+  .monthly-report [class*="rounded-"] {
+    border: 1px solid #ddd !important;
+  }
+
+  /* Remove shadows */
+  .monthly-report [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+
+  /* Page breaks */
+  .monthly-report [class*="card"] {
+    break-inside: avoid;
+  }
 }

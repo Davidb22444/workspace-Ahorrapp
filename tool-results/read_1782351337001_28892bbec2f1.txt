@@ -1,0 +1,1281 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useEffect, useState } from 'react'
+     4→     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→     5→import {
+     6→     6→  DollarSign,
+     7→     7→  TrendingUp,
+     8→     8→  TrendingDown,
+     9→     9→  CreditCard,
+    10→    10→  ArrowUpRight,
+    11→    11→  ArrowDownRight,
+    12→    12→  RefreshCw,
+    13→    13→  Plus,
+    14→    14→  Calendar,
+    15→    15→  Trophy,
+    16→    16→  Tag,
+    17→    17→  Target,
+    18→    18→  BarChart3,
+    19→    19→  X,
+    20→    20→  Loader2,
+    21→    21→} from 'lucide-react'
+    22→    22→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    23→    23→import { Badge } from '@/components/ui/badge'
+    24→    24→import { Button } from '@/components/ui/button'
+    25→    25→import { Skeleton } from '@/components/ui/skeleton'
+    26→    26→import { Input } from '@/components/ui/input'
+    27→    27→import { Label } from '@/components/ui/label'
+    28→    28→import { Switch } from '@/components/ui/switch'
+    29→    29→import {
+    30→    30→  Dialog,
+    31→    31→  DialogContent,
+    32→    32→  DialogHeader,
+    33→    33→  DialogTitle,
+    34→    34→  DialogDescription,
+    35→    35→  DialogFooter,
+    36→    36→} from '@/components/ui/dialog'
+    37→    37→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    38→    38→import {
+    39→    39→  Select,
+    40→    40→  SelectContent,
+    41→    41→  SelectItem,
+    42→    42→  SelectTrigger,
+    43→    43→  SelectValue,
+    44→    44→} from '@/components/ui/select'
+    45→    45→import { useAppStore } from '@/lib/store'
+    46→    46→import { cn } from '@/lib/utils'
+    47→    47→import {
+    48→    48→  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    49→    49→  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
+    50→    50→} from 'recharts'
+    51→    51→import { format } from 'date-fns'
+    52→    52→
+    53→    53→const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
+    54→    54→
+    55→    55→function formatCurrency(amount: number): string {
+    56→    56→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    57→    57→}
+    58→    58→
+    59→    59→interface DashboardData {
+    60→    60→  balance: number
+    61→    61→  totalIncome: number
+    62→    62→  totalExpenses: number
+    63→    63→  totalDebt: number
+    64→    64→  monthlyCashFlow: Array<{ month: string; income: number; expenses: number }>
+    65→    65→  expenseCategories: Array<{ name: string; value: number; color: string }>
+    66→    66→  budgetVsActual: Array<{ name: string; planned: number; actual: number }>
+    67→    67→  recentTransactions: Array<{
+    68→    68→    id: string
+    69→    69→    type: string
+    70→    70→    description: string
+    71→    71→    amount: number
+    72→    72→    date: string
+    73→    73→    category?: string
+    74→    74→    categoryColor?: string
+    75→    75→  }>
+    76→    76→  savingsGoals: Array<{
+    77→    77→    id: string
+    78→    78→    name: string
+    79→    79→    saved: number
+    80→    80→    target: number
+    81→    81→    deadline?: string
+    82→    82→  }>
+    83→    83→}
+    84→    84→
+    85→    85→const mockData: DashboardData = {
+    86→    86→  balance: 12450.75,
+    87→    87→  totalIncome: 5200.0,
+    88→    88→  totalExpenses: 3420.5,
+    89→    89→  totalDebt: 8500.0,
+    90→    90→  monthlyCashFlow: [
+    91→    91→    { month: 'Jan', income: 4800, expenses: 3200 },
+    92→    92→    { month: 'Feb', income: 5100, expenses: 2900 },
+    93→    93→    { month: 'Mar', income: 4900, expenses: 3500 },
+    94→    94→    { month: 'Apr', income: 5300, expenses: 3100 },
+    95→    95→    { month: 'May', income: 5000, expenses: 3400 },
+    96→    96→    { month: 'Jun', income: 5200, expenses: 3420 },
+    97→    97→  ],
+    98→    98→  expenseCategories: [
+    99→    99→    { name: 'Housing', value: 1200, color: '#10b981' },
+   100→   100→    { name: 'Food', value: 680, color: '#f59e0b' },
+   101→   101→    { name: 'Transport', value: 450, color: '#f43f5e' },
+   102→   102→    { name: 'Entertainment', value: 320, color: '#6366f1' },
+   103→   103→    { name: 'Utilities', value: 380, color: '#06b6d4' },
+   104→   104→    { name: 'Other', value: 390.5, color: '#8b5cf6' },
+   105→   105→  ],
+   106→   106→  budgetVsActual: [
+   107→   107→    { name: 'Needs', planned: 2600, actual: 2510 },
+   108→   108→    { name: 'Wants', planned: 1560, actual: 1480 },
+   109→   109→    { name: 'Savings', planned: 1040, actual: 770 },
+   110→   110→  ],
+   111→   111→  recentTransactions: [
+   112→   112→    { id: '1', type: 'income', description: 'Monthly Salary', amount: 5200, date: '2025-06-01', category: 'Salary' },
+   113→   113→    { id: '2', type: 'expense', description: 'Rent Payment', amount: -1200, date: '2025-06-02', category: 'Housing', categoryColor: '#10b981' },
+   114→   114→    { id: '3', type: 'expense', description: 'Grocery Store', amount: -156.80, date: '2025-06-03', category: 'Food', categoryColor: '#f59e0b' },
+   115→   115→    { id: '4', type: 'expense', description: 'Electric Bill', amount: -120, date: '2025-06-04', category: 'Utilities', categoryColor: '#06b6d4' },
+   116→   116→    { id: '5', type: 'income', description: 'Freelance Project', amount: 800, date: '2025-06-05', category: 'Freelance' },
+   117→   117→    { id: '6', type: 'expense', description: 'Gas Station', amount: -65, date: '2025-06-06', category: 'Transport', categoryColor: '#f43f5e' },
+   118→   118→    { id: '7', type: 'expense', description: 'Netflix Subscription', amount: -15.99, date: '2025-06-07', category: 'Entertainment', categoryColor: '#6366f1' },
+   119→   119→    { id: '8', type: 'expense', description: 'Restaurant Dinner', amount: -85.50, date: '2025-06-08', category: 'Food', categoryColor: '#f59e0b' },
+   120→   120→    { id: '9', type: 'income', description: 'Investment Returns', amount: 150, date: '2025-06-09', category: 'Investment' },
+   121→   121→    { id: '10', type: 'expense', description: 'Phone Bill', amount: -55, date: '2025-06-10', category: 'Utilities', categoryColor: '#06b6d4' },
+   122→   122→  ],
+   123→   123→  savingsGoals: [
+   124→   124→    { id: '1', name: 'Emergency Fund', saved: 4500, target: 10000, deadline: '2025-12-31' },
+   125→   125→    { id: '2', name: 'Vacation', saved: 1200, target: 3000, deadline: '2025-08-15' },
+   126→   126→    { id: '3', name: 'New Laptop', saved: 800, target: 2000 },
+   127→   127→    { id: '4', name: 'Down Payment', saved: 15000, target: 50000, deadline: '2027-06-01' },
+   128→   128→  ],
+   129→   129→}
+   130→   130→
+   131→   131→// ── Enhanced Tooltip ──────────────────────────────────────────────
+   132→   132→function EnhancedChartTooltip({ active, payload, label }: any) {
+   133→   133→  if (active && payload && payload.length) {
+   134→   134→    const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0)
+   135→   135→    return (
+   136→   136→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   137→   137→        <p className="text-sm font-semibold text-foreground mb-1.5">{label}</p>
+   138→   138→        {payload.map((entry: any, idx: number) => (
+   139→   139→          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+   140→   140→            <div className="flex items-center gap-1.5">
+   141→   141→              <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+   142→   142→              <span className="text-muted-foreground">{entry.name}</span>
+   143→   143→            </div>
+   144→   144→            <span className="font-semibold tabular-nums">{formatCurrency(entry.value)}</span>
+   145→   145→          </div>
+   146→   146→        ))}
+   147→   147→        {payload.length > 1 && (
+   148→   148→          <div className="border-t border-border/50 mt-1.5 pt-1.5 flex items-center justify-between text-xs">
+   149→   149→            <span className="text-muted-foreground font-medium">Net</span>
+   150→   150→            <span className={cn('font-bold tabular-nums', total >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
+   151→   151→              {formatCurrency(total)}
+   152→   152→            </span>
+   153→   153→          </div>
+   154→   154→        )}
+   155→   155→      </div>
+   156→   156→    )
+   157→   157→  }
+   158→   158→  return null
+   159→   159→}
+   160→   160→
+   161→   161→// ── Emoji mapper for savings goals ─────────────────────────────────
+   162→   162→function getGoalEmoji(name: string): string {
+   163→   163→  const lower = name.toLowerCase()
+   164→   164→  if (lower.includes('emergency') || lower.includes('emergencia')) return '🛡️'
+   165→   165→  if (lower.includes('vacat') || lower.includes('viaje')) return '✈️'
+   166→   166→  if (lower.includes('laptop') || lower.includes('computer') || lower.includes('pc')) return '💻'
+   167→   167→  if (lower.includes('car') || lower.includes('auto') || lower.includes('coche')) return '🚗'
+   168→   168→  if (lower.includes('house') || lower.includes('home') || lower.includes('down') || lower.includes('casa')) return '🏠'
+   169→   169→  if (lower.includes('wedding') || lower.includes('boda')) return '💍'
+   170→   170→  if (lower.includes('education') || lower.includes('study') || lower.includes('college')) return '🎓'
+   171→   171→  if (lower.includes('retire') || lower.includes('jubil')) return '🌴'
+   172→   172→  if (lower.includes('gift') || lower.includes('regalo')) return '🎁'
+   173→   173→  if (lower.includes('invest') || lower.includes('inversion')) return '📈'
+   174→   174→  return '🎯'
+   175→   175→}
+   176→   176→
+   177→   177→// ── Quick Add Transaction Dialog ───────────────────────────────────
+   178→   178→function QuickAddDialog({
+   179→   179→  open,
+   180→   180→  onOpenChange,
+   181→   181→  type,
+   182→   182→  onTypeChange,
+   183→   183→  accountId,
+   184→   184→  onSaved,
+   185→   185→}: {
+   186→   186→  open: boolean
+   187→   187→  onOpenChange: (open: boolean) => void
+   188→   188→  type: 'income' | 'expense'
+   189→   189→  onTypeChange: (type: 'income' | 'expense') => void
+   190→   190→  accountId: string
+   191→   191→  onSaved: () => void
+   192→   192→}) {
+   193→   193→  const [amount, setAmount] = useState('')
+   194→   194→  const [description, setDescription] = useState('')
+   195→   195→  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+   196→   196→  const [source, setSource] = useState('Salary')
+   197→   197→  const [category, setCategory] = useState('')
+   198→   198→  const [isRecurring, setIsRecurring] = useState(false)
+   199→   199→  const [saving, setSaving] = useState(false)
+   200→   200→  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+   201→   201→
+   202→   202→  const incomeSources = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+   203→   203→
+   204→   204→  useEffect(() => {
+   205→   205→    if (type === 'expense' && accountId) {
+   206→   206→      fetch(`/api/categories?accountId=${accountId}`)
+   207→   207→        .then(r => r.json())
+   208→   208→        .then(data => {
+   209→   209→          const cats = data.categories || data || []
+   210→   210→          setCategories(Array.isArray(cats) ? cats.map((c: any) => ({ id: c.id, name: c.name })) : [])
+   211→   211→          if (cats.length > 0 && !category) setCategory(cats[0].name)
+   212→   212→        })
+   213→   213→        .catch(() => {
+   214→   214→          setCategories([
+   215→   215→            { id: '1', name: 'Housing' },
+   216→   216→            { id: '2', name: 'Food' },
+   217→   217→            { id: '3', name: 'Transport' },
+   218→   218→            { id: '4', name: 'Entertainment' },
+   219→   219→            { id: '5', name: 'Utilities' },
+   220→   220→            { id: '6', name: 'Healthcare' },
+   221→   221→            { id: '7', name: 'Education' },
+   222→   222→            { id: '8', name: 'Other' },
+   223→   223→          ])
+   224→   224→          if (!category) setCategory('Housing')
+   225→   225→        })
+   226→   226→    }
+   227→   227→  }, [type, accountId])
+   228→   228→
+   229→   229→  const handleSave = async () => {
+   230→   230→    const numAmount = parseFloat(amount)
+   231→   231→    if (!numAmount || numAmount <= 0 || !description.trim()) return
+   232→   232→    setSaving(true)
+   233→   233→
+   234→   234→    try {
+   235→   235→      if (type === 'income') {
+   236→   236→        await fetch('/api/income', {
+   237→   237→          method: 'POST',
+   238→   238→          headers: { 'Content-Type': 'application/json' },
+   239→   239→          body: JSON.stringify({
+   240→   240→            accountId,
+   241→   241→            amount: numAmount,
+   242→   242→            source,
+   243→   243→            description: description.trim(),
+   244→   244→            date,
+   245→   245→            isRecurring,
+   246→   246→          }),
+   247→   247→        })
+   248→   248→      } else {
+   249→   249→        await fetch('/api/expenses', {
+   250→   250→          method: 'POST',
+   251→   251→          headers: { 'Content-Type': 'application/json' },
+   252→   252→          body: JSON.stringify({
+   253→   253→            accountId,
+   254→   254→            amount: numAmount,
+   255→   255→            categoryId: categories.find(c => c.name === category)?.id || '1',
+   256→   256→            description: description.trim(),
+   257→   257→            date,
+   258→   258→            isRecurring,
+   259→   259→          }),
+   260→   260→        })
+   261→   261→      }
+   262→   262→      onSaved()
+   263→   263→      onOpenChange(false)
+   264→   264→      setAmount('')
+   265→   265→      setDescription('')
+   266→   266→      setDate(format(new Date(), 'yyyy-MM-dd'))
+   267→   267→      setIsRecurring(false)
+   268→   268→    } catch {
+   269→   269→      // silent fail
+   270→   270→    } finally {
+   271→   271→      setSaving(false)
+   272→   272→    }
+   273→   273→  }
+   274→   274→
+   275→   275→  const handleTabChange = (val: string) => {
+   276→   276→    onTypeChange(val as 'income' | 'expense')
+   277→   277→  }
+   278→   278→
+   279→   279→  return (
+   280→   280→    <Dialog open={open} onOpenChange={onOpenChange}>
+   281→   281→      <DialogContent className="sm:max-w-md">
+   282→   282→        <DialogHeader>
+   283→   283→          <DialogTitle>Add Transaction</DialogTitle>
+   284→   284→          <DialogDescription>Quickly add a new income or expense entry.</DialogDescription>
+   285→   285→        </DialogHeader>
+   286→   286→
+   287→   287→        <Tabs value={type} onValueChange={handleTabChange} className="w-full">
+   288→   288→          <TabsList className="w-full">
+   289→   289→            <TabsTrigger value="income" className="flex-1">
+   290→   290→              <ArrowUpRight className="w-4 h-4 mr-1.5 text-emerald-500" />
+   291→   291→              Income
+   292→   292→            </TabsTrigger>
+   293→   293→            <TabsTrigger value="expense" className="flex-1">
+   294→   294→              <ArrowDownRight className="w-4 h-4 mr-1.5 text-rose-500" />
+   295→   295→              Expense
+   296→   296→            </TabsTrigger>
+   297→   297→          </TabsList>
+   298→   298→
+   299→   299→          <TabsContent value="income" className="space-y-4 mt-4">
+   300→   300→            <div className="space-y-2">
+   301→   301→              <Label htmlFor="income-amount">Amount</Label>
+   302→   302→              <div className="relative">
+   303→   303→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   304→   304→                <Input
+   305→   305→                  id="income-amount"
+   306→   306→                  type="number"
+   307→   307→                  step="0.01"
+   308→   308→                  min="0"
+   309→   309→                  placeholder="0.00"
+   310→   310→                  value={amount}
+   311→   311→                  onChange={(e) => setAmount(e.target.value)}
+   312→   312→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   313→   313→                />
+   314→   314→              </div>
+   315→   315→            </div>
+   316→   316→            <div className="space-y-2">
+   317→   317→              <Label htmlFor="income-desc">Description</Label>
+   318→   318→              <Input
+   319→   319→                id="income-desc"
+   320→   320→                placeholder="e.g. Monthly salary"
+   321→   321→                value={description}
+   322→   322→                onChange={(e) => setDescription(e.target.value)}
+   323→   323→              />
+   324→   324→            </div>
+   325→   325→            <div className="grid grid-cols-2 gap-3">
+   326→   326→              <div className="space-y-2">
+   327→   327→                <Label>Source</Label>
+   328→   328→                <Select value={source} onValueChange={setSource}>
+   329→   329→                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+   330→   330→                  <SelectContent>
+   331→   331→                    {incomeSources.map(s => (
+   332→   332→                      <SelectItem key={s} value={s}>{s}</SelectItem>
+   333→   333→                    ))}
+   334→   334→                  </SelectContent>
+   335→   335→                </Select>
+   336→   336→              </div>
+   337→   337→              <div className="space-y-2">
+   338→   338→                <Label htmlFor="income-date">Date</Label>
+   339→   339→                <Input
+   340→   340→                  id="income-date"
+   341→   341→                  type="date"
+   342→   342→                  value={date}
+   343→   343→                  onChange={(e) => setDate(e.target.value)}
+   344→   344→                />
+   345→   345→              </div>
+   346→   346→            </div>
+   347→   347→            <div className="flex items-center justify-between">
+   348→   348→              <Label htmlFor="income-recurring">Recurring</Label>
+   349→   349→              <Switch id="income-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   350→   350→            </div>
+   351→   351→          </TabsContent>
+   352→   352→
+   353→   353→          <TabsContent value="expense" className="space-y-4 mt-4">
+   354→   354→            <div className="space-y-2">
+   355→   355→              <Label htmlFor="expense-amount">Amount</Label>
+   356→   356→              <div className="relative">
+   357→   357→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   358→   358→                <Input
+   359→   359→                  id="expense-amount"
+   360→   360→                  type="number"
+   361→   361→                  step="0.01"
+   362→   362→                  min="0"
+   363→   363→                  placeholder="0.00"
+   364→   364→                  value={amount}
+   365→   365→                  onChange={(e) => setAmount(e.target.value)}
+   366→   366→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   367→   367→                />
+   368→   368→              </div>
+   369→   369→            </div>
+   370→   370→            <div className="space-y-2">
+   371→   371→              <Label htmlFor="expense-desc">Description</Label>
+   372→   372→              <Input
+   373→   373→                id="expense-desc"
+   374→   374→                placeholder="e.g. Grocery shopping"
+   375→   375→                value={description}
+   376→   376→                onChange={(e) => setDescription(e.target.value)}
+   377→   377→              />
+   378→   378→            </div>
+   379→   379→            <div className="grid grid-cols-2 gap-3">
+   380→   380→              <div className="space-y-2">
+   381→   381→                <Label>Category</Label>
+   382→   382→                <Select value={category} onValueChange={setCategory}>
+   383→   383→                  <SelectTrigger className="w-full"><SelectValue placeholder="Select..." /></SelectTrigger>
+   384→   384→                  <SelectContent>
+   385→   385→                    {categories.map(c => (
+   386→   386→                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+   387→   387→                    ))}
+   388→   388→                  </SelectContent>
+   389→   389→                </Select>
+   390→   390→              </div>
+   391→   391→              <div className="space-y-2">
+   392→   392→                <Label htmlFor="expense-date">Date</Label>
+   393→   393→                <Input
+   394→   394→                  id="expense-date"
+   395→   395→                  type="date"
+   396→   396→                  value={date}
+   397→   397→                  onChange={(e) => setDate(e.target.value)}
+   398→   398→                />
+   399→   399→              </div>
+   400→   400→            </div>
+   401→   401→            <div className="flex items-center justify-between">
+   402→   402→              <Label htmlFor="expense-recurring">Recurring</Label>
+   403→   403→              <Switch id="expense-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   404→   404→            </div>
+   405→   405→          </TabsContent>
+   406→   406→        </Tabs>
+   407→   407→
+   408→   408→        <DialogFooter>
+   409→   409→          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+   410→   410→          <Button
+   411→   411→            onClick={handleSave}
+   412→   412→            disabled={!amount || parseFloat(amount) <= 0 || !description.trim() || saving}
+   413→   413→            className={cn(
+   414→   414→              'min-w-[100px]',
+   415→   415→              type === 'income'
+   416→   416→                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+   417→   417→                : 'bg-rose-600 hover:bg-rose-700 text-white'
+   418→   418→            )}
+   419→   419→          >
+   420→   420→            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+   421→   421→            {type === 'income' ? 'Add Income' : 'Add Expense'}
+   422→   422→          </Button>
+   423→   423→        </DialogFooter>
+   424→   424→      </DialogContent>
+   425→   425→    </Dialog>
+   426→   426→  )
+   427→   427→}
+   428→   428→
+   429→   429→// ── Main Dashboard Component ───────────────────────────────────────
+   430→   430→export default function Dashboard() {
+   431→   431→  const [data, setData] = useState<DashboardData | null>(null)
+   432→   432→  const [loading, setLoading] = useState(true)
+   433→   433→  const { user, dashboardData, setDashboardData, showQuickAdd, setShowQuickAdd, quickAddType, setQuickAddType, setActiveModule } = useAppStore()
+   434→   434→
+   435→   435→  const mapApiData = (api: any): DashboardData => ({
+   436→   436→    balance: api.balance ?? 0,
+   437→   437→    totalIncome: api.totalIncome ?? 0,
+   438→   438→    totalExpenses: api.totalExpenses ?? 0,
+   439→   439→    totalDebt: api.activeDebtPayments ?? 0,
+   440→   440→    monthlyCashFlow: (api.monthlyData ?? []).map((m: any) => ({
+   441→   441→      month: m.month?.split(' ')[0] || m.month,
+   442→   442→      income: m.income ?? 0,
+   443→   443→      expenses: m.expenses ?? 0,
+   444→   444→    })),
+   445→   445→    expenseCategories: (api.categoryBreakdown ?? []).map((c: any) => ({
+   446→   446→      name: c.name,
+   447→   447→      value: c.total ?? c.value ?? 0,
+   448→   448→      color: c.color || '#94a3b8',
+   449→   449→    })),
+   450→   450→    budgetVsActual: [] as DashboardData['budgetVsActual'],
+   451→   451→    recentTransactions: (api.recentMovements ?? []).map((m: any) => ({
+   452→   452→      id: m.id,
+   453→   453→      type: m.type || 'expense',
+   454→   454→      description: m.description,
+   455→   455→      amount: m.type === 'entrada' ? m.amount : -m.amount,
+   456→   456→      date: m.date,
+   457→   457→      category: m.category?.name,
+   458→   458→      categoryColor: m.category?.color,
+   459→   459→    })),
+   460→   460→    savingsGoals: (api.savingsProgress ?? []).map((g: any) => ({
+   461→   461→      id: g.id,
+   462→   462→      name: g.name,
+   463→   463→      saved: g.savedAmount ?? g.saved ?? 0,
+   464→   464→      target: g.targetAmount ?? g.target ?? 0,
+   465→   465→      deadline: g.deadline,
+   466→   466→    })),
+   467→   467→  })
+   468→   468→
+   469→   469→  const doFetchData = async () => {
+   470→   470→    setLoading(true)
+   471→   471→    try {
+   472→   472→      if (user?.id) {
+   473→   473→        const [dashRes, budgetRes] = await Promise.all([
+   474→   474→          fetch(`/api/dashboard?accountId=${user.id}`),
+   475→   475→          fetch(`/api/budget?accountId=${user.id}`),
+   476→   476→        ])
+   477→   477→        if (dashRes.ok) {
+   478→   478→          const json = await dashRes.json()
+   479→   479→          const mapped = mapApiData(json)
+   480→   480→
+   481→   481→          if (budgetRes.ok) {
+   482→   482→            try {
+   483→   483→              const budgetJson = await budgetRes.json()
+   484→   484→              const budgets = budgetJson.budgets || []
+   485→   485→              if (budgets.length > 0) {
+   486→   486→                const b = budgets[0]
+   487→   487→                const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   488→   488→                const needsPct = b.needsPercent ?? 50
+   489→   489→                const wantsPct = b.wantsPercent ?? 30
+   490→   490→                const savingsPct = b.savingsPercent ?? 20
+   491→   491→                mapped.budgetVsActual = [
+   492→   492→                  { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   493→   493→                  { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   494→   494→                  { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   495→   495→                ]
+   496→   496→              }
+   497→   497→            } catch { /* keep mock budgetVsActual */ }
+   498→   498→          }
+   499→   499→
+   500→   500→          setDashboardData(mapped)
+   501→   501→          setData(mapped)
+   502→   502→          setLoading(false)
+   503→   503→          return
+   504→   504→        }
+   505→   505→      }
+   506→   506→    } catch { /* fallback */ }
+   507→   507→    setData(dashboardData || mockData)
+   508→   508→    setLoading(false)
+   509→   509→  }
+   510→   510→
+   511→   511→  useEffect(() => {
+   512→   512→    let cancelled = false
+   513→   513→    const load = async () => {
+   514→   514→      try {
+   515→   515→        if (user?.id) {
+   516→   516→          const [dashRes, budgetRes] = await Promise.all([
+   517→   517→            fetch(`/api/dashboard?accountId=${user.id}`),
+   518→   518→            fetch(`/api/budget?accountId=${user.id}`),
+   519→   519→          ])
+   520→   520→          if (dashRes.ok && !cancelled) {
+   521→   521→            const json = await dashRes.json()
+   522→   522→            const mapped = mapApiData(json)
+   523→   523→
+   524→   524→            if (budgetRes.ok) {
+   525→   525→              try {
+   526→   526→                const budgetJson = await budgetRes.json()
+   527→   527→                const budgets = budgetJson.budgets || []
+   528→   528→                if (budgets.length > 0) {
+   529→   529→                  const b = budgets[0]
+   530→   530→                  const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   531→   531→                  const needsPct = b.needsPercent ?? 50
+   532→   532→                  const wantsPct = b.wantsPercent ?? 30
+   533→   533→                  const savingsPct = b.savingsPercent ?? 20
+   534→   534→                  mapped.budgetVsActual = [
+   535→   535→                    { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   536→   536→                    { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   537→   537→                    { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   538→   538→                  ]
+   539→   539→                }
+   540→   540→              } catch { /* keep mock budgetVsActual */ }
+   541→   541→            }
+   542→   542→
+   543→   543→            setDashboardData(mapped)
+   544→   544→            setData(mapped)
+   545→   545→            setLoading(false)
+   546→   546→            return
+   547→   547→          }
+   548→   548→        }
+   549→   549→      } catch { /* fallback */ }
+   550→   550→      if (!cancelled) { setData(dashboardData || mockData); setLoading(false) }
+   551→   551→    }
+   552→   552→    load()
+   553→   553→    return () => { cancelled = true }
+   554→   554→  }, [user?.id])
+   555→   555→
+   556→   556→  const d = data || mockData
+   557→   557→
+   558→   558→  // ── Calculate Financial Health Score ──
+   559→   559→  const healthScore = (() => {
+   560→   560→    let score = 0
+   561→   561→    // Savings rate (up to 40 points)
+   562→   562→    const savingsRate = d.totalIncome > 0 ? (d.totalIncome - d.totalExpenses) / d.totalIncome : 0
+   563→   563→    score += Math.min(40, Math.max(0, savingsRate * 100)) * (40 / 50) // 50% savings rate = full 40 pts
+   564→   564→
+   565→   565→    // Debt-to-income ratio (up to 30 points, lower is better)
+   566→   566→    const debtRatio = d.totalIncome > 0 ? d.totalDebt / d.totalIncome : 0
+   567→   567→    score += Math.max(0, 30 - (debtRatio * 15)) // 0 debt = 30 pts, high debt = 0
+   568→   568→
+   569→   569→    // Emergency fund coverage (up to 30 points)
+   570→   570→    const monthsCovered = d.totalExpenses > 0 ? d.balance / d.totalExpenses : 0
+   571→   571→    score += Math.min(30, monthsCovered * 6) // 5 months = full 30 pts
+   572→   572→
+   573→   573→    return Math.round(Math.max(0, Math.min(100, score)))
+   574→   574→  })()
+   575→   575→
+   576→   576→  // ── Calculate Insights ──
+   577→   577→  const insights = (() => {
+   578→   578→    const cashFlow = d.monthlyCashFlow || []
+   579→   579→    // Best saving month
+   580→   580→    let bestMonth = 'N/A'
+   581→   581→    let bestNet = -Infinity
+   582→   582→    cashFlow.forEach(m => {
+   583→   583→      const net = m.income - m.expenses
+   584→   584→      if (net > bestNet) { bestNet = net; bestMonth = m.month }
+   585→   585→    })
+   586→   586→
+   587→   587→    // Biggest expense category
+   588→   588→    const cats = d.expenseCategories || []
+   589→   589→    const biggestCat = cats.length > 0
+   590→   590→      ? cats.reduce((a, b) => a.value > b.value ? a : b)
+   591→   591→      : { name: 'N/A', value: 0 }
+   592→   592→
+   593→   593→    // Savings on track (>50% progress)
+   594→   594→    const onTrackCount = d.savingsGoals.filter(g => {
+   595→   595→      const pct = g.target > 0 ? g.saved / g.target : 0
+   596→   596→      return pct > 0.5
+   597→   597→    }).length
+   598→   598→
+   599→   599→    // Net worth trend (current vs last month)
+   600→   600→    let trend = 0
+   601→   601→    let trendLabel = 'N/A'
+   602→   602→    if (cashFlow.length >= 2) {
+   603→   603→      const current = cashFlow[cashFlow.length - 1]
+   604→   604→      const previous = cashFlow[cashFlow.length - 2]
+   605→   605→      trend = (current.income - current.expenses) - (previous.income - previous.expenses)
+   606→   606→      trendLabel = formatCurrency(Math.abs(trend))
+   607→   607→    }
+   608→   608→
+   609→   609→    return { bestMonth, bestNet, biggestCat, onTrackCount, trend, trendLabel, hasTrend: cashFlow.length >= 2 }
+   610→   610→  })()
+   611→   611→
+   612→   612→  // ── Generate daily spending sparkline data ──
+   613→   613→  const dailySpending = (() => {
+   614→   614→    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+   615→   615→    const today = new Date().getDate()
+   616→   616→    const data: Array<{ day: string; amount: number }> = []
+   617→   617→    for (let i = 1; i <= Math.min(today, daysInMonth); i++) {
+   618→   618→      // Distribute expenses across days with some randomness but deterministic
+   619→   619→      const baseDaily = d.totalExpenses / 30
+   620→   620→      const variation = Math.sin(i * 2.7 + 1.3) * baseDaily * 0.6
+   621→   621→      data.push({ day: `${i}`, amount: Math.max(0, Math.round((baseDaily + variation) * 100) / 100) })
+   622→   622→    }
+   623→   623→    return data
+   624→   624→  })()
+   625→   625→
+   626→   626→  // ── Metric cards ──
+   627→   627→  const metrics = [
+   628→   628→    {
+   629→   629→      title: 'Balance Actual',
+   630→   630→      value: formatCurrency(d.balance),
+   631→   631→      change: '+12.5%',
+   632→   632→      trend: 'up' as const,
+   633→   633→      icon: DollarSign,
+   634→   634→      accentColor: '#10b981',
+   635→   635→      gradientFrom: 'from-emerald-500/10',
+   636→   636→      gradientTo: 'to-teal-500/5',
+   637→   637→      iconBg: 'bg-emerald-100 dark:bg-emerald-500/15',
+   638→   638→      iconColor: 'text-emerald-600 dark:text-emerald-400',
+   639→   639→    },
+   640→   640→    {
+   641→   641→      title: 'Ingresos Totales',
+   642→   642→      value: formatCurrency(d.totalIncome),
+   643→   643→      change: '+4.2%',
+   644→   644→      trend: 'up' as const,
+   645→   645→      icon: TrendingUp,
+   646→   646→      accentColor: '#06b6d4',
+   647→   647→      gradientFrom: 'from-cyan-500/10',
+   648→   648→      gradientTo: 'to-sky-500/5',
+   649→   649→      iconBg: 'bg-cyan-100 dark:bg-cyan-500/15',
+   650→   650→      iconColor: 'text-cyan-600 dark:text-cyan-400',
+   651→   651→    },
+   652→   652→    {
+   653→   653→      title: 'Gastos Totales',
+   654→   654→      value: formatCurrency(d.totalExpenses),
+   655→   655→      change: '-2.1%',
+   656→   656→      trend: 'down' as const,
+   657→   657→      icon: TrendingDown,
+   658→   658→      accentColor: '#f43f5e',
+   659→   659→      gradientFrom: 'from-rose-500/10',
+   660→   660→      gradientTo: 'to-pink-500/5',
+   661→   661→      iconBg: 'bg-rose-100 dark:bg-rose-500/15',
+   662→   662→      iconColor: 'text-rose-600 dark:text-rose-400',
+   663→   663→    },
+   664→   664→    {
+   665→   665→      title: 'Deudas Activas',
+   666→   666→      value: formatCurrency(d.totalDebt),
+   667→   667→      change: '3 debts',
+   668→   668→      trend: 'neutral' as const,
+   669→   669→      icon: CreditCard,
+   670→   670→      accentColor: '#f59e0b',
+   671→   671→      gradientFrom: 'from-amber-500/10',
+   672→   672→      gradientTo: 'to-orange-500/5',
+   673→   673→      iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+   674→   674→      iconColor: 'text-amber-600 dark:text-amber-400',
+   675→   675→    },
+   676→   676→  ]
+   677→   677→
+   678→   678→  // ── Savings goal colors ──
+   679→   679→  const goalColors = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899']
+   680→   680→
+   681→   681→  return (
+   682→   682→    <div className="space-y-6 pb-20">
+   683→   683→      {/* Header */}
+   684→   684→      <div className="flex items-center justify-between">
+   685→   685→        <div>
+   686→   686→          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+   687→   687→          <p className="text-muted-foreground text-sm mt-0.5">
+   688→   688→            Overview of your financial health
+   689→   689→          </p>
+   690→   690→        </div>
+   691→   691→        <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
+   692→   692→          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+   693→   693→          Refresh
+   694→   694→        </Button>
+   695→   695→      </div>
+   696→   696→
+   697→   697→      {/* ── A. Financial Health Score ── */}
+   698→   698→      <motion.div
+   699→   699→        initial={{ opacity: 0, y: 16 }}
+   700→   700→        animate={{ opacity: 1, y: 0 }}
+   701→   701→        transition={{ duration: 0.5, ease: 'easeOut' }}
+   702→   702→      >
+   703→   703→        {/* Inline the gauge content since we can't pass data to a sub-component easily */}
+   704→   704→        <Card className="overflow-hidden border-0 shadow-lg">
+   705→   705→          <div className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-6">
+   706→   706→            <div className="flex flex-col sm:flex-row items-center gap-6">
+   707→   707→              {/* Gauge Circle */}
+   708→   708→              <div className="relative w-36 h-36 shrink-0">
+   709→   709→                <div
+   710→   710→                  className="w-full h-full rounded-full flex items-center justify-center"
+   711→   711→                  style={{
+   712→   712→                    background: `conic-gradient(${healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981'} ${(healthScore / 100) * 360}deg, var(--muted) ${(healthScore / 100) * 360}deg)`,
+   713→   713→                    transition: 'all 0.8s ease-out',
+   714→   714→                  }}
+   715→   715→                >
+   716→   716→                  <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-inner">
+   717→   717→                    <span className="text-3xl font-bold tabular-nums" style={{ color: healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981' }}>
+   718→   718→                      {healthScore}
+   719→   719→                    </span>
+   720→   720→                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">of 100</span>
+   721→   721→                  </div>
+   722→   722→                </div>
+   723→   723→              </div>
+   724→   724→
+   725→   725→              {/* Details */}
+   726→   726→              <div className="flex-1 text-center sm:text-left space-y-3">
+   727→   727→                <div>
+   728→   728→                  <h3 className="text-lg font-bold text-foreground">Financial Health Score</h3>
+   729→   729→                  <p className={cn(
+   730→   730→                    'text-sm font-semibold',
+   731→   731→                    healthScore <= 40 ? 'text-red-500' : healthScore <= 70 ? 'text-amber-500' : 'text-emerald-500'
+   732→   732→                  )}>
+   733→   733→                    {healthScore <= 40 ? 'Needs Work' : healthScore <= 70 ? 'Fair' : 'Excellent'}
+   734→   734→                  </p>
+   735→   735→                </div>
+   736→   736→                <div className="grid grid-cols-3 gap-3 text-center">
+   737→   737→                  <div className="space-y-0.5">
+   738→   738→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Savings Rate</p>
+   739→   739→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   740→   740→                      {d.totalIncome > 0 ? `${Math.max(0, Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100))}%` : '0%'}
+   741→   741→                    </p>
+   742→   742→                  </div>
+   743→   743→                  <div className="space-y-0.5">
+   744→   744→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Debt Ratio</p>
+   745→   745→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   746→   746→                      {d.totalIncome > 0 ? `${Math.round(d.totalDebt / d.totalIncome * 100)}%` : '0%'}
+   747→   747→                    </p>
+   748→   748→                  </div>
+   749→   749→                  <div className="space-y-0.5">
+   750→   750→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergency</p>
+   751→   751→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   752→   752→                      {d.totalExpenses > 0 ? `${(d.balance / d.totalExpenses).toFixed(1)}mo` : '0mo'}
+   753→   753→                    </p>
+   754→   754→                  </div>
+   755→   755→                </div>
+   756→   756→              </div>
+   757→   757→            </div>
+   758→   758→          </div>
+   759→   759→        </Card>
+   760→   760→      </motion.div>
+   761→   761→
+   762→   762→      {/* ── B. Enhanced Metric Cards with Gradients ── */}
+   763→   763→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   764→   764→        {metrics.map((m, idx) => (
+   765→   765→          <motion.div
+   766→   766→            key={m.title}
+   767→   767→            initial={{ opacity: 0, y: 20 }}
+   768→   768→            animate={{ opacity: 1, y: 0 }}
+   769→   769→            transition={{ duration: 0.4, delay: idx * 0.08, ease: 'easeOut' }}
+   770→   770→          >
+   771→   771→            <Card className="card-hover overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px' }}>
+   772→   772→              <CardContent className="p-4">
+   773→   773→                <div className="flex items-start justify-between">
+   774→   774→                  <div className="space-y-1">
+   775→   775→                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.title}</p>
+   776→   776→                    <p className={cn(
+   777→   777→                      'text-2xl font-bold tabular-nums',
+   778→   778→                      d.balance >= 0 && m.title === 'Balance Actual' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+   779→   779→                    )}>
+   780→   780→                      {m.value}
+   781→   781→                    </p>
+   782→   782→                  </div>
+   783→   783→                  <div className={cn(
+   784→   784→                    'p-2.5 rounded-xl bg-gradient-to-br',
+   785→   785→                    m.gradientFrom,
+   786→   786→                    m.gradientTo
+   787→   787→                  )}>
+   788→   788→                    <m.icon className={cn('w-5 h-5', m.iconColor)} />
+   789→   789→                  </div>
+   790→   790→                </div>
+   791→   791→                <div className="flex items-center gap-1 mt-2">
+   792→   792→                  {m.trend === 'up' && <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />}
+   793→   793→                  {m.trend === 'down' && <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />}
+   794→   794→                  <span className={cn(
+   795→   795→                    'text-xs font-medium',
+   796→   796→                    m.trend === 'up' ? 'text-emerald-500' : m.trend === 'down' ? 'text-rose-500' : 'text-muted-foreground'
+   797→   797→                  )}>
+   798→   798→                    {m.change}
+   799→   799→                  </span>
+   800→   800→                  <span className="text-xs text-muted-foreground ml-1">vs last month</span>
+   801→   801→                </div>
+   802→   802→              </CardContent>
+   803→   803→            </Card>
+   804→   804→          </motion.div>
+   805→   805→        ))}
+   806→   806→      </div>
+   807→   807→
+   808→   808→      {/* ── Charts ── */}
+   809→   809→      {loading ? (
+   810→   810→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   811→   811→          {[1, 2, 3].map((i) => (
+   812→   812→            <Card key={i}>
+   813→   813→              <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+   814→   814→              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+   815→   815→            </Card>
+   816→   816→          ))}
+   817→   817→        </div>
+   818→   818→      ) : (
+   819→   819→        <>
+   820→   820→          {/* ── E. Enhanced Charts Row 1 ── */}
+   821→   821→          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   822→   822→            {/* Cash Flow Chart */}
+   823→   823→            <motion.div
+   824→   824→              initial={{ opacity: 0, y: 20 }}
+   825→   825→              animate={{ opacity: 1, y: 0 }}
+   826→   826→              transition={{ duration: 0.5, delay: 0.35 }}
+   827→   827→              className="lg:col-span-2"
+   828→   828→            >
+   829→   829→              <Card className="overflow-hidden">
+   830→   830→                <div className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 px-6 pt-5 pb-0">
+   831→   831→                  <CardTitle className="text-base font-semibold">Monthly Cash Flow</CardTitle>
+   832→   832→                  <CardDescription>Income vs Expenses over the last 6 months</CardDescription>
+   833→   833→                </div>
+   834→   834→                <CardContent className="pt-4">
+   835→   835→                  <div className="h-[300px]">
+   836→   836→                    <ResponsiveContainer width="100%" height="100%">
+   837→   837→                      <AreaChart data={d.monthlyCashFlow} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+   838→   838→                        <defs>
+   839→   839→                          <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   840→   840→                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   841→   841→                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   842→   842→                          </linearGradient>
+   843→   843→                          <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   844→   844→                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   845→   845→                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   846→   846→                          </linearGradient>
+   847→   847→                        </defs>
+   848→   848→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+   849→   849→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+   850→   850→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+   851→   851→                        <RechartsTooltip content={EnhancedChartTooltip} />
+   852→   852→                        <Legend />
+   853→   853→                        <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   854→   854→                        <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   855→   855→                      </AreaChart>
+   856→   856→                    </ResponsiveContainer>
+   857→   857→                  </div>
+   858→   858→                </CardContent>
+   859→   859→              </Card>
+   860→   860→            </motion.div>
+   861→   861→
+   862→   862→            {/* Expense Distribution */}
+   863→   863→            <motion.div
+   864→   864→              initial={{ opacity: 0, y: 20 }}
+   865→   865→              animate={{ opacity: 1, y: 0 }}
+   866→   866→              transition={{ duration: 0.5, delay: 0.4 }}
+   867→   867→            >
+   868→   868→              <Card className="overflow-hidden">
+   869→   869→                <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 px-6 pt-5 pb-0">
+   870→   870→                  <CardTitle className="text-base font-semibold">Expense Breakdown</CardTitle>
+   871→   871→                  <CardDescription>This month by category</CardDescription>
+   872→   872→                </div>
+   873→   873→                <CardContent className="pt-4">
+   874→   874→                  <div className="h-[300px]">
+   875→   875→                    <ResponsiveContainer width="100%" height="100%">
+   876→   876→                      <PieChart>
+   877→   877→                        <Pie
+   878→   878→                          data={d.expenseCategories || []}
+   879→   879→                          cx="50%"
+   880→   880→                          cy="42%"
+   881→   881→                          innerRadius={50}
+   882→   882→                          outerRadius={82}
+   883→   883→                          paddingAngle={3}
+   884→   884→                          dataKey="value"
+   885→   885→                        >
+   886→   886→                          {(d.expenseCategories || []).map((entry, idx) => (
+   887→   887→                            <Cell key={idx} fill={entry.color || CHART_COLORS[idx % CHART_COLORS.length]} />
+   888→   888→                          ))}
+   889→   889→                        </Pie>
+   890→   890→                        <RechartsTooltip
+   891→   891→                          formatter={(value: number, name: string, props: any) => {
+   892→   892→                            const total = (d.expenseCategories || []).reduce((s, c) => s + c.value, 0)
+   893→   893→                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+   894→   894→                            return [`${formatCurrency(value)} (${pct}%)`, props.payload.name]
+   895→   895→                          }}
+   896→   896→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+   897→   897→                        />
+   898→   898→                      </PieChart>
+   899→   899→                    </ResponsiveContainer>
+   900→   900→                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+   901→   901→                      {(d.expenseCategories || []).slice(0, 4).map((cat) => (
+   902→   902→                        <div key={cat.name} className="flex items-center gap-2 text-xs">
+   903→   903→                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+   904→   904→                          <span className="text-muted-foreground truncate">{cat.name}</span>
+   905→   905→                        </div>
+   906→   906→                      ))}
+   907→   907→                    </div>
+   908→   908→                  </div>
+   909→   909→                </CardContent>
+   910→   910→              </Card>
+   911→   911→            </motion.div>
+   912→   912→          </div>
+   913→   913→
+   914→   914→          {/* ── D. Financial Insights Section ── */}
+   915→   915→          <motion.div
+   916→   916→            initial={{ opacity: 0, y: 20 }}
+   917→   917→            animate={{ opacity: 1, y: 0 }}
+   918→   918→            transition={{ duration: 0.5, delay: 0.45 }}
+   919→   919→          >
+   920→   920→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   921→   921→              {/* Best Saving Month */}
+   922→   922→              <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-500/5 dark:to-teal-500/3 border-emerald-200/50 dark:border-emerald-500/10">
+   923→   923→                <CardContent className="p-4">
+   924→   924→                  <div className="flex items-center gap-2 mb-2">
+   925→   925→                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+   926→   926→                      <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+   927→   927→                    </div>
+   928→   928→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Best Saving Month</p>
+   929→   929→                  </div>
+   930→   930→                  <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
+   931→   931→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+   932→   932→                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} net` : 'No data'}
+   933→   933→                  </p>
+   934→   934→                </CardContent>
+   935→   935→              </Card>
+   936→   936→
+   937→   937→              {/* Biggest Expense Category */}
+   938→   938→              <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/30 dark:from-rose-500/5 dark:to-pink-500/3 border-rose-200/50 dark:border-rose-500/10">
+   939→   939→                <CardContent className="p-4">
+   940→   940→                  <div className="flex items-center gap-2 mb-2">
+   941→   941→                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
+   942→   942→                      <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+   943→   943→                    </div>
+   944→   944→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Top Expense</p>
+   945→   945→                  </div>
+   946→   946→                  <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
+   947→   947→                  <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+   948→   948→                    {formatCurrency(insights.biggestCat.value)}
+   949→   949→                  </p>
+   950→   950→                </CardContent>
+   951→   951→              </Card>
+   952→   952→
+   953→   953→              {/* Savings On Track */}
+   954→   954→              <Card className="bg-gradient-to-br from-cyan-50/50 to-sky-50/30 dark:from-cyan-500/5 dark:to-sky-500/3 border-cyan-200/50 dark:border-cyan-500/10">
+   955→   955→                <CardContent className="p-4">
+   956→   956→                  <div className="flex items-center gap-2 mb-2">
+   957→   957→                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
+   958→   958→                      <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+   959→   959→                    </div>
+   960→   960→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">On Track</p>
+   961→   961→                  </div>
+   962→   962→                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">of {d.savingsGoals.length}</span></p>
+   963→   963→                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+   964→   964→                    Goals &gt;50% complete
+   965→   965→                  </p>
+   966→   966→                </CardContent>
+   967→   967→              </Card>
+   968→   968→
+   969→   969→              {/* Net Worth Trend */}
+   970→   970→              <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-500/5 dark:to-purple-500/3 border-violet-200/50 dark:border-violet-500/10">
+   971→   971→                <CardContent className="p-4">
+   972→   972→                  <div className="flex items-center gap-2 mb-2">
+   973→   973→                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
+   974→   974→                      <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+   975→   975→                    </div>
+   976→   976→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cash Flow Trend</p>
+   977→   977→                  </div>
+   978→   978→                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
+   979→   979→                    {insights.hasTrend && (
+   980→   980→                      insights.trend >= 0
+   981→   981→                        ? <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+   982→   982→                        : <ArrowDownRight className="w-5 h-5 text-rose-500" />
+   983→   983→                    )}
+   984→   984→                    {insights.hasTrend ? insights.trendLabel : 'N/A'}
+   985→   985→                  </p>
+   986→   986→                  <p className={cn('text-xs font-medium', insights.trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
+   987→   987→                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs last month' : 'vs last month') : 'No comparison data'}
+   988→   988→                  </p>
+   989→   989→                </CardContent>
+   990→   990→              </Card>
+   991→   991→            </div>
+   992→   992→          </motion.div>
+   993→   993→
+   994→   994→          {/* ── Budget vs Actual ── */}
+   995→   995→          <motion.div
+   996→   996→            initial={{ opacity: 0, y: 20 }}
+   997→   997→            animate={{ opacity: 1, y: 0 }}
+   998→   998→            transition={{ duration: 0.5, delay: 0.5 }}
+   999→   999→          >
+  1000→  1000→            <Card className="overflow-hidden">
+  1001→  1001→              <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
+  1002→  1002→                <CardTitle className="text-base font-semibold">Budget vs Actual (50/30/20 Rule)</CardTitle>
+  1003→  1003→                <CardDescription>Comparing your planned budget with actual spending</CardDescription>
+  1004→  1004→              </div>
+  1005→  1005→              <CardContent className="pt-4">
+  1006→  1006→                <div className="h-[240px]">
+  1007→  1007→                  <ResponsiveContainer width="100%" height="100%">
+  1008→  1008→                    <BarChart data={d.budgetVsActual} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1009→  1009→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1010→  1010→                      <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1011→  1011→                      <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1012→  1012→                      <RechartsTooltip content={EnhancedChartTooltip} />
+  1013→  1013→                      <Legend />
+  1014→  1014→                      <Bar dataKey="planned" name="Planned" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+  1015→  1015→                      <Bar dataKey="actual" name="Actual" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+  1016→  1016→                    </BarChart>
+  1017→  1017→                  </ResponsiveContainer>
+  1018→  1018→                </div>
+  1019→  1019→              </CardContent>
+  1020→  1020→            </Card>
+  1021→  1021→          </motion.div>
+  1022→  1022→
+  1023→  1023→          {/* ── E. Spending Trend Sparkline ── */}
+  1024→  1024→          <motion.div
+  1025→  1025→            initial={{ opacity: 0, y: 20 }}
+  1026→  1026→            animate={{ opacity: 1, y: 0 }}
+  1027→  1027→            transition={{ duration: 0.5, delay: 0.55 }}
+  1028→  1028→          >
+  1029→  1029→            <Card className="overflow-hidden">
+  1030→  1030→              <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
+  1031→  1031→                <CardTitle className="text-base font-semibold">Daily Spending Trend</CardTitle>
+  1032→  1032→                <CardDescription>Your spending pattern this month</CardDescription>
+  1033→  1033→              </div>
+  1034→  1034→              <CardContent className="pt-4">
+  1035→  1035→                <div className="h-[200px]">
+  1036→  1036→                  <ResponsiveContainer width="100%" height="100%">
+  1037→  1037→                    <AreaChart data={dailySpending} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1038→  1038→                      <defs>
+  1039→  1039→                        <linearGradient id="dailySpendGrad" x1="0" y1="0" x2="0" y2="1">
+  1040→  1040→                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+  1041→  1041→                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+  1042→  1042→                        </linearGradient>
+  1043→  1043→                      </defs>
+  1044→  1044→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1045→  1045→                      <XAxis
+  1046→  1046→                        dataKey="day"
+  1047→  1047→                        tick={{ fontSize: 10 }}
+  1048→  1048→                        stroke="var(--muted-foreground)"
+  1049→  1049→                        interval="preserveStartEnd"
+  1050→  1050→                      />
+  1051→  1051→                      <YAxis
+  1052→  1052→                        tick={{ fontSize: 10 }}
+  1053→  1053→                        stroke="var(--muted-foreground)"
+  1054→  1054→                        tickFormatter={(v) => `$${v}`}
+  1055→  1055→                      />
+  1056→  1056→                      <RechartsTooltip
+  1057→  1057→                        formatter={(value: number) => [formatCurrency(value), 'Spending']}
+  1058→  1058→                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1059→  1059→                      />
+  1060→  1060→                      <Area
+  1061→  1061→                        type="monotone"
+  1062→  1062→                        dataKey="amount"
+  1063→  1063→                        name="Spending"
+  1064→  1064→                        stroke="#f59e0b"
+  1065→  1065→                        fill="url(#dailySpendGrad)"
+  1066→  1066→                        strokeWidth={2}
+  1067→  1067→                        dot={false}
+  1068→  1068→                        activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }}
+  1069→  1069→                      />
+  1070→  1070→                    </AreaChart>
+  1071→  1071→                  </ResponsiveContainer>
+  1072→  1072→                </div>
+  1073→  1073→              </CardContent>
+  1074→  1074→            </Card>
+  1075→  1075→          </motion.div>
+  1076→  1076→
+  1077→  1077→          {/* ── Bottom Row ── */}
+  1078→  1078→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1079→  1079→            {/* Recent Transactions */}
+  1080→  1080→            <motion.div
+  1081→  1081→              initial={{ opacity: 0, y: 20 }}
+  1082→  1082→              animate={{ opacity: 1, y: 0 }}
+  1083→  1083→              transition={{ duration: 0.5, delay: 0.6 }}
+  1084→  1084→            >
+  1085→  1085→              <Card>
+  1086→  1086→                <CardHeader className="pb-2">
+  1087→  1087→                  <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
+  1088→  1088→                  <CardDescription>Your latest financial movements</CardDescription>
+  1089→  1089→                </CardHeader>
+  1090→  1090→                <CardContent>
+  1091→  1091→                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+  1092→  1092→                    {d.recentTransactions.map((tx) => (
+  1093→  1093→                      <motion.div
+  1094→  1094→                        key={tx.id}
+  1095→  1095→                        initial={{ opacity: 0, x: -10 }}
+  1096→  1096→                        animate={{ opacity: 1, x: 0 }}
+  1097→  1097→                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+  1098→  1098→                      >
+  1099→  1099→                        <div className="flex items-center gap-3 min-w-0">
+  1100→  1100→                          <div className={cn(
+  1101→  1101→                            'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+  1102→  1102→                            tx.type === 'income'
+  1103→  1103→                              ? 'bg-emerald-50 dark:bg-emerald-500/10'
+  1104→  1104→                              : 'bg-rose-50 dark:bg-rose-500/10'
+  1105→  1105→                          )}>
+  1106→  1106→                            {tx.type === 'income'
+  1107→  1107→                              ? <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+  1108→  1108→                              : <ArrowDownRight className="w-4 h-4 text-rose-500" />
+  1109→  1109→                            }
+  1110→  1110→                          </div>
+  1111→  1111→                          <div className="min-w-0">
+  1112→  1112→                            <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
+  1113→  1113→                            <div className="flex items-center gap-2">
+  1114→  1114→                              <span className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</span>
+  1115→  1115→                              {tx.category && (
+  1116→  1116→                                <Badge
+  1117→  1117→                                  variant="secondary"
+  1118→  1118→                                  className="text-[10px] h-4 px-1.5"
+  1119→  1119→                                  style={{ backgroundColor: (tx.categoryColor || '#64748b') + '20', color: tx.categoryColor || '#64748b' }}
+  1120→  1120→                                >
+  1121→  1121→                                  {tx.category}
+  1122→  1122→                                </Badge>
+  1123→  1123→                              )}
+  1124→  1124→                            </div>
+  1125→  1125→                          </div>
+  1126→  1126→                        </div>
+  1127→  1127→                        <span className={cn(
+  1128→  1128→                          'text-sm font-semibold tabular-nums shrink-0',
+  1129→  1129→                          tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+  1130→  1130→                        )}>
+  1131→  1131→                          {tx.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+  1132→  1132→                        </span>
+  1133→  1133→                      </motion.div>
+  1134→  1134→                    ))}
+  1135→  1135→                  </div>
+  1136→  1136→                </CardContent>
+  1137→  1137→              </Card>
+  1138→  1138→            </motion.div>
+  1139→  1139→
+  1140→  1140→            {/* ── F. Enhanced Savings Section ── */}
+  1141→  1141→            <motion.div
+  1142→  1142→              initial={{ opacity: 0, y: 20 }}
+  1143→  1143→              animate={{ opacity: 1, y: 0 }}
+  1144→  1144→              transition={{ duration: 0.5, delay: 0.65 }}
+  1145→  1145→            >
+  1146→  1146→              <Card>
+  1147→  1147→                <CardHeader className="pb-2">
+  1148→  1148→                  <div className="flex items-center justify-between">
+  1149→  1149→                    <div>
+  1150→  1150→                      <CardTitle className="text-base font-semibold">Savings Goals</CardTitle>
+  1151→  1151→                      <CardDescription>Track your savings progress</CardDescription>
+  1152→  1152→                    </div>
+  1153→  1153→                    <Button
+  1154→  1154→                      variant="ghost"
+  1155→  1155→                      size="sm"
+  1156→  1156→                      className="text-xs text-primary hover:text-primary"
+  1157→  1157→                      onClick={() => setActiveModule('savings')}
+  1158→  1158→                    >
+  1159→  1159→                      View All
+  1160→  1160→                      <ArrowUpRight className="w-3 h-3 ml-1" />
+  1161→  1161→                    </Button>
+  1162→  1162→                  </div>
+  1163→  1163→                </CardHeader>
+  1164→  1164→                <CardContent>
+  1165→  1165→                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+  1166→  1166→                    {d.savingsGoals.map((goal, idx) => {
+  1167→  1167→                      const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+  1168→  1168→                      const goalColor = goalColors[idx % goalColors.length]
+  1169→  1169→                      return (
+  1170→  1170→                        <motion.div
+  1171→  1171→                          key={goal.id}
+  1172→  1172→                          initial={{ opacity: 0, y: 10 }}
+  1173→  1173→                          animate={{ opacity: 1, y: 0 }}
+  1174→  1174→                          transition={{ delay: 0.05 * idx }}
+  1175→  1175→                          className="space-y-2 rounded-lg border-l-[3px] pl-3"
+  1176→  1176→                          style={{ borderLeftColor: goalColor }}
+  1177→  1177→                        >
+  1178→  1178→                          <div className="flex items-center justify-between">
+  1179→  1179→                            <div className="flex items-center gap-2">
+  1180→  1180→                              <span className="text-base">{getGoalEmoji(goal.name)}</span>
+  1181→  1181→                              <span className="text-sm font-medium text-foreground">{goal.name}</span>
+  1182→  1182→                            </div>
+  1183→  1183→                            <span className="text-xs font-semibold tabular-nums" style={{ color: goalColor }}>
+  1184→  1184→                              {pct}%
+  1185→  1185→                            </span>
+  1186→  1186→                          </div>
+  1187→  1187→                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+  1188→  1188→                            <motion.div
+  1189→  1189→                              className="h-full rounded-full"
+  1190→  1190→                              style={{ background: goalColor }}
+  1191→  1191→                              initial={{ width: 0 }}
+  1192→  1192→                              animate={{ width: `${pct}%` }}
+  1193→  1193→                              transition={{ duration: 0.8, delay: 0.2 + idx * 0.1, ease: 'easeOut' }}
+  1194→  1194→                            />
+  1195→  1195→                          </div>
+  1196→  1196→                          <div className="flex justify-between text-xs text-muted-foreground">
+  1197→  1197→                            <span>{formatCurrency(goal.saved)} saved</span>
+  1198→  1198→                            <span>Goal: {formatCurrency(goal.target)}</span>
+  1199→  1199→                          </div>
+  1200→  1200→                          {goal.deadline && (
+  1201→  1201→                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+  1202→  1202→                              <Calendar className="w-3 h-3" />
+  1203→  1203→                              {format(new Date(goal.deadline), 'MMM d, yyyy')}
+  1204→  1204→                            </p>
+  1205→  1205→                          )}
+  1206→  1206→                        </motion.div>
+  1207→  1207→                      )
+  1208→  1208→                    })}
+  1209→  1209→                  </div>
+  1210→  1210→                </CardContent>
+  1211→  1211→              </Card>
+  1212→  1212→            </motion.div>
+  1213→  1213→          </div>
+  1214→  1214→        </>
+  1215→  1215→      )}
+  1216→  1216→
+  1217→  1217→      {/* ── C. Quick Transaction FAB ── */}
+  1218→  1218→      <AnimatePresence>
+  1219→  1219→        {showQuickAdd && (
+  1220→  1220→          <motion.div
+  1221→  1221→            className="fixed bottom-6 right-6 z-50 flex items-end gap-3"
+  1222→  1222→            initial={{ opacity: 0, scale: 0.8 }}
+  1223→  1223→            animate={{ opacity: 1, scale: 1 }}
+  1224→  1224→            exit={{ opacity: 0, scale: 0.8 }}
+  1225→  1225→            transition={{ duration: 0.2 }}
+  1226→  1226→          >
+  1227→  1227→            <motion.button
+  1228→  1228→              whileHover={{ scale: 1.05 }}
+  1229→  1229→              whileTap={{ scale: 0.95 }}
+  1230→  1230→              onClick={() => { setQuickAddType('income'); setShowQuickAdd(true) }}
+  1231→  1231→              className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center justify-center"
+  1232→  1232→            >
+  1233→  1233→              <ArrowUpRight className="w-5 h-5" />
+  1234→  1234→            </motion.button>
+  1235→  1235→            <motion.button
+  1236→  1236→              whileHover={{ scale: 1.05 }}
+  1237→  1237→              whileTap={{ scale: 0.95 }}
+  1238→  1238→              onClick={() => { setQuickAddType('expense'); setShowQuickAdd(true) }}
+  1239→  1239→              className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg flex items-center justify-center"
+  1240→  1240→            >
+  1241→  1241→              <ArrowDownRight className="w-5 h-5" />
+  1242→  1242→            </motion.button>
+  1243→  1243→            <motion.button
+  1244→  1244→              whileHover={{ scale: 1.05 }}
+  1245→  1245→              whileTap={{ scale: 0.95 }}
+  1246→  1246→              onClick={() => setShowQuickAdd(false)}
+  1247→  1247→              className="w-10 h-10 rounded-full bg-muted text-muted-foreground shadow-md flex items-center justify-center"
+  1248→  1248→            >
+  1249→  1249→              <X className="w-4 h-4" />
+  1250→  1250→            </motion.button>
+  1251→  1251→          </motion.div>
+  1252→  1252→        )}
+  1253→  1253→      </AnimatePresence>
+  1254→  1254→
+  1255→  1255→      {/* Main FAB */}
+  1256→  1256→      {!showQuickAdd && (
+  1257→  1257→        <motion.button
+  1258→  1258→          initial={{ opacity: 0, scale: 0 }}
+  1259→  1259→          animate={{ opacity: 1, scale: 1 }}
+  1260→  1260→          whileHover={{ scale: 1.08 }}
+  1261→  1261→          whileTap={{ scale: 0.92 }}
+  1262→  1262→          onClick={() => setShowQuickAdd(true)}
+  1263→  1263→          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl flex items-center justify-center"
+  1264→  1264→          title="Add Transaction"
+  1265→  1265→        >
+  1266→  1266→          <Plus className="w-6 h-6" />
+  1267→  1267→        </motion.button>
+  1268→  1268→      )}
+  1269→  1269→
+  1270→  1270→      {/* Quick Add Dialog */}
+  1271→  1271→      <QuickAddDialog
+  1272→  1272→        open={showQuickAdd}
+  1273→  1273→        onOpenChange={setShowQuickAdd}
+  1274→  1274→        type={quickAddType}
+  1275→  1275→        onTypeChange={setQuickAddType}
+  1276→  1276→        accountId={user?.id || ''}
+  1277→  1277→        onSaved={doFetchData}
+  1278→  1278→      />
+  1279→  1279→    </div>
+  1280→  1280→  )
+  1281→  1281→}

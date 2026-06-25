@@ -103,12 +103,12 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-auth p-4 relative overflow-hidden">
-      {/* Background decorations */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-auth p-4 relative overflow-hidden animate-fade-in">
+      {/* Floating animated gradient blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-white/10 blur-3xl animate-float" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-white/5 blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-cyan-400/10 blur-3xl animate-float" style={{ animationDelay: '0.8s' }} />
+        <div className="absolute -top-20 -left-20 w-[420px] h-[420px] rounded-full bg-emerald-400/20 blur-[100px] animate-[blobMove1_20s_ease-in-out_infinite]" />
+        <div className="absolute -bottom-24 -right-16 w-[360px] h-[360px] rounded-full bg-teal-400/20 blur-[100px] animate-[blobMove2_18s_ease-in-out_infinite]" />
+        <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan-400/15 blur-[100px] animate-[blobMove3_22s_ease-in-out_infinite]" />
       </div>
 
       <motion.div
@@ -131,8 +131,8 @@ export default function AuthScreen() {
           <p className="text-white/70 mt-1">Your smart finance companion</p>
         </motion.div>
 
-        {/* Form Card */}
-        <div className="glass-card rounded-2xl p-8">
+        {/* Form Card with glassmorphism */}
+        <div className="rounded-2xl p-8 bg-white/70 dark:bg-[#1a2332]/70 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-2xl shadow-black/10 dark:shadow-black/30">
           <AnimatePresence mode="wait">
             <motion.div
               key={isLogin ? 'login' : 'register'}
@@ -234,16 +234,18 @@ export default function AuthScreen() {
             </div>
           </div>
 
-          {/* Demo Button */}
-          <Button
-            variant="outline"
-            className="w-full h-11 border-primary/30 hover:bg-primary/10 hover:border-primary/50 text-primary"
-            onClick={handleDemoLogin}
-            disabled={loading}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Try Demo Account
-          </Button>
+          {/* Demo Button with rotating gradient border */}
+          <div className="relative rounded-lg p-[2px] bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 animate-[rotateGradient_3s_linear_infinite] bg-[length:200%_200%]">
+            <Button
+              variant="outline"
+              className="w-full h-11 border-0 bg-white dark:bg-[#1a2332] hover:bg-white/90 dark:hover:bg-[#1a2332]/90 text-primary rounded-[6px]"
+              onClick={handleDemoLogin}
+              disabled={loading}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Try Demo Account
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
             No sign-up required. Explore with sample data.
           </p>

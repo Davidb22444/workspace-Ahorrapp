@@ -19,6 +19,8 @@ import NotificationsPanel from '@/components/ahorrapp/NotificationsPanel'
 import DependentsModule from '@/components/ahorrapp/DependentsModule'
 import SettingsPanel from '@/components/ahorrapp/SettingsPanel'
 import UnexpectedModule from '@/components/ahorrapp/UnexpectedModule'
+import TransactionCenter from '@/components/ahorrapp/TransactionCenter'
+import MonthlyReport from '@/components/ahorrapp/MonthlyReport'
 
 const moduleComponents: Record<Module, React.ComponentType> = {
   dashboard: Dashboard,
@@ -31,6 +33,8 @@ const moduleComponents: Record<Module, React.ComponentType> = {
   'ai-assistant': AIAssistant,
   notifications: NotificationsPanel,
   dependents: DependentsModule,
+  transactions: TransactionCenter,
+  report: MonthlyReport,
   settings: SettingsPanel,
 }
 
@@ -45,6 +49,8 @@ const moduleTitles: Record<Module, string> = {
   'ai-assistant': 'Asistente IA',
   notifications: 'Notificaciones',
   dependents: 'Dependientes',
+  transactions: 'Transaction Center',
+  report: 'Monthly Report',
   settings: 'Configuración',
 }
 

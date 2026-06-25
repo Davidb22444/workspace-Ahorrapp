@@ -16,8 +16,9 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight,
   Wallet,
+  Search,
+  FileBarChart,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -46,6 +47,8 @@ const navItems: NavItem[] = [
   { id: 'ai-assistant', label: 'Asistente IA', icon: Bot },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, badge: true },
   { id: 'dependents', label: 'Dependientes', icon: Users },
+  { id: 'transactions', label: 'Transaction Center', icon: Search },
+  { id: 'report', label: 'Monthly Report', icon: FileBarChart },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ]
 
@@ -104,7 +107,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             <button
               onClick={() => handleNav(item.id)}
               className={cn(
-                'sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative',
+                'sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all relative sidebar-item-hover',
                 isActive
                   ? 'active'
                   : 'text-muted-foreground hover:text-foreground',
@@ -125,7 +128,10 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                 </Badge>
               )}
               {isActive && !collapsed && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full animate-pulse-dot" />
+              )}
+              {isActive && collapsed && (
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary animate-pulse-dot" />
               )}
             </button>
           )
@@ -150,7 +156,8 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
         })}
       </nav>
 
-      <Separator />
+      {/* Gradient divider before bottom actions */}
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
 
       {/* Bottom actions */}
       <div className="px-3 py-3 space-y-1">
@@ -210,7 +217,7 @@ export default function AppSidebar() {
             className="h-6 w-6 rounded-full bg-card border shadow-sm hover:bg-accent"
             onClick={() => setCollapsed(!collapsed)}
           >
-            {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+            <ChevronLeft className={cn('w-3 h-3 transition-transform duration-300', collapsed && 'rotate-180')} />
           </Button>
         </div>
       </aside>

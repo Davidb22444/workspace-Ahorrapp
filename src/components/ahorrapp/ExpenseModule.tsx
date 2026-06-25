@@ -35,6 +35,13 @@ const CATEGORIES = [
   { id: 'other', name: 'Other', color: '#64748b' },
 ]
 
+interface ApiCategory {
+  id: string
+  name: string
+  icon?: string
+  color: string
+}
+
 interface Expense {
   id: string
   amount: number
@@ -45,6 +52,21 @@ interface Expense {
   dependentId?: string
   isRecurring: boolean
   isUnexpected: boolean
+}
+
+function mapApiExpense(raw: Record<string, unknown>): Expense {
+  const cat = raw.category as ApiCategory | null | undefined
+  return {
+    id: raw.id as string,
+    amount: raw.amount as number,
+    description: raw.description as string,
+    date: raw.date ? new Date(raw.date as string).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    category: cat?.name?.toLowerCase() || (raw.categoryId as string) || 'other',
+    categoryColor: cat?.color || '#64748b',
+    dependentId: (raw.dependentId as string) || undefined,
+    isRecurring: (raw.isRecurring as boolean) || false,
+    isUnexpected: (raw.isUnexpected as boolean) || (raw.resolved !== undefined),
+  }
 }
 
 const mockExpenses: Expense[] = [
@@ -100,12 +122,14 @@ export default function ExpenseModule() {
         ])
         if (expRes.ok && !cancelled) {
           const data = await expRes.json()
-          setExpenses(data.expenses || data || [])
+          const rawList = Array.isArray(data.expenses) ? data.expenses : Array.isArray(data) ? data : []
+          setExpenses(rawList.map(mapApiExpense))
           gotExpenses = true
         }
         if (unexpRes.ok && !cancelled) {
           const data = await unexpRes.json()
-          setUnexpected(data.expenses || data || [])
+          const rawList = Array.isArray(data.unexpecteds) ? data.unexpecteds : Array.isArray(data.expenses) ? data.expenses : Array.isArray(data) ? data : []
+          setUnexpected(rawList.map(mapApiExpense))
           gotUnexpected = true
         }
       } catch { /* fallback */ }
