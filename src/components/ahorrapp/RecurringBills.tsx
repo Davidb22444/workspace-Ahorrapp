@@ -53,11 +53,11 @@ interface RecurringBill {
 }
 
 const FREQUENCY_OPTIONS = [
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'biweekly', label: 'Biweekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Quarterly' },
-  { value: 'yearly', label: 'Yearly' },
+  { value: 'weekly', label: 'Semanal' },
+  { value: 'biweekly', label: 'Quincenal' },
+  { value: 'monthly', label: 'Mensual' },
+  { value: 'quarterly', label: 'Trimestral' },
+  { value: 'yearly', label: 'Anual' },
 ]
 
 const mockBills: RecurringBill[] = [
@@ -84,11 +84,11 @@ const mockCategories: Category[] = [
 
 function getDaysUntilText(nextDate: string): { text: string; colorClass: string } {
   const days = differenceInDays(parseISO(nextDate), new Date())
-  if (days < 0) return { text: 'Overdue', colorClass: 'text-rose-600 dark:text-rose-400' }
-  if (days === 0) return { text: 'Today', colorClass: 'text-rose-600 dark:text-rose-400' }
-  if (days <= 3) return { text: `${days}d left`, colorClass: 'text-rose-600 dark:text-rose-400' }
-  if (days <= 7) return { text: `${days}d left`, colorClass: 'text-amber-600 dark:text-amber-400' }
-  return { text: `${days}d left`, colorClass: 'text-emerald-600 dark:text-emerald-400' }
+  if (days < 0) return { text: 'Vencido', colorClass: 'text-rose-600 dark:text-rose-400' }
+  if (days === 0) return { text: 'Hoy', colorClass: 'text-rose-600 dark:text-rose-400' }
+  if (days <= 3) return { text: `${days}d restante${days !== 1 ? 's' : ''}`, colorClass: 'text-rose-600 dark:text-rose-400' }
+  if (days <= 7) return { text: `${days}d restante${days !== 1 ? 's' : ''}`, colorClass: 'text-amber-600 dark:text-amber-400' }
+  return { text: `${days}d restante${days !== 1 ? 's' : ''}`, colorClass: 'text-emerald-600 dark:text-emerald-400' }
 }
 
 export default function RecurringBills() {
@@ -194,7 +194,7 @@ export default function RecurringBills() {
 
   const handleSaveBill = async () => {
     if (!billForm.description || !billForm.amount || !billForm.categoryId) {
-      toast.error('Please fill in all required fields')
+      toast.error('Por favor completa todos los campos requeridos')
       return
     }
     const selectedCat = categories.find((c) => c.id === billForm.categoryId)
@@ -226,7 +226,7 @@ export default function RecurringBills() {
       })
       if (res.ok) {
         setBills((prev) => [...prev, payload])
-        toast.success(editingBill ? 'Bill updated' : 'Recurring bill added')
+        toast.success(editingBill ? 'Pago actualizado' : 'Pago recurrente agregado')
         closeDialog()
         return
       }
@@ -236,7 +236,7 @@ export default function RecurringBills() {
     } else {
       setBills((prev) => [...prev, payload])
     }
-    toast.success(editingBill ? 'Bill updated' : 'Recurring bill added')
+    toast.success(editingBill ? 'Pago actualizado' : 'Pago recurrente agregado')
     closeDialog()
   }
 
@@ -247,7 +247,7 @@ export default function RecurringBills() {
   const handleDelete = (id: string) => {
     try { fetch(`/api/expenses/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
     setBills((prev) => prev.filter((b) => b.id !== id))
-    toast.success('Bill removed')
+    toast.success('Pago eliminado')
   }
 
   const openEditDialog = (bill: RecurringBill) => {
@@ -269,18 +269,18 @@ export default function RecurringBills() {
     setBillForm({ description: '', amount: '', categoryId: '', frequency: 'monthly', startDate: format(new Date(), 'yyyy-MM-dd'), nextDate: format(new Date(), 'yyyy-MM-dd') })
   }
 
-  const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+  const DAY_LABELS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gradient">Recurring Bills</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Track subscriptions and recurring payments</p>
+          <h1 className="text-2xl font-bold text-gradient">Pagos Recurrentes</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Rastrea tus suscripciones y pagos recurrentes</p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Add Bill
+          <Plus className="w-4 h-4 mr-2" /> Agregar Pago
         </Button>
       </div>
 
@@ -299,7 +299,7 @@ export default function RecurringBills() {
                 <DollarSign className="w-6 h-6 text-rose-600 dark:text-rose-400" />
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Recurring</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Mensual</p>
                 <p className="text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400">{formatCurrency(monthlyTotal)}</p>
               </div>
             </CardContent>
@@ -310,7 +310,7 @@ export default function RecurringBills() {
                 <Repeat className="w-6 h-6 text-violet-600 dark:text-violet-400" />
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Subscriptions</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Suscripciones Activas</p>
                 <p className="text-2xl font-bold tabular-nums text-violet-600 dark:text-violet-400">{bills.length}</p>
               </div>
             </CardContent>
@@ -321,14 +321,14 @@ export default function RecurringBills() {
                 <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Payment</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Próximo Pago</p>
                 {nextPayment ? (
                   <p className="text-sm font-semibold text-foreground mt-0.5">
                     {format(parseISO(nextPayment.nextDate), 'MMM d, yyyy')}
                     <span className="text-xs text-muted-foreground ml-2">{getDaysUntilText(nextPayment.nextDate).text}</span>
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-0.5">No upcoming bills</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Sin pagos próximos</p>
                 )}
               </div>
             </CardContent>
@@ -345,10 +345,10 @@ export default function RecurringBills() {
       ) : bills.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No recurring bills</p>
-          <p className="text-sm mt-1 mb-6">Add your subscriptions and recurring payments to track them</p>
+          <p className="text-lg font-medium">Sin pagos recurrentes</p>
+          <p className="text-sm mt-1 mb-6">Agrega tus suscripciones y pagos recurrentes para rastrearlos</p>
           <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" /> Add First Bill
+            <Plus className="w-4 h-4 mr-2" /> Agregar Primer Pago
           </Button>
         </div>
       ) : (
@@ -356,8 +356,8 @@ export default function RecurringBills() {
           {/* Upcoming Bills List */}
           <Card className="card-hover">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Upcoming Bills</CardTitle>
-              <CardDescription className="text-xs">Sorted by next payment date</CardDescription>
+              <CardTitle className="text-base font-semibold">Próximos Pagos</CardTitle>
+              <CardDescription className="text-xs">Ordenados por fecha de próximo pago</CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="max-h-96 overflow-y-auto space-y-2">
@@ -480,8 +480,8 @@ export default function RecurringBills() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <Card className="card-hover">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold">Category Breakdown</CardTitle>
-                  <CardDescription className="text-xs">Recurring spend by category</CardDescription>
+                  <CardTitle className="text-base font-semibold">Desglose por Categoría</CardTitle>
+                  <CardDescription className="text-xs">Gastos recurrentes por categoría</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   {categoryBreakdown.length > 0 ? (
@@ -494,7 +494,7 @@ export default function RecurringBills() {
                             formatter={(value: number) => formatCurrency(value)}
                             contentStyle={{ borderRadius: 12, fontSize: 12, border: '1px solid var(--border)', background: 'var(--card)' }}
                           />
-                          <Bar dataKey="amount" name="Amount" radius={[0, 6, 6, 0]} barSize={16}>
+                          <Bar dataKey="amount" name="Monto" radius={[0, 6, 6, 0]} barSize={16}>
                             {categoryBreakdown.map((_, idx) => (
                               <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                             ))}
@@ -533,23 +533,23 @@ export default function RecurringBills() {
       <Dialog open={addDialogOpen} onOpenChange={(open) => { if (!open) closeDialog() }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingBill ? 'Edit Recurring Bill' : 'Add Recurring Bill'}</DialogTitle>
+            <DialogTitle>{editingBill ? 'Editar Pago Recurrente' : 'Agregar Pago Recurrente'}</DialogTitle>
             <DialogDescription>
-              {editingBill ? 'Update this recurring payment.' : 'Add a new subscription or recurring payment.'}
+              {editingBill ? 'Actualiza este pago recurrente.' : 'Agrega una nueva suscripción o pago recurrente.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>Descripción</Label>
               <Input
-                placeholder="e.g., Netflix Subscription"
+                placeholder="ej., Suscripción a Netflix"
                 value={billForm.description}
                 onChange={(e) => setBillForm({ ...billForm, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Amount ($)</Label>
+                <Label>Monto ($)</Label>
                 <Input
                   type="number" step="0.01" min="0" placeholder="0.00"
                   value={billForm.amount}
@@ -557,9 +557,9 @@ export default function RecurringBills() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>Categoría</Label>
                 <Select value={billForm.categoryId} onValueChange={(v) => setBillForm({ ...billForm, categoryId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
@@ -569,7 +569,7 @@ export default function RecurringBills() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Frequency</Label>
+              <Label>Frecuencia</Label>
               <Select value={billForm.frequency} onValueChange={(v) => setBillForm({ ...billForm, frequency: v as RecurringBill['frequency'] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -581,7 +581,7 @@ export default function RecurringBills() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Date</Label>
+                <Label>Fecha de Inicio</Label>
                 <Input
                   type="date"
                   value={billForm.startDate}
@@ -589,7 +589,7 @@ export default function RecurringBills() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Next Payment</Label>
+                <Label>Próximo Pago</Label>
                 <Input
                   type="date"
                   value={billForm.nextDate}
@@ -599,9 +599,9 @@ export default function RecurringBills() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+            <Button variant="outline" onClick={closeDialog}>Cancelar</Button>
             <Button onClick={handleSaveBill} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              {editingBill ? 'Save Changes' : 'Add Bill'}
+              {editingBill ? 'Guardar Cambios' : 'Agregar Pago'}
             </Button>
           </DialogFooter>
         </DialogContent>

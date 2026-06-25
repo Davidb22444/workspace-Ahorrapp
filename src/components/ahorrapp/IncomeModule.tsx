@@ -25,6 +25,24 @@ import { format } from 'date-fns'
 const SOURCES = ['salary', 'bonus', 'rent', 'freelance', 'investment', 'other'] as const
 const FREQUENCIES = ['one-time', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const
 
+const SOURCE_LABELS: Record<string, string> = {
+  salary: 'Salario',
+  bonus: 'Bono',
+  rent: 'Renta',
+  freelance: 'Freelance',
+  investment: 'Inversión',
+  other: 'Otro',
+}
+
+const FREQUENCY_LABELS: Record<string, string> = {
+  'one-time': 'Único',
+  weekly: 'Semanal',
+  biweekly: 'Quincenal',
+  monthly: 'Mensual',
+  quarterly: 'Trimestral',
+  yearly: 'Anual',
+}
+
 interface Income {
   id: string
   source: string
@@ -106,14 +124,14 @@ export default function IncomeModule() {
   }
 
   const handleSave = async () => {
-    if (!form.amount || !form.description) { toast.error('Please fill in amount and description'); return }
+    if (!form.amount || !form.description) { toast.error('Por favor completa el monto y la descripción'); return }
     const payload = { ...form, amount: parseFloat(form.amount) }
     try {
       const url = editingId ? `/api/income/${editingId}` : '/api/income'
       const method = editingId ? 'PUT' : 'POST'
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, accountId: user?.id }) })
       if (res.ok) {
-        toast.success(editingId ? 'Income updated' : 'Income added')
+        toast.success(editingId ? 'Ingreso actualizado' : 'Ingreso agregado')
         if (editingId) {
           setIncomes((prev) => prev.map((i) => i.id === editingId ? { ...i, ...payload } : i))
         } else {
@@ -127,10 +145,10 @@ export default function IncomeModule() {
     // Local fallback
     if (editingId) {
       setIncomes((prev) => prev.map((i) => i.id === editingId ? { ...i, ...payload } : i))
-      toast.success('Income updated')
+      toast.success('Ingreso actualizado')
     } else {
       setIncomes((prev) => [{ ...payload, id: Date.now().toString() }, ...prev])
-      toast.success('Income added')
+      toast.success('Ingreso agregado')
     }
     setDialogOpen(false)
     resetForm()
@@ -139,10 +157,10 @@ export default function IncomeModule() {
   const handleDelete = async (id: string) => {
     try {
       const res = await fetch(`/api/income/${id}?accountId=${user?.id}`, { method: 'DELETE' })
-      if (res.ok) { setIncomes((prev) => prev.filter((i) => i.id !== id)); toast.success('Income deleted'); return }
+      if (res.ok) { setIncomes((prev) => prev.filter((i) => i.id !== id)); toast.success('Ingreso eliminado'); return }
     } catch { /* fallback */ }
     setIncomes((prev) => prev.filter((i) => i.id !== id))
-    toast.success('Income deleted')
+    toast.success('Ingreso eliminado')
   }
 
   const filtered = incomes.filter((i) => {
@@ -160,7 +178,7 @@ export default function IncomeModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Ingresos</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Manage your income sources</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Administra tus fuentes de ingreso</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => {
@@ -169,10 +187,10 @@ export default function IncomeModule() {
             link.download = `ahorrapp-income-${format(new Date(), 'yyyy-MM-dd')}.csv`
             link.click()
           }}>
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 mr-2" /> Exportar CSV
           </Button>
           <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" /> Add Income
+            <Plus className="w-4 h-4 mr-2" /> Agregar Ingreso
           </Button>
         </div>
       </div>
@@ -184,7 +202,7 @@ export default function IncomeModule() {
             <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Income This Month</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total de Ingresos Este Mes</p>
             <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatCurrency(thisMonth)}</p>
           </div>
         </CardContent>
@@ -194,17 +212,17 @@ export default function IncomeModule() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search incomes..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar ingresos..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterSource} onValueChange={setFilterSource}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Filter by source" />
+            <SelectValue placeholder="Filtrar por fuente" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
+            <SelectItem value="all">Todas las Fuentes</SelectItem>
             {SOURCES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+              <SelectItem key={s} value={s}>{SOURCE_LABELS[s] || s}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -230,12 +248,12 @@ export default function IncomeModule() {
                 <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-1">No incomes yet</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-1">Sin ingresos aún</h3>
                 <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-                  Start tracking your income sources to get a clear picture of your earnings.
+                  Comienza a rastrear tus fuentes de ingreso para tener una visión clara de tus ganancias.
                 </p>
                 <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Plus className="w-4 h-4 mr-2" /> Add Your First Income
+                  <Plus className="w-4 h-4 mr-2" /> Agregar Tu Primer Ingreso
                 </Button>
               </div>
             </div>
@@ -244,12 +262,12 @@ export default function IncomeModule() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead className="hidden sm:table-cell">Description</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead className="hidden md:table-cell">Frequency</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Fuente</TableHead>
+                    <TableHead className="hidden sm:table-cell">Descripción</TableHead>
+                    <TableHead>Monto</TableHead>
+                    <TableHead className="hidden md:table-cell">Frecuencia</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -259,8 +277,8 @@ export default function IncomeModule() {
                         {format(new Date(inc.date), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="capitalize bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                          {inc.source}
+                        <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                          {SOURCE_LABELS[inc.source] || inc.source}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm font-medium max-w-[200px] truncate">
@@ -273,7 +291,7 @@ export default function IncomeModule() {
                         </span>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <span className="text-xs text-muted-foreground capitalize">{inc.frequency}</span>
+                        <span className="text-xs text-muted-foreground">{FREQUENCY_LABELS[inc.frequency] || inc.frequency}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out">
@@ -298,55 +316,55 @@ export default function IncomeModule() {
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); resetForm() } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Income' : 'Add Income'}</DialogTitle>
-            <DialogDescription>Enter the details for this income entry.</DialogDescription>
+            <DialogTitle>{editingId ? 'Editar Ingreso' : 'Agregar Ingreso'}</DialogTitle>
+            <DialogDescription>Ingresa los detalles para este ingreso.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Source</Label>
+              <Label>Fuente</Label>
               <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SOURCES.map((s) => (
-                    <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                    <SelectItem key={s} value={s}>{SOURCE_LABELS[s] || s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Amount ($)</Label>
+              <Label>Monto ($)</Label>
               <Input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Input placeholder="Describe this income..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <Label>Descripción</Label>
+              <Input placeholder="Describe este ingreso..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Frequency</Label>
+                <Label>Frecuencia</Label>
                 <Select value={form.frequency} onValueChange={(v) => setForm({ ...form, frequency: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {FREQUENCIES.map((f) => (
-                      <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>
+                      <SelectItem key={f} value={f}>{FREQUENCY_LABELS[f] || f}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Date</Label>
+                <Label>Fecha</Label>
                 <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Category (optional)</Label>
-              <Input placeholder="e.g., Employment, Freelance..." value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+              <Label>Categoría (opcional)</Label>
+              <Input placeholder="ej., Empleo, Freelance..." value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancelar</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              {editingId ? 'Update' : 'Add Income'}
+              {editingId ? 'Actualizar' : 'Agregar Ingreso'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -55,31 +55,31 @@ function getGoalEmoji(name: string): string {
 
 const mockGoals: SavingsGoal[] = [
   {
-    id: '1', name: 'Emergency Fund', icon: '🛡️', saved: 4500, target: 10000, deadline: '2025-12-31', color: '#10b981',
+    id: '1', name: 'Fondo de Emergencia', icon: '🛡️', saved: 4500, target: 10000, deadline: '2025-12-31', color: '#10b981',
     contributions: [
-      { id: 'c1', amount: 500, date: '2025-06-01', note: 'Monthly contribution' },
-      { id: 'c2', amount: 500, date: '2025-05-01', note: 'Monthly contribution' },
-      { id: 'c3', amount: 300, date: '2025-04-15', note: 'Extra savings' },
+      { id: 'c1', amount: 500, date: '2025-06-01', note: 'Contribución mensual' },
+      { id: 'c2', amount: 500, date: '2025-05-01', note: 'Contribución mensual' },
+      { id: 'c3', amount: 300, date: '2025-04-15', note: 'Ahorros extra' },
     ],
   },
   {
-    id: '2', name: 'Vacation to Europe', icon: '✈️', saved: 1200, target: 3000, deadline: '2025-08-15', color: '#06b6d4',
+    id: '2', name: 'Vacaciones a Europa', icon: '✈️', saved: 1200, target: 3000, deadline: '2025-08-15', color: '#06b6d4',
     contributions: [
-      { id: 'c4', amount: 200, date: '2025-06-01', note: 'Saving for flights' },
-      { id: 'c5', amount: 150, date: '2025-05-15', note: 'Side hustle income' },
+      { id: 'c4', amount: 200, date: '2025-06-01', note: 'Ahorro para vuelos' },
+      { id: 'c5', amount: 150, date: '2025-05-15', note: 'Ingreso extra' },
     ],
   },
   {
-    id: '3', name: 'New Laptop', icon: '💻', saved: 800, target: 2000, color: '#8b5cf6',
+    id: '3', name: 'Laptop Nueva', icon: '💻', saved: 800, target: 2000, color: '#8b5cf6',
     contributions: [
-      { id: 'c6', amount: 200, date: '2025-06-05', note: 'Monthly savings' },
+      { id: 'c6', amount: 200, date: '2025-06-05', note: 'Ahorros mensuales' },
     ],
   },
   {
-    id: '4', name: 'House Down Payment', icon: '🏠', saved: 15000, target: 50000, deadline: '2027-06-01', color: '#f59e0b',
+    id: '4', name: 'Enganche de Casa', icon: '🏠', saved: 15000, target: 50000, deadline: '2027-06-01', color: '#f59e0b',
     contributions: [
-      { id: 'c7', amount: 2000, date: '2025-06-01', note: 'Monthly contribution' },
-      { id: 'c8', amount: 2000, date: '2025-05-01', note: 'Monthly contribution' },
+      { id: 'c7', amount: 2000, date: '2025-06-01', note: 'Contribución mensual' },
+      { id: 'c8', amount: 2000, date: '2025-05-01', note: 'Contribución mensual' },
     ],
   },
 ]
@@ -134,27 +134,27 @@ export default function SavingsModule() {
   }, [])
 
   const handleAddGoal = async () => {
-    if (!goalForm.name || !goalForm.target) { toast.error('Please fill in name and target'); return }
+    if (!goalForm.name || !goalForm.target) { toast.error('Por favor completa nombre y meta'); return }
     const payload = { ...goalForm, target: parseFloat(goalForm.target), saved: 0, icon: goalForm.icon || getGoalEmoji(goalForm.name) }
     try {
       const res = await fetch('/api/savings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, accountId: user?.id }) })
       if (res.ok) {
         const newGoal = { ...payload, id: Date.now().toString(), contributions: [], color: GOAL_COLORS[goals.length % GOAL_COLORS.length] }
         setGoals((prev) => [...prev, newGoal])
-        toast.success('Savings goal created')
+        toast.success('Meta de ahorro creada')
         setAddDialogOpen(false)
         setGoalForm({ name: '', icon: '💰', target: '', deadline: '' })
         return
       }
     } catch { /* fallback */ }
     setGoals((prev) => [...prev, { ...payload, id: Date.now().toString(), contributions: [], color: GOAL_COLORS[goals.length % GOAL_COLORS.length] }])
-    toast.success('Savings goal created')
+    toast.success('Meta de ahorro creada')
     setAddDialogOpen(false)
     setGoalForm({ name: '', icon: '💰', target: '', deadline: '' })
   }
 
   const handleContribute = async () => {
-    if (!contributeForm.amount || !selectedGoal) { toast.error('Please enter an amount'); return }
+    if (!contributeForm.amount || !selectedGoal) { toast.error('Por favor ingresa un monto'); return }
     const amount = parseFloat(contributeForm.amount)
     const contribution: Contribution = { id: Date.now().toString(), amount, date: format(new Date(), 'yyyy-MM-dd'), note: contributeForm.note || undefined }
 
@@ -170,7 +170,7 @@ export default function SavingsModule() {
             ? { ...g, saved: g.saved + amount, contributions: [contribution, ...(g.contributions || [])] }
             : g
         ))
-        toast.success(`Contributed ${formatCurrency(amount)} to ${selectedGoal.name}`)
+        toast.success(`Contribución de ${formatCurrency(amount)} a ${selectedGoal.name}`)
         setContributeDialogOpen(false)
         setContributeForm({ amount: '', note: '' })
         return
@@ -181,7 +181,7 @@ export default function SavingsModule() {
         ? { ...g, saved: g.saved + amount, contributions: [contribution, ...(g.contributions || [])] }
         : g
     ))
-    toast.success(`Contributed ${formatCurrency(amount)} to ${selectedGoal.name}`)
+    toast.success(`Contribución de ${formatCurrency(amount)} a ${selectedGoal.name}`)
     setContributeDialogOpen(false)
     setContributeForm({ amount: '', note: '' })
   }
@@ -195,7 +195,7 @@ export default function SavingsModule() {
   const handleDeleteGoal = async (id: string) => {
     try { await fetch(`/api/savings/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
     setGoals((prev) => prev.filter((g) => g.id !== id))
-    toast.success('Goal deleted')
+    toast.success('Meta eliminada')
   }
 
   const totalSaved = goals.reduce((sum, g) => sum + g.saved, 0)
@@ -209,10 +209,10 @@ export default function SavingsModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Ahorros</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Track your savings goals</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Sigue tus metas de ahorro</p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Add Goal
+          <Plus className="w-4 h-4 mr-2" /> Agregar Meta
         </Button>
       </div>
 
@@ -224,16 +224,16 @@ export default function SavingsModule() {
               <PiggyBank className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Saved</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Ahorrado</p>
               <p className="text-2xl font-bold tabular-nums text-gradient">{formatCurrency(totalSaved)}</p>
-              <p className="text-xs text-muted-foreground">of {formatCurrency(totalTarget)} total goals</p>
+              <p className="text-xs text-muted-foreground">de {formatCurrency(totalTarget)} en metas totales</p>
             </div>
           </CardContent>
         </Card>
         <Card className="stat-card card-hover card-accent" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#34d399' } as React.CSSProperties}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Overall Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">Progreso General</span>
               <span className="text-sm font-bold tabular-nums text-primary">
                 {totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0}%
               </span>
@@ -261,12 +261,12 @@ export default function SavingsModule() {
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
               <PiggyBank className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">No savings goals yet</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Sin metas de ahorro aún</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              Set your first savings goal to start building a better financial future. Every dollar counts!
+              Establece tu primera meta de ahorro para comenzar a construir un mejor futuro financiero. ¡Cada centavo cuenta!
             </p>
             <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="w-4 h-4 mr-2" /> Create Your First Goal
+              <Plus className="w-4 h-4 mr-2" /> Crear Tu Primera Meta
             </Button>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function SavingsModule() {
 
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Saved</span>
+                          <span className="text-muted-foreground">Ahorrado</span>
                           <span className="font-semibold tabular-nums text-foreground">{formatCurrency(goal.saved)}</span>
                         </div>
                         <div className="relative group/prog">
@@ -327,8 +327,8 @@ export default function SavingsModule() {
                           </button>
                         </div>
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{formatCurrency(goal.target)} goal</span>
-                          <span>{formatCurrency(Math.max(0, goal.target - goal.saved))} remaining</span>
+                          <span>{formatCurrency(goal.target)} meta</span>
+                          <span>{formatCurrency(Math.max(0, goal.target - goal.saved))} restante</span>
                         </div>
                       </div>
 
@@ -345,7 +345,7 @@ export default function SavingsModule() {
                               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-8"
                               onClick={() => { setSelectedGoal(goal); setContributeDialogOpen(true) }}
                             >
-                              <DollarSign className="w-3.5 h-3.5 mr-1" /> Contribute
+                              <DollarSign className="w-3.5 h-3.5 mr-1" /> Contribuir
                             </Button>
                             <Button
                               size="sm"
@@ -360,7 +360,7 @@ export default function SavingsModule() {
                           {goal.contributions && goal.contributions.length > 0 && (
                             <div className="space-y-2">
                               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                <History className="w-3 h-3" /> Contribution Timeline
+                                <History className="w-3 h-3" /> Línea de Tiempo de Contribuciones
                               </p>
                               <div className="max-h-48 overflow-y-auto pl-4 relative">
                                 <div className="absolute left-[7px] top-2 bottom-2 w-px border-l-2 border-dashed border-border" />
@@ -415,7 +415,7 @@ export default function SavingsModule() {
                 onClick={() => setShowAll(true)}
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
               >
-                View all in Ahorros
+                Ver todo en Ahorros
                 <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
@@ -431,7 +431,7 @@ export default function SavingsModule() {
                 onClick={() => setShowAll(false)}
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors"
               >
-                Show less
+                Ver menos
               </button>
             </motion.div>
           )}
@@ -442,12 +442,12 @@ export default function SavingsModule() {
       <Dialog open={addDialogOpen} onOpenChange={(open) => { if (!open) setAddDialogOpen(false) }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Savings Goal</DialogTitle>
-            <DialogDescription>Set a new financial target to save toward.</DialogDescription>
+            <DialogTitle>Crear Meta de Ahorro</DialogTitle>
+            <DialogDescription>Establece un nuevo objetivo financiero para ahorrar.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Icon</Label>
+              <Label>Ícono</Label>
               <div className="flex flex-wrap gap-2">
                 {ICON_OPTIONS.map((icon) => (
                   <button
@@ -462,23 +462,23 @@ export default function SavingsModule() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Goal Name</Label>
-              <Input placeholder="e.g., Emergency Fund" value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} />
+              <Label>Nombre de la Meta</Label>
+              <Input placeholder="ej., Fondo de Emergencia" value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Target Amount ($)</Label>
+                <Label>Monto Objetivo ($)</Label>
                 <Input type="number" step="0.01" min="0" placeholder="0.00" value={goalForm.target} onChange={(e) => setGoalForm({ ...goalForm, target: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Deadline (optional)</Label>
+                <Label>Fecha Límite (opcional)</Label>
                 <Input type="date" value={goalForm.deadline} onChange={(e) => setGoalForm({ ...goalForm, deadline: e.target.value })} />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddGoal} className="bg-primary hover:bg-primary/90 text-primary-foreground">Create Goal</Button>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAddGoal} className="bg-primary hover:bg-primary/90 text-primary-foreground">Crear Meta</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -487,27 +487,27 @@ export default function SavingsModule() {
       <Dialog open={contributeDialogOpen} onOpenChange={(open) => { if (!open) { setContributeDialogOpen(false); setContributeForm({ amount: '', note: '' }) } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Contribute to {selectedGoal?.name}</DialogTitle>
-            <DialogDescription>Add money toward your savings goal.</DialogDescription>
+            <DialogTitle>Contribuir a {selectedGoal?.name}</DialogTitle>
+            <DialogDescription>Agrega dinero a tu meta de ahorro.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="bg-muted rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground">Current Progress</p>
+              <p className="text-xs text-muted-foreground">Progreso Actual</p>
               <p className="text-lg font-bold tabular-nums text-gradient">{formatCurrency(selectedGoal?.saved || 0)}</p>
-              <p className="text-xs text-muted-foreground">of {formatCurrency(selectedGoal?.target || 0)}</p>
+              <p className="text-xs text-muted-foreground">de {formatCurrency(selectedGoal?.target || 0)}</p>
             </div>
             <div className="space-y-2">
-              <Label>Amount ($)</Label>
+              <Label>Monto ($)</Label>
               <Input type="number" step="0.01" min="0" placeholder="0.00" value={contributeForm.amount} onChange={(e) => setContributeForm({ ...contributeForm, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Note (optional)</Label>
-              <Input placeholder="e.g., Monthly contribution" value={contributeForm.note} onChange={(e) => setContributeForm({ ...contributeForm, note: e.target.value })} />
+              <Label>Nota (opcional)</Label>
+              <Input placeholder="ej., Contribución mensual" value={contributeForm.note} onChange={(e) => setContributeForm({ ...contributeForm, note: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setContributeDialogOpen(false); setContributeForm({ amount: '', note: '' }) }}>Cancel</Button>
-            <Button onClick={handleContribute} className="bg-primary hover:bg-primary/90 text-primary-foreground">Add Contribution</Button>
+            <Button variant="outline" onClick={() => { setContributeDialogOpen(false); setContributeForm({ amount: '', note: '' }) }}>Cancelar</Button>
+            <Button onClick={handleContribute} className="bg-primary hover:bg-primary/90 text-primary-foreground">Agregar Contribución</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

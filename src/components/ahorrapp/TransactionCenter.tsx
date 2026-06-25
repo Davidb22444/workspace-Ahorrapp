@@ -207,10 +207,10 @@ export default function TransactionCenter() {
   }
 
   const typeFilters: { key: TypeFilter; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'income', label: 'Income' },
-    { key: 'expense', label: 'Expenses' },
-    { key: 'unexpected', label: 'Unexpected' },
+    { key: 'all', label: 'Todos' },
+    { key: 'income', label: 'Ingreso' },
+    { key: 'expense', label: 'Gastos' },
+    { key: 'unexpected', label: 'Imprevisto' },
   ]
 
   return (
@@ -222,9 +222,9 @@ export default function TransactionCenter() {
         className="flex items-center justify-between"
       >
         <div className="module-header">
-          <h2 className="text-2xl font-bold text-foreground">Transaction Center</h2>
+          <h2 className="text-2xl font-bold text-foreground">Centro de Transacciones</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Search and filter all your transactions in one place
+            Rastrea y filtra todas tus transacciones
           </p>
         </div>
       </motion.div>
@@ -239,7 +239,7 @@ export default function TransactionCenter() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search transactions..."
+            placeholder="Buscar transacciones..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
             className="pl-9"
@@ -252,7 +252,7 @@ export default function TransactionCenter() {
           className={cn('gap-2', hasActiveFilters && !filtersOpen && 'border-primary text-primary')}
         >
           <Filter className="w-4 h-4" />
-          <span className="hidden sm:inline">Filters</span>
+          <span className="hidden sm:inline">Filtros</span>
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1.5 text-[10px]">
               {[
@@ -281,7 +281,7 @@ export default function TransactionCenter() {
                 {/* Type filter tabs */}
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
-                    Type
+                    Tipo
                   </Label>
                   <div className="flex gap-1 bg-muted/50 p-1 rounded-lg w-fit">
                     {typeFilters.map((tf) => (
@@ -305,7 +305,7 @@ export default function TransactionCenter() {
                   {/* Date from */}
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      <Calendar className="w-3 h-3 inline mr-1" />From Date
+                      <Calendar className="w-3 h-3 inline mr-1" />Desde
                     </Label>
                     <Input
                       type="date"
@@ -316,7 +316,7 @@ export default function TransactionCenter() {
                   {/* Date to */}
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      <Calendar className="w-3 h-3 inline mr-1" />To Date
+                      <Calendar className="w-3 h-3 inline mr-1" />Hasta
                     </Label>
                     <Input
                       type="date"
@@ -327,7 +327,7 @@ export default function TransactionCenter() {
                   {/* Amount min */}
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      <DollarSign className="w-3 h-3 inline mr-1" />Min Amount
+                      <DollarSign className="w-3 h-3 inline mr-1" />Monto Mínimo
                     </Label>
                     <Input
                       type="number"
@@ -341,11 +341,11 @@ export default function TransactionCenter() {
                   {/* Amount max */}
                   <div>
                     <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                      <DollarSign className="w-3 h-3 inline mr-1" />Max Amount
+                      <DollarSign className="w-3 h-3 inline mr-1" />Monto Máximo
                     </Label>
                     <Input
                       type="number"
-                      placeholder="No limit"
+                      placeholder="Sin límite"
                       value={amountMax}
                       onChange={(e) => setAmountMax(e.target.value)}
                       min={0}
@@ -357,14 +357,14 @@ export default function TransactionCenter() {
                 {/* Category filter */}
                 <div className="max-w-xs">
                   <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    Category
+                    Categoría
                   </Label>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All Categories" />
+                      <SelectValue placeholder="Todas las Categorías" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="all">Todas las Categorías</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           <span className="flex items-center gap-2">
@@ -382,7 +382,7 @@ export default function TransactionCenter() {
 
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                    Clear all filters
+                    Limpiar todos los filtros
                   </Button>
                 )}
               </CardContent>
@@ -400,19 +400,19 @@ export default function TransactionCenter() {
           className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground bg-muted/40 rounded-lg px-4 py-2.5"
         >
           <span>
-            Showing <strong className="text-foreground">{filtered.length}</strong> transaction{filtered.length !== 1 ? 's' : ''}
+            Mostrando <strong className="text-foreground">{filtered.length}</strong> transaccion{filtered.length !== 1 ? 'es' : ''}
           </span>
           <span className="hidden sm:inline text-border">|</span>
           <span className="text-emerald-600 dark:text-emerald-400">
-            Income: <strong>{formatCurrency(totalIncome)}</strong>
+            Ingresos: <strong>{formatCurrency(totalIncome)}</strong>
           </span>
           <span className="hidden sm:inline text-border">|</span>
           <span className="text-rose-600 dark:text-rose-400">
-            Expenses: <strong>{formatCurrency(totalExpenses)}</strong>
+            Gastos: <strong>{formatCurrency(totalExpenses)}</strong>
           </span>
           <span className="hidden sm:inline text-border">|</span>
           <span className={cn('font-medium', net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
-            Net: {formatCurrency(net)}
+            Neto: {formatCurrency(net)}
           </span>
         </motion.div>
       )}
@@ -442,16 +442,16 @@ export default function TransactionCenter() {
         >
           <Search className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-1">
-            {hasActiveFilters ? 'No transactions match your filters' : 'No transactions yet'}
+            {hasActiveFilters ? 'Sin transacciones encontradas' : 'Sin transacciones aún'}
           </h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             {hasActiveFilters
-              ? 'Try adjusting your search criteria or clearing the filters.'
-              : 'Start by adding income or expenses to see them here.'}
+              ? 'Intenta ajustar tus filtros'
+              : 'Comienza agregando ingresos o gastos para verlos aquí.'}
           </p>
           {hasActiveFilters && (
             <Button variant="outline" size="sm" onClick={clearFilters} className="mt-4">
-              Clear Filters
+              Limpiar Filtros
             </Button>
           )}
         </motion.div>
@@ -535,14 +535,14 @@ export default function TransactionCenter() {
                     {t.type === 'expense' && t.isRecurring && (
                       <>
                         <span className="text-border">·</span>
-                        <span>Recurring</span>
+                        <span>Recurrente</span>
                       </>
                     )}
                     {t.type === 'unexpected' && (
                       <>
                         <span className="text-border">·</span>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">
-                          {t.resolved ? 'Resolved' : 'Pending'}
+                          {t.resolved ? 'Resuelto' : 'Pendiente'}
                         </Badge>
                       </>
                     )}
@@ -577,7 +577,7 @@ export default function TransactionCenter() {
           className="flex items-center justify-between pt-2"
         >
           <p className="text-xs text-muted-foreground">
-            Page {page} of {totalPages} · {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+            Página {page} de {totalPages} · {(page - 1) * ITEMS_PER_PAGE + 1}–{Math.min(page * ITEMS_PER_PAGE, filtered.length)} de {filtered.length}
           </p>
           <div className="flex items-center gap-1">
             <Button

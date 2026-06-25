@@ -24,16 +24,28 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 
 const CATEGORIES = [
-  { id: 'housing', name: 'Housing', color: '#10b981' },
-  { id: 'food', name: 'Food', color: '#f59e0b' },
-  { id: 'transport', name: 'Transport', color: '#f43f5e' },
-  { id: 'entertainment', name: 'Entertainment', color: '#6366f1' },
-  { id: 'utilities', name: 'Utilities', color: '#06b6d4' },
-  { id: 'health', name: 'Health', color: '#ec4899' },
-  { id: 'education', name: 'Education', color: '#8b5cf6' },
-  { id: 'clothing', name: 'Clothing', color: '#14b8a6' },
-  { id: 'other', name: 'Other', color: '#64748b' },
+  { id: 'housing', name: 'Vivienda', color: '#10b981' },
+  { id: 'food', name: 'Alimentación', color: '#f59e0b' },
+  { id: 'transport', name: 'Transporte', color: '#f43f5e' },
+  { id: 'entertainment', name: 'Entretenimiento', color: '#6366f1' },
+  { id: 'utilities', name: 'Servicios', color: '#06b6d4' },
+  { id: 'health', name: 'Salud', color: '#ec4899' },
+  { id: 'education', name: 'Educación', color: '#8b5cf6' },
+  { id: 'clothing', name: 'Ropa', color: '#14b8a6' },
+  { id: 'other', name: 'Otro', color: '#64748b' },
 ]
+
+const CATEGORY_LABELS: Record<string, string> = {
+  housing: 'Vivienda',
+  food: 'Alimentación',
+  transport: 'Transporte',
+  entertainment: 'Entretenimiento',
+  utilities: 'Servicios',
+  health: 'Salud',
+  education: 'Educación',
+  clothing: 'Ropa',
+  other: 'Otro',
+}
 
 interface ApiCategory {
   id: string
@@ -170,7 +182,7 @@ export default function ExpenseModule() {
   }
 
   const handleSave = async () => {
-    if (!form.amount || !form.description) { toast.error('Please fill in amount and description'); return }
+    if (!form.amount || !form.description) { toast.error('Por favor completa el monto y la descripción'); return }
     const payload = {
       ...form,
       amount: parseFloat(form.amount),
@@ -188,7 +200,7 @@ export default function ExpenseModule() {
         } else {
           setExpenses((prev) => editingId ? prev.map((e) => e.id === editingId ? newExp : e) : [newExp, ...prev])
         }
-        toast.success(editingId ? 'Expense updated' : 'Expense added')
+        toast.success(editingId ? 'Gasto actualizado' : 'Gasto agregado')
         setDialogOpen(false)
         resetForm()
         return
@@ -200,7 +212,7 @@ export default function ExpenseModule() {
     } else {
       setExpenses((prev) => editingId ? prev.map((e) => e.id === editingId ? newExp : e) : [newExp, ...prev])
     }
-    toast.success(editingId ? 'Expense updated' : 'Expense added')
+    toast.success(editingId ? 'Gasto actualizado' : 'Gasto agregado')
     setDialogOpen(false)
     resetForm()
   }
@@ -211,13 +223,13 @@ export default function ExpenseModule() {
       if (res.ok) {
         if (isUnexp) setUnexpected((prev) => prev.filter((e) => e.id !== id))
         else setExpenses((prev) => prev.filter((e) => e.id !== id))
-        toast.success('Expense deleted')
+        toast.success('Gasto eliminado')
         return
       }
     } catch { /* fallback */ }
     if (isUnexp) setUnexpected((prev) => prev.filter((e) => e.id !== id))
     else setExpenses((prev) => prev.filter((e) => e.id !== id))
-    toast.success('Expense deleted')
+    toast.success('Gasto eliminado')
   }
 
   const filterList = (list: Expense[]) =>
@@ -253,14 +265,14 @@ export default function ExpenseModule() {
                 ? <AlertTriangle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
                 : <ShoppingCart className="w-8 h-8 text-rose-500 dark:text-rose-400" />}
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">No {isUnexp ? 'unexpected expenses' : 'expenses'} yet</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1">Sin {isUnexp ? 'gastos imprevistos' : 'gastos'} aún</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               {isUnexp
-                ? 'Good news! No unexpected expenses recorded. Keep it that way.'
-                : 'Start tracking your expenses to understand where your money goes.'}
+                ? '¡Buenas noticias! No hay gastos imprevistos registrados. ¡Mantén así!'
+                : 'Comienza a rastrear tus gastos para entender dónde va tu dinero.'}
             </p>
             <Button onClick={() => openAdd(isUnexp)} className={isUnexp ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white'}>
-              <Plus className="w-4 h-4 mr-2" /> Log {isUnexp ? 'Unexpected Expense' : 'Your First Expense'}
+              <Plus className="w-4 h-4 mr-2" /> {isUnexp ? 'Registrar Gasto Imprevisto' : 'Registrar Primer Gasto'}
             </Button>
           </div>
         </div>
@@ -269,12 +281,12 @@ export default function ExpenseModule() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="hidden sm:table-cell">Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead className="hidden md:table-cell">Recurring</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Categoría</TableHead>
+                <TableHead className="hidden sm:table-cell">Descripción</TableHead>
+                <TableHead>Monto</TableHead>
+                <TableHead className="hidden md:table-cell">Recurrente</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -292,7 +304,7 @@ export default function ExpenseModule() {
                         color: exp.categoryColor || '#64748b',
                       }}
                     >
-                      {exp.category}
+                      {CATEGORY_LABELS[exp.category] || exp.category}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-sm font-medium max-w-[200px] truncate">{exp.description}</TableCell>
@@ -303,7 +315,7 @@ export default function ExpenseModule() {
                     </span>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {exp.isRecurring ? <Badge variant="outline" className="text-xs">Recurring</Badge> : <span className="text-xs text-muted-foreground">One-time</span>}
+                    {exp.isRecurring ? <Badge variant="outline" className="text-xs">Recurrente</Badge> : <span className="text-xs text-muted-foreground">Único</span>}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -329,7 +341,7 @@ export default function ExpenseModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Gastos</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Track and manage your expenses</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Rastrea y administra tus gastos</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => {
@@ -338,13 +350,13 @@ export default function ExpenseModule() {
             link.download = `ahorrapp-expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`
             link.click()
           }}>
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+            <Download className="w-4 h-4 mr-2" /> Exportar CSV
           </Button>
           <Button variant="outline" onClick={() => setActiveModule('unexpected')}>
-            <AlertTriangle className="w-4 h-4 mr-2" /> Manage Imprevistos
+            <AlertTriangle className="w-4 h-4 mr-2" /> Administrar Imprevistos
           </Button>
           <Button onClick={() => openAdd(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" /> Add Expense
+            <Plus className="w-4 h-4 mr-2" /> Agregar Gasto
           </Button>
         </div>
       </div>
@@ -357,7 +369,7 @@ export default function ExpenseModule() {
               <ShoppingCart className="w-6 h-6 text-rose-600 dark:text-rose-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Expenses This Month</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total de Gastos Este Mes</p>
               <p className="text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400">{formatCurrency(thisMonthTotal)}</p>
             </div>
           </CardContent>
@@ -368,7 +380,7 @@ export default function ExpenseModule() {
               <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Unexpected This Month</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Imprevistos Este Mes</p>
               <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{formatCurrency(thisMonthUnexpected)}</p>
             </div>
           </CardContent>
@@ -379,15 +391,15 @@ export default function ExpenseModule() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search expenses..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar gastos..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Filter by category" />
+            <SelectValue placeholder="Filtrar por categoría" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="all">Todas las Categorías</SelectItem>
             {CATEGORIES.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
@@ -398,7 +410,7 @@ export default function ExpenseModule() {
       {/* Tabs */}
       <Tabs defaultValue="planned">
         <TabsList>
-          <TabsTrigger value="planned">Gastos Planificados ({filterList(expenses).length})</TabsTrigger>
+          <TabsTrigger value="planned">Planeados ({filterList(expenses).length})</TabsTrigger>
           <TabsTrigger value="unexpected">Imprevistos ({filterList(unexpected).length})</TabsTrigger>
         </TabsList>
         <TabsContent value="planned">
@@ -416,7 +428,7 @@ export default function ExpenseModule() {
           </Card>
           <div className="mt-4 flex justify-center">
             <Button variant="outline" onClick={() => openAdd(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Log Unexpected Expense
+              <Plus className="w-4 h-4 mr-2" /> Registrar Gasto Imprevisto
             </Button>
           </div>
         </TabsContent>
@@ -426,21 +438,21 @@ export default function ExpenseModule() {
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); resetForm() } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Expense' : isUnexpectedMode ? 'Log Unexpected Expense' : 'Add Expense'}</DialogTitle>
-            <DialogDescription>{isUnexpectedMode ? 'Record an unexpected expense.' : 'Enter the details for this expense.'}</DialogDescription>
+            <DialogTitle>{editingId ? 'Editar Gasto' : isUnexpectedMode ? 'Registrar Gasto Imprevisto' : 'Agregar Gasto'}</DialogTitle>
+            <DialogDescription>{isUnexpectedMode ? 'Registra un gasto imprevisto.' : 'Ingresa los detalles para este gasto.'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Amount ($)</Label>
+              <Label>Monto ($)</Label>
               <Input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Input placeholder="Describe this expense..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <Label>Descripción</Label>
+              <Input placeholder="Describe este gasto..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>Categoría</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -451,7 +463,7 @@ export default function ExpenseModule() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Date</Label>
+                <Label>Fecha</Label>
                 <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
               </div>
             </div>
@@ -463,14 +475,14 @@ export default function ExpenseModule() {
                 disabled={isUnexpectedMode}
               />
               <Label htmlFor="recurring" className={isUnexpectedMode ? 'opacity-50' : ''}>
-                Recurring expense
+                Gasto recurrente
               </Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancelar</Button>
             <Button onClick={handleSave} className="bg-rose-600 hover:bg-rose-700 text-white">
-              {editingId ? 'Update' : isUnexpectedMode ? 'Log Expense' : 'Add Expense'}
+              {editingId ? 'Actualizar' : isUnexpectedMode ? 'Registrar Gasto' : 'Agregar Gasto'}
             </Button>
           </DialogFooter>
         </DialogContent>

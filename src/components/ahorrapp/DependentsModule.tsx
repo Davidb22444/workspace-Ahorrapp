@@ -32,6 +32,14 @@ interface Dependent {
 
 const RELATIONSHIPS = ['spouse', 'child', 'parent', 'sibling', 'other']
 
+const relationshipLabels: Record<string, string> = {
+  spouse: 'Cónyuge',
+  child: 'Hijo/a',
+  parent: 'Padre/Madre',
+  sibling: 'Hermano/a',
+  other: 'Otro',
+}
+
 const mockDependents: Dependent[] = [
   { id: '1', name: 'Maria Garcia', relationship: 'spouse', economicWeight: 30, totalSpending: 1026 },
   { id: '2', name: 'Carlos Garcia', relationship: 'child', economicWeight: 20, totalSpending: 684 },
@@ -87,7 +95,7 @@ export default function DependentsModule() {
   }
 
   const handleSave = async () => {
-    if (!form.name || !form.economicWeight) { toast.error('Please fill in all fields'); return }
+    if (!form.name || !form.economicWeight) { toast.error('Por favor completa todos los campos'); return }
     const payload = { ...form, economicWeight: parseFloat(form.economicWeight) }
 
     try {
@@ -97,7 +105,7 @@ export default function DependentsModule() {
       if (res.ok) {
         const newDep = { ...payload, id: editingId || Date.now().toString() }
         setDependents((prev) => editingId ? prev.map((d) => d.id === editingId ? newDep : d) : [...prev, newDep])
-        toast.success(editingId ? 'Dependent updated' : 'Dependent added')
+        toast.success(editingId ? 'Dependiente actualizado' : 'Dependiente agregado')
         setDialogOpen(false)
         resetForm()
         return
@@ -106,7 +114,7 @@ export default function DependentsModule() {
 
     const newDep = { ...payload, id: editingId || Date.now().toString() }
     setDependents((prev) => editingId ? prev.map((d) => d.id === editingId ? newDep : d) : [...prev, newDep])
-    toast.success(editingId ? 'Dependent updated' : 'Dependent added')
+    toast.success(editingId ? 'Dependiente actualizado' : 'Dependiente agregado')
     setDialogOpen(false)
     resetForm()
   }
@@ -114,7 +122,7 @@ export default function DependentsModule() {
   const handleDelete = async (id: string) => {
     try { await fetch(`/api/dependents/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
     setDependents((prev) => prev.filter((d) => d.id !== id))
-    toast.success('Dependent removed')
+    toast.success('Dependiente eliminado')
   }
 
   const totalWeight = dependents.reduce((sum, d) => sum + d.economicWeight, 0)
@@ -133,10 +141,10 @@ export default function DependentsModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-foreground">Dependientes</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Manage family members and their economic impact</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Administra a los miembros de tu familia y su impacto económico</p>
         </div>
         <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Add Dependent
+          <Plus className="w-4 h-4 mr-2" /> Agregar Dependiente
         </Button>
       </div>
 
@@ -148,7 +156,7 @@ export default function DependentsModule() {
               <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Dependents</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total de Dependientes</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{dependents.length}</p>
             </div>
           </CardContent>
@@ -159,7 +167,7 @@ export default function DependentsModule() {
               <UserCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Economic Weight</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Peso Económico Total</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{totalWeight}%</p>
             </div>
           </CardContent>
@@ -170,7 +178,7 @@ export default function DependentsModule() {
               <DollarSign className="w-6 h-6 text-rose-600 dark:text-rose-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Per-Dependent Spending</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Gasto por Dependiente</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(totalSpending)}</p>
             </div>
           </CardContent>
@@ -185,8 +193,8 @@ export default function DependentsModule() {
       ) : dependents.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No dependents added</p>
-          <p className="text-sm mt-1">Add family members to track per-dependent spending</p>
+          <p className="text-lg font-medium">Sin dependientes aún</p>
+          <p className="text-sm mt-1">Agrega a los miembros de tu familia para rastrear el gasto por dependiente</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -207,7 +215,7 @@ export default function DependentsModule() {
                       <div>
                         <h3 className="font-semibold text-foreground text-sm">{dep.name}</h3>
                         <Badge variant="secondary" className={relColors[dep.relationship] || relColors.other}>
-                          {dep.relationship}
+                          {relationshipLabels[dep.relationship] || dep.relationship}
                         </Badge>
                       </div>
                     </div>
@@ -224,7 +232,7 @@ export default function DependentsModule() {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Economic Weight</span>
+                        <span className="text-muted-foreground">Peso Económico</span>
                         <span className="font-semibold tabular-nums">{dep.economicWeight}%</span>
                       </div>
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -237,7 +245,7 @@ export default function DependentsModule() {
 
                     {dep.totalSpending !== undefined && (
                       <div className="flex justify-between text-sm pt-2 border-t border-border">
-                        <span className="text-muted-foreground">Monthly Spending</span>
+                        <span className="text-muted-foreground">Gasto Mensual</span>
                         <span className="font-semibold tabular-nums">{formatCurrency(dep.totalSpending)}</span>
                       </div>
                     )}
@@ -253,35 +261,35 @@ export default function DependentsModule() {
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); resetForm() } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit Dependent' : 'Add Dependent'}</DialogTitle>
-            <DialogDescription>Add a family member to track their economic impact.</DialogDescription>
+            <DialogTitle>{editingId ? 'Editar Dependiente' : 'Agregar Dependiente'}</DialogTitle>
+            <DialogDescription>Agrega un miembro de la familia para rastrear su impacto económico.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Name</Label>
-              <Input placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Label>Nombre</Label>
+              <Input placeholder="Nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Relationship</Label>
+              <Label>Relación</Label>
               <Select value={form.relationship} onValueChange={(v) => setForm({ ...form, relationship: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {RELATIONSHIPS.map((r) => (
-                    <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>
+                    <SelectItem key={r} value={r}>{relationshipLabels[r]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Economic Weight (%)</Label>
-              <p className="text-xs text-muted-foreground">Percentage of budget allocated to this dependent (0-100)</p>
+              <Label>Peso Económico (%)</Label>
+              <p className="text-xs text-muted-foreground">Porcentaje del presupuesto asignado a este dependiente (0-100)</p>
               <Input type="number" min="0" max="100" placeholder="0" value={form.economicWeight} onChange={(e) => setForm({ ...form, economicWeight: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm() }}>Cancelar</Button>
             <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              {editingId ? 'Update' : 'Add Dependent'}
+              {editingId ? 'Guardar' : 'Agregar Dependiente'}
             </Button>
           </DialogFooter>
         </DialogContent>

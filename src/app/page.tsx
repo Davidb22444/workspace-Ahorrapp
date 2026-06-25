@@ -45,7 +45,7 @@ const moduleComponents: Record<Module, React.ComponentType> = {
 }
 
 const moduleTitles: Record<Module, string> = {
-  dashboard: 'Dashboard',
+  dashboard: 'Panel Principal',
   income: 'Ingresos',
   expenses: 'Gastos',
   unexpected: 'Imprevistos',
@@ -55,11 +55,11 @@ const moduleTitles: Record<Module, string> = {
   'ai-assistant': 'Asistente IA',
   notifications: 'Notificaciones',
   dependents: 'Dependientes',
-  transactions: 'Transaction Center',
-  report: 'Monthly Report',
-  recurring: 'Recurring Bills',
-  achievements: 'Achievements',
-  'annual-summary': 'Annual Summary',
+  transactions: 'Centro de Transacciones',
+  report: 'Reporte Mensual',
+  recurring: 'Pagos Recurrentes',
+  achievements: 'Logros',
+  'annual-summary': 'Resumen Anual',
   settings: 'Configuración',
 }
 
@@ -112,7 +112,7 @@ export default function Home() {
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="w-5 h-5" />
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
               </Button>
               <h1 className="text-lg font-bold text-foreground">{moduleTitle}</h1>
             </div>
@@ -131,7 +131,7 @@ export default function Home() {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </Badge>
               )}
-              <span className="sr-only">Notifications</span>
+              <span className="sr-only">Notificaciones</span>
             </Button>
           </div>
         </header>
@@ -152,7 +152,7 @@ export default function Home() {
         <footer className="border-t border-border/50 py-4 px-4 lg:px-8">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs text-muted-foreground">
             <span>© 2025 AhorrApp</span>
-            <span className="flex items-center gap-1">Made with <Heart className="w-3 h-3 text-rose-400 fill-rose-400" /> for smart finances</span>
+            <span className="flex items-center gap-1">Hecho con <Heart className="w-3 h-3 text-rose-400 fill-rose-400" /> para finanzas inteligentes</span>
           </div>
         </footer>
       </main>

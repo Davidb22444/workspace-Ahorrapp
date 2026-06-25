@@ -20,14 +20,14 @@ interface Notification {
 }
 
 const mockNotifications: Notification[] = [
-  { id: '1', type: 'success', title: 'Budget Goal Met!', message: 'You stayed under budget for entertainment this month. Great job!', read: false, createdAt: '2025-06-12T10:30:00Z' },
-  { id: '2', type: 'warning', title: 'Budget Overrun', message: 'Your food spending is $80 over the planned budget this month.', read: false, createdAt: '2025-06-11T14:20:00Z' },
-  { id: '3', type: 'info', title: 'Savings Milestone', message: 'Your Emergency Fund is now 45% complete! Keep going.', read: false, createdAt: '2025-06-10T09:15:00Z' },
-  { id: '4', type: 'error', title: 'Debt Payment Due', message: 'Your credit card payment of $500 is due in 3 days.', read: false, createdAt: '2025-06-09T16:00:00Z' },
-  { id: '5', type: 'info', title: 'Monthly Report Ready', message: 'Your May 2025 financial report is available for review.', read: true, createdAt: '2025-06-01T08:00:00Z' },
-  { id: '6', type: 'success', title: 'Income Received', message: 'Monthly salary of $5,200 has been received.', read: true, createdAt: '2025-06-01T07:00:00Z' },
-  { id: '7', type: 'warning', title: 'Savings Goal Behind', message: 'Your vacation savings goal is only 40% complete with 2 months remaining.', read: true, createdAt: '2025-05-28T12:00:00Z' },
-  { id: '8', type: 'info', title: 'New Feature Available', message: 'AI Assistant is now available! Get personalized financial advice.', read: true, createdAt: '2025-05-25T10:00:00Z' },
+  { id: '1', type: 'success', title: '¡Meta de Presupuesto Cumplida!', message: 'Te mantuviste por debajo del presupuesto de entretenimiento este mes. ¡Excelente trabajo!', read: false, createdAt: '2025-06-12T10:30:00Z' },
+  { id: '2', type: 'warning', title: 'Presupuesto Sobrepasado', message: 'Tu gasto en alimentación está $80 por encima del presupuesto planeado este mes.', read: false, createdAt: '2025-06-11T14:20:00Z' },
+  { id: '3', type: 'info', title: 'Hito de Ahorro', message: '¡Tu Fondo de Emergencia está ahora 45% completo! Sigue así.', read: false, createdAt: '2025-06-10T09:15:00Z' },
+  { id: '4', type: 'error', title: 'Pago de Deuda Vencido', message: 'Tu pago de tarjeta de crédito de $500 vence en 3 días.', read: false, createdAt: '2025-06-09T16:00:00Z' },
+  { id: '5', type: 'info', title: 'Reporte Mensual Listo', message: 'Tu reporte financiero de mayo 2025 está disponible para revisión.', read: true, createdAt: '2025-06-01T08:00:00Z' },
+  { id: '6', type: 'success', title: 'Ingreso Recibido', message: 'El salario mensual de $5,200 ha sido recibido.', read: true, createdAt: '2025-06-01T07:00:00Z' },
+  { id: '7', type: 'warning', title: 'Meta de Ahorro Atrasada', message: 'Tu meta de ahorro para vacaciones está solo 40% completa con 2 meses restantes.', read: true, createdAt: '2025-05-28T12:00:00Z' },
+  { id: '8', type: 'info', title: 'Nueva Función Disponible', message: '¡El Asistente IA ya está disponible! Obtén consejos financieros personalizados.', read: true, createdAt: '2025-05-25T10:00:00Z' },
 ]
 
 const typeConfig = {
@@ -42,19 +42,19 @@ function timeAgo(dateStr: string): string {
   const date = new Date(dateStr)
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (seconds < 60) return 'Just now'
+  if (seconds < 60) return 'Ahora mismo'
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) return `hace ${minutes}m`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return `hace ${hours}h`
   const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return `hace ${days}d`
   const weeks = Math.floor(days / 7)
-  if (weeks < 4) return `${weeks}w ago`
+  if (weeks < 4) return `hace ${weeks}s`
   const months = Math.floor(days / 30)
-  if (months < 12) return `${months}mo ago`
+  if (months < 12) return `hace ${months}m`
   const years = Math.floor(days / 365)
-  return `${years}y ago`
+  return `hace ${years}a`
 }
 
 export default function NotificationsPanel() {
@@ -99,7 +99,7 @@ export default function NotificationsPanel() {
     try { await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accountId: user?.id }) }) } catch { /* ok */ }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     setUnreadCount(0)
-    toast.success('All notifications marked as read')
+    toast.success('Todas las notificaciones marcadas como leídas')
   }
 
   const deleteNotification = async (id: string) => {
@@ -116,12 +116,12 @@ export default function NotificationsPanel() {
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Notificaciones</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
+            {unreadCount > 0 ? `${unreadCount} notificación${unreadCount > 1 ? 'es' : ''} sin leer` : '¡Todo al día!'}
           </p>
         </div>
         {unreadCount > 0 && (
           <Button variant="outline" size="sm" onClick={markAllRead}>
-            <CheckCheck className="w-4 h-4 mr-2" /> Mark all as read
+            <CheckCheck className="w-4 h-4 mr-2" /> Marcar todo como leído
           </Button>
         )}
       </div>
@@ -135,8 +135,8 @@ export default function NotificationsPanel() {
       ) : notifications.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No notifications</p>
-          <p className="text-sm mt-1">You&apos;re all caught up!</p>
+          <p className="text-lg font-medium">Sin notificaciones</p>
+          <p className="text-sm mt-1">Estás al día.</p>
         </div>
       ) : allRead ? (
         <motion.div
@@ -147,8 +147,8 @@ export default function NotificationsPanel() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
               <PartyPopper className="w-8 h-8 text-emerald-500" />
             </div>
-            <p className="text-lg font-semibold text-foreground">All caught up! 🎉</p>
-            <p className="text-sm text-muted-foreground mt-1">You have no unread notifications</p>
+            <p className="text-lg font-semibold text-foreground">¡Todo al día! 🎉</p>
+            <p className="text-sm text-muted-foreground mt-1">No tienes notificaciones sin leer</p>
           </div>
 
           <div className="space-y-2 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1 mt-4">

@@ -40,21 +40,21 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
   { id: 'income', label: 'Ingresos', icon: TrendingUp },
   { id: 'expenses', label: 'Gastos', icon: ShoppingCart },
   { id: 'unexpected', label: 'Imprevistos', icon: AlertTriangle },
   { id: 'savings', label: 'Ahorros', icon: PiggyBank },
   { id: 'debts', label: 'Deudas', icon: CreditCard },
   { id: 'budget', label: 'Presupuesto', icon: PieChart },
-  { id: 'recurring', label: 'Recurring Bills', icon: Repeat },
+  { id: 'recurring', label: 'Pagos Recurrentes', icon: Repeat },
   { id: 'ai-assistant', label: 'Asistente IA', icon: Bot },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, badge: true },
   { id: 'dependents', label: 'Dependientes', icon: Users },
-  { id: 'transactions', label: 'Transaction Center', icon: Search },
-  { id: 'report', label: 'Monthly Report', icon: FileBarChart },
-  { id: 'achievements', label: 'Achievements', icon: Trophy },
-  { id: 'annual-summary', label: 'Annual Summary', icon: CalendarDays },
+  { id: 'transactions', label: 'Centro de Transacciones', icon: Search },
+  { id: 'report', label: 'Reporte Mensual', icon: FileBarChart },
+  { id: 'achievements', label: 'Logros', icon: Trophy },
+  { id: 'annual-summary', label: 'Resumen Anual', icon: CalendarDays },
   { id: 'settings', label: 'Configuración', icon: Settings },
 ]
 
@@ -77,7 +77,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
         {!collapsed && (
           <div className="animate-fade-in">
             <h2 className="font-bold text-foreground text-lg leading-none">AhorrApp</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Finance Manager</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Gestor de Finanzas</p>
           </div>
         )}
       </div>
@@ -94,7 +94,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           </Avatar>
           {!collapsed && (
             <div className="min-w-0 animate-fade-in">
-              <p className="text-sm font-medium text-foreground truncate">{user?.name || 'User'}</p>
+              <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Usuario'}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
             </div>
           )}
@@ -172,7 +172,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           <div className="px-4 py-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="status-dot status-dot-active" />
-              <span>All systems operational</span>
+              <span>Sistema operativo</span>
             </div>
           </div>
         )}
@@ -184,7 +184,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           )}
         >
           {theme === 'dark' ? '☀️' : '🌙'}
-          {!collapsed && <span className="animate-fade-in">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>}
+          {!collapsed && <span className="animate-fade-in">{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>}
         </button>
         <button
           onClick={logout}
@@ -194,7 +194,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           )}
         >
           <LogOut className="w-5 h-5 shrink-0" />
-          {!collapsed && <span className="animate-fade-in">Logout</span>}
+          {!collapsed && <span className="animate-fade-in">Cerrar Sesión</span>}
         </button>
       </div>
     </div>
@@ -242,7 +242,7 @@ export default function AppSidebar() {
       {/* Mobile Sheet */}
       <Sheet open={mobileOpen} onOpenChange={(open) => { if (!open) handleMobileClose() }}>
         <SheetContent side="left" className="w-[280px] p-0">
-          <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+          <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
           <SidebarContent collapsed={false} onNavigate={handleMobileClose} />
         </SheetContent>
       </Sheet>

@@ -51,51 +51,51 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 
 const mockAchievements: Achievement[] = [
   {
-    id: '1', title: 'First Deposit', description: 'Record your first income entry', icon: 'dollar',
+    id: '1', title: 'Primer Depósito', description: 'Registra tu primer ingreso', icon: 'dollar',
     color: '#10b981', unlocked: true, unlockedDate: '2025-01-15', category: 'income',
   },
   {
-    id: '2', title: 'Savings Starter', description: 'Save your first $100', icon: 'piggybank',
+    id: '2', title: 'Ahorrador Principiante', description: 'Ahorra tus primeros $100', icon: 'piggybank',
     color: '#06b6d4', unlocked: true, unlockedDate: '2025-02-10', category: 'savings',
   },
   {
-    id: '3', title: 'Budget Master', description: 'Stay under budget for 3 consecutive months', icon: 'target',
+    id: '3', title: 'Maestro del Presupuesto', description: 'Mantente dentro del presupuesto por 3 meses consecutivos', icon: 'target',
     color: '#f59e0b', unlocked: true, unlockedDate: '2025-04-01', category: 'budget',
   },
   {
-    id: '4', title: 'Debt Destroyer', description: 'Pay off a debt completely', icon: 'shield',
+    id: '4', title: 'Destructor de Deudas', description: 'Paga una deuda completamente', icon: 'shield',
     color: '#f43f5e', unlocked: true, unlockedDate: '2025-05-20', category: 'debt',
   },
   {
-    id: '5', title: 'Thousand Club', description: 'Accumulate $1,000 in total savings', icon: 'award',
+    id: '5', title: 'Club del Millar', description: 'Acumula $1,000 en ahorros totales', icon: 'award',
     color: '#8b5cf6', unlocked: false, progress: 72, targetValue: 1000, currentValue: 720, category: 'savings',
   },
   {
-    id: '6', title: 'Consistency King', description: 'Log expenses for 30 consecutive days', icon: 'repeat',
+    id: '6', title: 'Rey de la Consistencia', description: 'Registra gastos durante 30 días consecutivos', icon: 'repeat',
     color: '#ec4899', unlocked: false, progress: 53, targetValue: 30, currentValue: 16, category: 'consistency',
   },
   {
-    id: '7', title: 'Frugal Finder', description: 'Reduce monthly expenses by 10% from baseline', icon: 'cart',
+    id: '7', title: 'Buscador de Ofertas', description: 'Reduce los gastos mensuales un 10% respecto al inicio', icon: 'cart',
     color: '#14b8a6', unlocked: false, progress: 45, targetValue: 10, currentValue: 4.5, category: 'expenses',
   },
   {
-    id: '8', title: 'Milestone $10K', description: 'Reach $10,000 in total savings', icon: 'trophy',
+    id: '8', title: 'Meta $10K', description: 'Alcanza $10,000 en ahorros totales', icon: 'trophy',
     color: '#f59e0b', unlocked: false, progress: 21, targetValue: 10000, currentValue: 2150, category: 'savings',
   },
   {
-    id: '9', title: 'Chart Topper', description: 'View your dashboard every day for a week', icon: 'barchart',
+    id: '9', title: 'Líder del Tablero', description: 'Ve tu panel cada día durante una semana', icon: 'barchart',
     color: '#6366f1', unlocked: true, unlockedDate: '2025-03-14', category: 'engagement',
   },
   {
-    id: '10', title: 'Rising Star', description: 'Increase income month-over-month 3 times', icon: 'trendingup',
+    id: '10', title: 'Estrella Ascendente', description: 'Incrementa tus ingresos mes a mes 3 veces', icon: 'trendingup',
     color: '#10b981', unlocked: false, progress: 67, targetValue: 3, currentValue: 2, category: 'income',
   },
   {
-    id: '11', title: 'Goal Getter', description: 'Fully fund a savings goal', icon: 'flag',
+    id: '11', title: 'Fijador de Metas', description: 'Completa financieramente una meta de ahorro', icon: 'flag',
     color: '#f43f5e', unlocked: false, progress: 30, targetValue: 1, currentValue: 0, category: 'savings',
   },
   {
-    id: '12', title: 'Super Saver', description: 'Save 50% of your income in a single month', icon: 'star',
+    id: '12', title: 'Súper Ahorrador', description: 'Ahorra 50% de tus ingresos en un solo mes', icon: 'star',
     color: '#06b6d4', unlocked: false, progress: 38, targetValue: 50, currentValue: 19, category: 'savings',
   },
 ]
@@ -146,8 +146,8 @@ export default function AchievementsModule() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Achievements</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Track your financial milestones</p>
+        <h1 className="text-2xl font-bold text-foreground">Logros</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Rastrea tus metas financieras</p>
       </div>
 
       {/* Summary Stats */}
@@ -195,9 +195,9 @@ export default function AchievementsModule() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Unlocked</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Desbloqueado</p>
                 <p className="text-2xl font-bold text-gradient mt-1">{unlockPct}%</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Keep going!</p>
+                <p className="text-xs text-muted-foreground mt-0.5">¡Sigue así!</p>
               </div>
             </CardContent>
           </Card>
@@ -209,15 +209,15 @@ export default function AchievementsModule() {
                 <Flag className="w-7 h-7 text-amber-600 dark:text-amber-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Milestone</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Próxima Meta</p>
                 {nextMilestone ? (
                   <>
                     <p className="text-sm font-semibold text-foreground mt-1 truncate">{nextMilestone.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{nextMilestone.progress}% complete</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{nextMilestone.progress}% completado</p>
                     <Progress value={nextMilestone.progress} className="h-1.5 mt-2 w-32" />
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground mt-1">All achievements unlocked!</p>
+                  <p className="text-sm text-muted-foreground mt-1">¡Todos los logros desbloqueados!</p>
                 )}
               </div>
             </CardContent>
@@ -242,8 +242,8 @@ export default function AchievementsModule() {
       ) : achievements.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No achievements yet</p>
-          <p className="text-sm mt-1">Start using the app to unlock your first achievement</p>
+          <p className="text-lg font-medium">Sin logros aún</p>
+          <p className="text-sm mt-1">Comienza a usar la app para desbloquear tu primer logro</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-children">
@@ -321,7 +321,7 @@ export default function AchievementsModule() {
                     {achievement.unlocked && achievement.unlockedDate && (
                       <div className="flex items-center justify-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                         <PartyPopper className="w-3.5 h-3.5" />
-                        <span>Unlocked {format(new Date(achievement.unlockedDate), 'MMM d, yyyy')}</span>
+                        <span>Desbloqueado el {format(new Date(achievement.unlockedDate), 'MMM d, yyyy')}</span>
                       </div>
                     )}
 
@@ -329,7 +329,7 @@ export default function AchievementsModule() {
                     {!achievement.unlocked && achievement.progress !== undefined && (
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">Progress</span>
+                          <span className="text-muted-foreground">Progreso</span>
                           <span className="font-semibold tabular-nums" style={{ color: achievement.color }}>
                             {achievement.progress}%
                           </span>
@@ -341,7 +341,7 @@ export default function AchievementsModule() {
                     {!achievement.unlocked && achievement.progress === undefined && (
                       <div className="text-xs text-muted-foreground flex items-center justify-center gap-1">
                         <Lock className="w-3 h-3" />
-                        <span>Locked</span>
+                        <span>Bloqueado</span>
                       </div>
                     )}
                   </CardContent>
@@ -362,7 +362,7 @@ export default function AchievementsModule() {
           <Card className="card-hover">
             <CardContent className="p-4">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                Categories
+                Categorías
               </p>
               <div className="flex flex-wrap gap-2">
                 {Array.from(new Set(achievements.map((a) => a.category))).map((cat) => {

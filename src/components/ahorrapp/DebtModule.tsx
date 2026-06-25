@@ -48,31 +48,31 @@ interface Debt {
 
 const mockDebts: Debt[] = [
   {
-    id: '1', name: 'Car Loan', total: 25000, paid: 8500, interestRate: 4.5, type: 'installment', installments: 60, dueDate: '2030-06-01', nextPayment: '2025-07-01', status: 'pending',
+    id: '1', name: 'Préstamo de Auto', total: 25000, paid: 8500, interestRate: 4.5, type: 'installment', installments: 60, dueDate: '2030-06-01', nextPayment: '2025-07-01', status: 'pending',
     payments: [
-      { id: 'p1', amount: 475, date: '2025-06-01', note: 'Monthly payment' },
-      { id: 'p2', amount: 475, date: '2025-05-01', note: 'Monthly payment' },
-      { id: 'p9', amount: 475, date: '2025-04-01', note: 'Monthly payment' },
+      { id: 'p1', amount: 475, date: '2025-06-01', note: 'Pago mensual' },
+      { id: 'p2', amount: 475, date: '2025-05-01', note: 'Pago mensual' },
+      { id: 'p9', amount: 475, date: '2025-04-01', note: 'Pago mensual' },
     ],
   },
   {
-    id: '2', name: 'Student Loan', total: 35000, paid: 12000, interestRate: 3.2, type: 'installment', installments: 120, dueDate: '2035-06-01', nextPayment: '2025-07-15', status: 'pending',
+    id: '2', name: 'Préstamo Estudiantil', total: 35000, paid: 12000, interestRate: 3.2, type: 'installment', installments: 120, dueDate: '2035-06-01', nextPayment: '2025-07-15', status: 'pending',
     payments: [
-      { id: 'p3', amount: 350, date: '2025-06-15', note: 'Monthly payment' },
+      { id: 'p3', amount: 350, date: '2025-06-15', note: 'Pago mensual' },
     ],
   },
   {
-    id: '3', name: 'Credit Card', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'overdue',
+    id: '3', name: 'Tarjeta de Crédito', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'overdue',
     payments: [
-      { id: 'p4', amount: 500, date: '2025-06-05', note: 'Monthly payment' },
-      { id: 'p5', amount: 500, date: '2025-05-05', note: 'Monthly payment' },
-      { id: 'p6', amount: 500, date: '2025-04-05', note: 'Monthly payment' },
+      { id: 'p4', amount: 500, date: '2025-06-05', note: 'Pago mensual' },
+      { id: 'p5', amount: 500, date: '2025-05-05', note: 'Pago mensual' },
+      { id: 'p6', amount: 500, date: '2025-04-05', note: 'Pago mensual' },
     ],
   },
   {
-    id: '4', name: 'Personal Loan', total: 5000, paid: 5000, interestRate: 8.0, type: 'installment', installments: 12, dueDate: '2025-05-01', status: 'paid',
+    id: '4', name: 'Préstamo Personal', total: 5000, paid: 5000, interestRate: 8.0, type: 'installment', installments: 12, dueDate: '2025-05-01', status: 'paid',
     payments: [
-      { id: 'p7', amount: 416.67, date: '2025-05-01', note: 'Final payment' },
+      { id: 'p7', amount: 416.67, date: '2025-05-01', note: 'Pago final' },
     ],
   },
 ]
@@ -85,21 +85,21 @@ function getStatusInfo(status: string) {
       return {
         dotColor: 'bg-emerald-500',
         badgeClass: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-        label: 'Active',
+        label: 'Activo',
         dotGlow: 'shadow-emerald-500/40',
       }
     case 'overdue':
       return {
         dotColor: 'bg-rose-500',
         badgeClass: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
-        label: 'Overdue',
+        label: 'Vencido',
         dotGlow: 'shadow-rose-500/40',
       }
     default:
       return {
         dotColor: 'bg-amber-500',
         badgeClass: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-        label: 'In Progress',
+        label: 'En Progreso',
         dotGlow: 'shadow-amber-500/40',
       }
   }
@@ -139,7 +139,7 @@ export default function DebtModule() {
   }, [])
 
   const handleAddDebt = async () => {
-    if (!debtForm.name || !debtForm.total) { toast.error('Please fill in name and total amount'); return }
+    if (!debtForm.name || !debtForm.total) { toast.error('Por favor completa nombre y monto total'); return }
     const payload = {
       ...debtForm,
       total: parseFloat(debtForm.total),
@@ -152,20 +152,20 @@ export default function DebtModule() {
       const res = await fetch('/api/debts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, accountId: user?.id }) })
       if (res.ok) {
         setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
-        toast.success('Debt added')
+        toast.success('Deuda agregada')
         setAddDialogOpen(false)
         setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
         return
       }
     } catch { /* fallback */ }
     setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
-    toast.success('Debt added')
+    toast.success('Deuda agregada')
     setAddDialogOpen(false)
     setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
   }
 
   const handleRecordPayment = async () => {
-    if (!paymentForm.amount || !selectedDebt) { toast.error('Please enter an amount'); return }
+    if (!paymentForm.amount || !selectedDebt) { toast.error('Por favor ingresa un monto'); return }
     const amount = parseFloat(paymentForm.amount)
     const payment: Payment = { id: Date.now().toString(), amount, date: format(new Date(), 'yyyy-MM-dd'), note: paymentForm.note || undefined }
 
@@ -182,7 +182,7 @@ export default function DebtModule() {
             ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
             : d
         ))
-        toast.success(`Payment of ${formatCurrency(amount)} recorded`)
+        toast.success(`Pago de ${formatCurrency(amount)} registrado`)
         setPaymentDialogOpen(false)
         setPaymentForm({ amount: '', note: '' })
         return
@@ -194,7 +194,7 @@ export default function DebtModule() {
         ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
         : d
     ))
-    toast.success(`Payment of ${formatCurrency(amount)} recorded`)
+    toast.success(`Pago de ${formatCurrency(amount)} registrado`)
     setPaymentDialogOpen(false)
     setPaymentForm({ amount: '', note: '' })
   }
@@ -202,7 +202,7 @@ export default function DebtModule() {
   const handleDelete = async (id: string) => {
     try { await fetch(`/api/debts/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
     setDebts((prev) => prev.filter((d) => d.id !== id))
-    toast.success('Debt deleted')
+    toast.success('Deuda eliminada')
   }
 
   const totalOwed = debts.reduce((sum, d) => sum + d.total, 0)
@@ -226,10 +226,10 @@ export default function DebtModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Deudas</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Track and manage your debts</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Rastrea y gestiona tus deudas</p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Add Debt
+          <Plus className="w-4 h-4 mr-2" /> Agregar Deuda
         </Button>
       </div>
 
@@ -241,7 +241,7 @@ export default function DebtModule() {
               <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Owed</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Devido</p>
               <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{formatCurrency(totalOwed)}</p>
             </div>
           </CardContent>
@@ -252,7 +252,7 @@ export default function DebtModule() {
               <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Paid</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Pagado</p>
               <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatCurrency(totalPaid)}</p>
             </div>
           </CardContent>
@@ -263,7 +263,7 @@ export default function DebtModule() {
               <Clock className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Payments</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pagos Mensuales</p>
               <p className="text-2xl font-bold tabular-nums text-cyan-600 dark:text-cyan-400">{formatCurrency(monthlyPayments)}</p>
             </div>
           </CardContent>
@@ -278,8 +278,8 @@ export default function DebtModule() {
       ) : debts.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No debts tracked</p>
-          <p className="text-sm mt-1">Add your first debt to start tracking</p>
+          <p className="text-lg font-medium">Sin deudas registradas</p>
+          <p className="text-sm mt-1">Agrega tu primera deuda para comenzar a rastrear</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -340,10 +340,10 @@ export default function DebtModule() {
                         <span className="text-muted-foreground">
                           {debt.status === 'paid' ? (
                             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                              <CheckCircle2 className="w-3.5 h-3.5" /> Fully Paid
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Completamente Pagado
                             </span>
                           ) : (
-                            <>Paid: {formatCurrency(debt.paid)} of {formatCurrency(debt.total)}</>
+                            <>Pagado: {formatCurrency(debt.paid)} de {formatCurrency(debt.total)}</>
                           )}
                         </span>
                         <span className="font-semibold tabular-nums">{pct}%</span>
@@ -364,7 +364,7 @@ export default function DebtModule() {
                               onClick={() => { setSelectedDebt(debt); setPaymentDialogOpen(true) }}
                               disabled={debt.status === 'paid'}
                             >
-                              <DollarSign className="w-3.5 h-3.5 mr-1" /> Record Payment
+                              <DollarSign className="w-3.5 h-3.5 mr-1" /> Registrar Pago
                             </Button>
                             <Button size="sm" variant="outline" className="h-8 text-destructive hover:text-destructive"
                               onClick={() => handleDelete(debt.id)}
@@ -376,7 +376,7 @@ export default function DebtModule() {
                           {debt.payments && debt.payments.length > 0 && (
                             <div className="space-y-2">
                               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                <History className="w-3 h-3" /> Payment Timeline
+                                <History className="w-3 h-3" /> Línea de Tiempo de Pagos
                               </p>
                               <div className="max-h-48 overflow-y-auto pl-4 relative">
                                 <div className="absolute left-[7px] top-2 bottom-2 w-px border-l-2 border-dashed border-border" />
@@ -424,27 +424,27 @@ export default function DebtModule() {
       <Dialog open={addDialogOpen} onOpenChange={(open) => { if (!open) setAddDialogOpen(false) }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Debt</DialogTitle>
-            <DialogDescription>Record a new debt to track.</DialogDescription>
+            <DialogTitle>Agregar Deuda</DialogTitle>
+            <DialogDescription>Registra una nueva deuda para rastrear.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Debt Name</Label>
-              <Input placeholder="e.g., Car Loan" value={debtForm.name} onChange={(e) => setDebtForm({ ...debtForm, name: e.target.value })} />
+              <Label>Nombre de la Deuda</Label>
+              <Input placeholder="ej., Préstamo de Auto" value={debtForm.name} onChange={(e) => setDebtForm({ ...debtForm, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Total Amount ($)</Label>
+                <Label>Monto Total ($)</Label>
                 <Input type="number" step="0.01" min="0" placeholder="0.00" value={debtForm.total} onChange={(e) => setDebtForm({ ...debtForm, total: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Interest Rate (%)</Label>
+                <Label>Tasa de Interés (%)</Label>
                 <Input type="number" step="0.1" min="0" placeholder="0.0" value={debtForm.interestRate} onChange={(e) => setDebtForm({ ...debtForm, interestRate: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Tipo</Label>
                 <Select value={debtForm.type} onValueChange={(v) => setDebtForm({ ...debtForm, type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -453,18 +453,18 @@ export default function DebtModule() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Installments (0 if revolving)</Label>
+                <Label>Cuotas (0 si es revolving)</Label>
                 <Input type="number" min="0" placeholder="0" value={debtForm.installments} onChange={(e) => setDebtForm({ ...debtForm, installments: e.target.value })} />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Due Date (optional)</Label>
+              <Label>Fecha de Vencimiento (opcional)</Label>
               <Input type="date" value={debtForm.dueDate} onChange={(e) => setDebtForm({ ...debtForm, dueDate: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddDebt} className="bg-primary hover:bg-primary/90 text-primary-foreground">Add Debt</Button>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAddDebt} className="bg-primary hover:bg-primary/90 text-primary-foreground">Agregar Deuda</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -473,28 +473,28 @@ export default function DebtModule() {
       <Dialog open={paymentDialogOpen} onOpenChange={(open) => { if (!open) { setPaymentDialogOpen(false); setPaymentForm({ amount: '', note: '' }) } }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Record Payment - {selectedDebt?.name}</DialogTitle>
-            <DialogDescription>Log a payment toward this debt.</DialogDescription>
+            <DialogTitle>Registrar Pago - {selectedDebt?.name}</DialogTitle>
+            <DialogDescription>Registra un pago hacia esta deuda.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="bg-muted rounded-lg p-3 text-center">
-              <p className="text-xs text-muted-foreground">Remaining</p>
+              <p className="text-xs text-muted-foreground">Restante</p>
               <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
                 {formatCurrency((selectedDebt?.total || 0) - (selectedDebt?.paid || 0))}
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Payment Amount ($)</Label>
+              <Label>Monto del Pago ($)</Label>
               <Input type="number" step="0.01" min="0" placeholder="0.00" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>Note (optional)</Label>
-              <Input placeholder="e.g., Monthly payment" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
+              <Label>Nota (opcional)</Label>
+              <Input placeholder="ej., Pago mensual" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setPaymentDialogOpen(false); setPaymentForm({ amount: '', note: '' }) }}>Cancel</Button>
-            <Button onClick={handleRecordPayment} className="bg-primary hover:bg-primary/90 text-primary-foreground">Record Payment</Button>
+            <Button variant="outline" onClick={() => { setPaymentDialogOpen(false); setPaymentForm({ amount: '', note: '' }) }}>Cancelar</Button>
+            <Button onClick={handleRecordPayment} className="bg-primary hover:bg-primary/90 text-primary-foreground">Registrar Pago</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

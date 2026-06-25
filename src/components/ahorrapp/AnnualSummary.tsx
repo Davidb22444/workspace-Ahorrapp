@@ -41,7 +41,7 @@ interface AnnualData {
   worstMonth: { month: string; savings: number } | null
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 function generateMockData(year: number): AnnualData {
   const seed = year * 7
@@ -187,12 +187,12 @@ export default function AnnualSummary() {
   const metricCards = useMemo(() => {
     if (!data) return []
     return [
-      { label: 'Total Income', value: data.totalIncome, icon: TrendingUp, color: 'emerald', change: 8.2 },
-      { label: 'Total Expenses', value: data.totalExpenses, icon: TrendingDown, color: 'rose', change: -3.1 },
-      { label: 'Net Savings', value: data.netSavings, icon: DollarSign, color: 'cyan', change: 12.5 },
-      { label: 'Savings Rate', value: data.savingsRate, icon: Target, color: 'primary', change: 2.1, isPercent: true },
-      { label: 'Total Debt Paid', value: data.totalDebtPaid, icon: CreditCard, color: 'amber', change: 15.0 },
-      { label: 'Unexpected Costs', value: data.unexpectedCosts, icon: AlertTriangle, color: 'violet', change: -5.4 },
+      { label: 'Ingresos Totales', value: data.totalIncome, icon: TrendingUp, color: 'emerald', change: 8.2 },
+      { label: 'Gastos Totales', value: data.totalExpenses, icon: TrendingDown, color: 'rose', change: -3.1 },
+      { label: 'Ahorro Neto', value: data.netSavings, icon: DollarSign, color: 'cyan', change: 12.5 },
+      { label: 'Tasa de Ahorro', value: data.savingsRate, icon: Target, color: 'primary', change: 2.1, isPercent: true },
+      { label: 'Total Deudas Pagadas', value: data.totalDebtPaid, icon: CreditCard, color: 'amber', change: 15.0 },
+      { label: 'Costos Imprevistos', value: data.unexpectedCosts, icon: AlertTriangle, color: 'violet', change: -5.4 },
     ]
   }, [data])
 
@@ -210,8 +210,8 @@ export default function AnnualSummary() {
       {/* Header + Year Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gradient">Annual Summary</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Year-over-year financial overview</p>
+          <h1 className="text-2xl font-bold text-gradient">Resumen Anual</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Resumen financiero año tras año</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -224,7 +224,7 @@ export default function AnnualSummary() {
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="font-semibold text-foreground tabular-nums">{selectedYear}</span>
             {selectedYear === currentYear && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 h-5">Current</Badge>
+              <Badge variant="secondary" className="text-[10px] px-1.5 h-5">Actual</Badge>
             )}
           </div>
           <Button
@@ -294,8 +294,8 @@ export default function AnnualSummary() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card className="card-hover">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Monthly Overview</CardTitle>
-                <CardDescription className="text-xs">Income vs expenses across all months</CardDescription>
+                <CardTitle className="text-base font-semibold">Vista Mensual</CardTitle>
+                <CardDescription className="text-xs">Ingresos vs gastos a lo largo de todos los meses</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="h-72">
@@ -315,8 +315,8 @@ export default function AnnualSummary() {
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
                       <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} className="text-muted-foreground" />
                       <RechartsTooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
-                      <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="expenses" name="Gastos" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -331,8 +331,8 @@ export default function AnnualSummary() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <Card className="card-hover">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold">Income Sources</CardTitle>
-                  <CardDescription className="text-xs">Breakdown of where your money comes from</CardDescription>
+                  <CardTitle className="text-base font-semibold">Fuentes de Ingreso</CardTitle>
+                  <CardDescription className="text-xs">Desglose de dónde proviene tu dinero</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="h-64">
@@ -365,8 +365,8 @@ export default function AnnualSummary() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <Card className="card-hover">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold">Top Expense Categories</CardTitle>
-                  <CardDescription className="text-xs">Highest spending areas this year</CardDescription>
+                  <CardTitle className="text-base font-semibold">Categorías de Mayor Gasto</CardTitle>
+                  <CardDescription className="text-xs">Áreas de mayor gasto este año</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="h-64">
@@ -379,7 +379,7 @@ export default function AnnualSummary() {
                           formatter={(value: number) => formatCurrency(value)}
                           contentStyle={{ borderRadius: 12, fontSize: 12, border: '1px solid var(--border)', background: 'var(--card)' }}
                         />
-                        <Bar dataKey="amount" name="Amount" radius={[0, 6, 6, 0]} barSize={18}>
+                        <Bar dataKey="amount" name="Monto" radius={[0, 6, 6, 0]} barSize={18}>
                           {data.topExpenseCategories.map((_, idx) => (
                             <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
                           ))}
@@ -396,8 +396,8 @@ export default function AnnualSummary() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card className="card-hover">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Savings Goals Progress</CardTitle>
-                <CardDescription className="text-xs">How your savings goals are tracking this year</CardDescription>
+                <CardTitle className="text-base font-semibold">Progreso de Metas de Ahorro</CardTitle>
+                <CardDescription className="text-xs">Cómo van tus metas de ahorro este año</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-4">
                 {data.savingsGoals.map((goal, idx) => {
@@ -414,8 +414,8 @@ export default function AnnualSummary() {
                         <Progress value={pct} className="h-2.5" />
                       </div>
                       <div className="flex justify-between mt-1">
-                        <span className="text-[10px] text-muted-foreground">{pct}% complete</span>
-                        <span className="text-[10px] text-muted-foreground">{formatCurrency(goal.target - goal.saved)} remaining</span>
+                        <span className="text-[10px] text-muted-foreground">{pct}% completado</span>
+                        <span className="text-[10px] text-muted-foreground">{formatCurrency(goal.target - goal.saved)} restante</span>
                       </div>
                     </div>
                   )
@@ -428,17 +428,17 @@ export default function AnnualSummary() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="card-hover">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold">Month-over-Month Trends</CardTitle>
-                <CardDescription className="text-xs">Percentage change between consecutive months</CardDescription>
+                <CardTitle className="text-base font-semibold">Tendencias Mes a Mes</CardTitle>
+                <CardDescription className="text-xs">Cambio porcentual entre meses consecutivos</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border">
-                        <th className="text-left text-xs font-medium text-muted-foreground pb-2 pr-4">Month</th>
-                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 px-4">Income</th>
-                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 pl-4">Expenses</th>
+                        <th className="text-left text-xs font-medium text-muted-foreground pb-2 pr-4">Mes</th>
+                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 px-4">Ingresos</th>
+                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 pl-4">Gastos</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -491,14 +491,14 @@ export default function AnnualSummary() {
                         <Trophy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Best Month</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes</p>
                         <p className="text-lg font-bold text-foreground">{data.bestMonth.month}</p>
                       </div>
                     </div>
                     <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                       {formatCurrency(data.bestMonth.savings)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Net savings this month</p>
+                    <p className="text-xs text-muted-foreground mt-1">Ahorro neto este mes</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -512,7 +512,7 @@ export default function AnnualSummary() {
                         <Frown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Worst Month</p>
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Peor Mes</p>
                         <p className="text-lg font-bold text-foreground">{data.worstMonth.month}</p>
                       </div>
                     </div>
@@ -524,7 +524,7 @@ export default function AnnualSummary() {
                     )}>
                       {formatCurrency(data.worstMonth.savings)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Net savings this month</p>
+                    <p className="text-xs text-muted-foreground mt-1">Ahorro neto este mes</p>
                   </CardContent>
                 </Card>
               </motion.div>

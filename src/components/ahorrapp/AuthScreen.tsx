@@ -20,11 +20,11 @@ export default function AuthScreen() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) {
-      toast.error('Please fill in all fields')
+      toast.error('Por favor completa todos los campos')
       return
     }
     if (!isLogin && !name) {
-      toast.error('Please enter your name')
+      toast.error('Por favor ingresa tu nombre')
       return
     }
 
@@ -44,7 +44,7 @@ export default function AuthScreen() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed')
+        throw new Error(data.error || 'Autenticación fallida')
       }
 
       login({
@@ -54,9 +54,9 @@ export default function AuthScreen() {
         role: data.user?.role || data.role || 'user',
       })
 
-      toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!')
+      toast.success(isLogin ? '¡Bienvenido de nuevo!' : '¡Cuenta creada exitosamente!')
     } catch (err: any) {
-      toast.error(err.message || 'Something went wrong')
+      toast.error(err.message || 'Algo salió mal')
     } finally {
       setLoading(false)
     }
@@ -79,7 +79,7 @@ export default function AuthScreen() {
           name: 'Demo User',
           role: 'user',
         })
-        toast.success('Welcome to the demo!')
+        toast.success('¡Bienvenido al demo!')
         return
       }
       login({
@@ -88,7 +88,7 @@ export default function AuthScreen() {
         name: data.user?.name || 'Demo User',
         role: data.user?.role || 'user',
       })
-      toast.success('Welcome to the demo!')
+      toast.success('¡Bienvenido al demo!')
     } catch {
       login({
         id: 'demo-1',
@@ -96,7 +96,7 @@ export default function AuthScreen() {
         name: 'Demo User',
         role: 'user',
       })
-      toast.success('Welcome to the demo!')
+      toast.success('¡Bienvenido al demo!')
     } finally {
       setLoading(false)
     }
@@ -128,7 +128,7 @@ export default function AuthScreen() {
             <Wallet className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-white">AhorrApp</h1>
-          <p className="text-white/70 mt-1">Your smart finance companion</p>
+          <p className="text-white/70 mt-1">Tu compañero financiero inteligente</p>
         </motion.div>
 
         {/* Form Card with glassmorphism */}
@@ -142,7 +142,7 @@ export default function AuthScreen() {
               transition={{ duration: 0.25 }}
             >
               <h2 className="text-xl font-semibold text-foreground mb-6">
-                {isLogin ? 'Welcome back' : 'Create account'}
+                {isLogin ? 'Bienvenido de nuevo' : 'Crear cuenta'}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,12 +153,12 @@ export default function AuthScreen() {
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-2"
                   >
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Nombre Completo</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="name"
-                        placeholder="John Doe"
+                        placeholder="Juan Pérez"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="pl-10"
@@ -168,13 +168,13 @@ export default function AuthScreen() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Correo Electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="tu@ejemplo.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -183,7 +183,7 @@ export default function AuthScreen() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Contraseña</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -207,7 +207,7 @@ export default function AuthScreen() {
                   ) : (
                     <ArrowRight className="w-4 h-4 mr-2" />
                   )}
-                  {isLogin ? 'Sign In' : 'Create Account'}
+                  {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
                 </Button>
               </form>
 
@@ -217,8 +217,8 @@ export default function AuthScreen() {
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   {isLogin
-                    ? "Don't have an account? Sign up"
-                    : 'Already have an account? Sign in'}
+                    ? "¿No tienes cuenta? Regístrate"
+                    : '¿Ya tienes cuenta? Inicia sesión'}
                 </button>
               </div>
             </motion.div>
@@ -230,7 +230,7 @@ export default function AuthScreen() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
+              <span className="bg-card px-2 text-muted-foreground">o</span>
             </div>
           </div>
 
@@ -243,11 +243,11 @@ export default function AuthScreen() {
               disabled={loading}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              Try Demo Account
+              Probar Cuenta Demo
             </Button>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            No sign-up required. Explore with sample data.
+            Sin registro. Explora con datos de ejemplo.
           </p>
         </div>
       </motion.div>

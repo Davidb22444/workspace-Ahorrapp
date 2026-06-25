@@ -98,35 +98,35 @@ const mockData: DashboardData = {
     { month: 'Jun', income: 5200, expenses: 3420 },
   ],
   expenseCategories: [
-    { name: 'Housing', value: 1200, color: '#10b981' },
-    { name: 'Food', value: 680, color: '#f59e0b' },
-    { name: 'Transport', value: 450, color: '#f43f5e' },
-    { name: 'Entertainment', value: 320, color: '#6366f1' },
-    { name: 'Utilities', value: 380, color: '#06b6d4' },
-    { name: 'Other', value: 390.5, color: '#8b5cf6' },
+    { name: 'Vivienda', value: 1200, color: '#10b981' },
+    { name: 'Alimentación', value: 680, color: '#f59e0b' },
+    { name: 'Transporte', value: 450, color: '#f43f5e' },
+    { name: 'Entretenimiento', value: 320, color: '#6366f1' },
+    { name: 'Servicios', value: 380, color: '#06b6d4' },
+    { name: 'Otro', value: 390.5, color: '#8b5cf6' },
   ],
   budgetVsActual: [
-    { name: 'Needs', planned: 2600, actual: 2510 },
-    { name: 'Wants', planned: 1560, actual: 1480 },
-    { name: 'Savings', planned: 1040, actual: 770 },
+    { name: 'Necesidades', planned: 2600, actual: 2510 },
+    { name: 'Deseos', planned: 1560, actual: 1480 },
+    { name: 'Ahorros', planned: 1040, actual: 770 },
   ],
   recentTransactions: [
-    { id: '1', type: 'income', description: 'Monthly Salary', amount: 5200, date: '2025-06-01', category: 'Salary' },
-    { id: '2', type: 'expense', description: 'Rent Payment', amount: -1200, date: '2025-06-02', category: 'Housing', categoryColor: '#10b981' },
-    { id: '3', type: 'expense', description: 'Grocery Store', amount: -156.80, date: '2025-06-03', category: 'Food', categoryColor: '#f59e0b' },
-    { id: '4', type: 'expense', description: 'Electric Bill', amount: -120, date: '2025-06-04', category: 'Utilities', categoryColor: '#06b6d4' },
-    { id: '5', type: 'income', description: 'Freelance Project', amount: 800, date: '2025-06-05', category: 'Freelance' },
-    { id: '6', type: 'expense', description: 'Gas Station', amount: -65, date: '2025-06-06', category: 'Transport', categoryColor: '#f43f5e' },
-    { id: '7', type: 'expense', description: 'Netflix Subscription', amount: -15.99, date: '2025-06-07', category: 'Entertainment', categoryColor: '#6366f1' },
-    { id: '8', type: 'expense', description: 'Restaurant Dinner', amount: -85.50, date: '2025-06-08', category: 'Food', categoryColor: '#f59e0b' },
-    { id: '9', type: 'income', description: 'Investment Returns', amount: 150, date: '2025-06-09', category: 'Investment' },
-    { id: '10', type: 'expense', description: 'Phone Bill', amount: -55, date: '2025-06-10', category: 'Utilities', categoryColor: '#06b6d4' },
+    { id: '1', type: 'income', description: 'Salario Mensual', amount: 5200, date: '2025-06-01', category: 'Salario' },
+    { id: '2', type: 'expense', description: 'Pago de Renta', amount: -1200, date: '2025-06-02', category: 'Vivienda', categoryColor: '#10b981' },
+    { id: '3', type: 'expense', description: 'Supermercado', amount: -156.80, date: '2025-06-03', category: 'Alimentación', categoryColor: '#f59e0b' },
+    { id: '4', type: 'expense', description: 'Recibo de Electricidad', amount: -120, date: '2025-06-04', category: 'Servicios', categoryColor: '#06b6d4' },
+    { id: '5', type: 'income', description: 'Proyecto Freelance', amount: 800, date: '2025-06-05', category: 'Freelance' },
+    { id: '6', type: 'expense', description: 'Gasolinera', amount: -65, date: '2025-06-06', category: 'Transporte', categoryColor: '#f43f5e' },
+    { id: '7', type: 'expense', description: 'Suscripción Netflix', amount: -15.99, date: '2025-06-07', category: 'Entretenimiento', categoryColor: '#6366f1' },
+    { id: '8', type: 'expense', description: 'Cena en Restaurante', amount: -85.50, date: '2025-06-08', category: 'Alimentación', categoryColor: '#f59e0b' },
+    { id: '9', type: 'income', description: 'Retorno de Inversión', amount: 150, date: '2025-06-09', category: 'Inversión' },
+    { id: '10', type: 'expense', description: 'Recibo de Teléfono', amount: -55, date: '2025-06-10', category: 'Servicios', categoryColor: '#06b6d4' },
   ],
   savingsGoals: [
-    { id: '1', name: 'Emergency Fund', saved: 4500, target: 10000, deadline: '2025-12-31' },
-    { id: '2', name: 'Vacation', saved: 1200, target: 3000, deadline: '2025-08-15' },
-    { id: '3', name: 'New Laptop', saved: 800, target: 2000 },
-    { id: '4', name: 'Down Payment', saved: 15000, target: 50000, deadline: '2027-06-01' },
+    { id: '1', name: 'Fondo de Emergencia', saved: 4500, target: 10000, deadline: '2025-12-31' },
+    { id: '2', name: 'Vacaciones', saved: 1200, target: 3000, deadline: '2025-08-15' },
+    { id: '3', name: 'Laptop Nueva', saved: 800, target: 2000 },
+    { id: '4', name: 'Enganche', saved: 15000, target: 50000, deadline: '2027-06-01' },
   ],
 }
 
@@ -148,7 +148,7 @@ function EnhancedChartTooltip({ active, payload, label }: any) {
         ))}
         {payload.length > 1 && (
           <div className="border-t border-border/50 mt-1.5 pt-1.5 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground font-medium">Net</span>
+            <span className="text-muted-foreground font-medium">Neto</span>
             <span className={cn('font-bold tabular-nums', total >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
               {formatCurrency(total)}
             </span>
@@ -167,7 +167,7 @@ function getGoalEmoji(name: string): string {
   if (lower.includes('vacat') || lower.includes('viaje')) return '✈️'
   if (lower.includes('laptop') || lower.includes('computer') || lower.includes('pc')) return '💻'
   if (lower.includes('car') || lower.includes('auto') || lower.includes('coche')) return '🚗'
-  if (lower.includes('house') || lower.includes('home') || lower.includes('down') || lower.includes('casa')) return '🏠'
+  if (lower.includes('house') || lower.includes('home') || lower.includes('down') || lower.includes('casa') || lower.includes('enganche')) return '🏠'
   if (lower.includes('wedding') || lower.includes('boda')) return '💍'
   if (lower.includes('education') || lower.includes('study') || lower.includes('college')) return '🎓'
   if (lower.includes('retire') || lower.includes('jubil')) return '🌴'
@@ -195,13 +195,13 @@ function QuickAddDialog({
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
-  const [source, setSource] = useState('Salary')
+  const [source, setSource] = useState('Salario')
   const [category, setCategory] = useState('')
   const [isRecurring, setIsRecurring] = useState(false)
   const [saving, setSaving] = useState(false)
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
 
-  const incomeSources = ['Salary', 'Freelance', 'Investment', 'Gift', 'Other']
+  const incomeSources = ['Salario', 'Freelance', 'Inversión', 'Regalo', 'Otro']
 
   useEffect(() => {
     if (type === 'expense' && accountId) {
@@ -214,16 +214,16 @@ function QuickAddDialog({
         })
         .catch(() => {
           setCategories([
-            { id: '1', name: 'Housing' },
-            { id: '2', name: 'Food' },
-            { id: '3', name: 'Transport' },
-            { id: '4', name: 'Entertainment' },
-            { id: '5', name: 'Utilities' },
-            { id: '6', name: 'Healthcare' },
-            { id: '7', name: 'Education' },
-            { id: '8', name: 'Other' },
+            { id: '1', name: 'Vivienda' },
+            { id: '2', name: 'Alimentación' },
+            { id: '3', name: 'Transporte' },
+            { id: '4', name: 'Entretenimiento' },
+            { id: '5', name: 'Servicios' },
+            { id: '6', name: 'Salud' },
+            { id: '7', name: 'Educación' },
+            { id: '8', name: 'Otro' },
           ])
-          if (!category) setCategory('Housing')
+          if (!category) setCategory('Vivienda')
         })
     }
   }, [type, accountId])
@@ -282,25 +282,25 @@ function QuickAddDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
-          <DialogDescription>Quickly add a new income or expense entry.</DialogDescription>
+          <DialogTitle>Agregar Transacción</DialogTitle>
+          <DialogDescription>Agrega rápidamente un nuevo ingreso o gasto.</DialogDescription>
         </DialogHeader>
 
         <Tabs value={type} onValueChange={handleTabChange} className="w-full">
           <TabsList className="w-full">
             <TabsTrigger value="income" className="flex-1">
               <ArrowUpRight className="w-4 h-4 mr-1.5 text-emerald-500" />
-              Income
+              Ingreso
             </TabsTrigger>
             <TabsTrigger value="expense" className="flex-1">
               <ArrowDownRight className="w-4 h-4 mr-1.5 text-rose-500" />
-              Expense
+              Gasto
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="income" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="income-amount">Amount</Label>
+              <Label htmlFor="income-amount">Monto</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
                 <Input
@@ -316,17 +316,17 @@ function QuickAddDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="income-desc">Description</Label>
+              <Label htmlFor="income-desc">Descripción</Label>
               <Input
                 id="income-desc"
-                placeholder="e.g. Monthly salary"
+                placeholder="ej. Salario mensual"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Source</Label>
+                <Label>Fuente</Label>
                 <Select value={source} onValueChange={setSource}>
                   <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -337,7 +337,7 @@ function QuickAddDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="income-date">Date</Label>
+                <Label htmlFor="income-date">Fecha</Label>
                 <Input
                   id="income-date"
                   type="date"
@@ -347,14 +347,14 @@ function QuickAddDialog({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="income-recurring">Recurring</Label>
+              <Label htmlFor="income-recurring">Recurrente</Label>
               <Switch id="income-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
             </div>
           </TabsContent>
 
           <TabsContent value="expense" className="space-y-4 mt-4">
             <div className="space-y-2">
-              <Label htmlFor="expense-amount">Amount</Label>
+              <Label htmlFor="expense-amount">Monto</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
                 <Input
@@ -370,19 +370,19 @@ function QuickAddDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="expense-desc">Description</Label>
+              <Label htmlFor="expense-desc">Descripción</Label>
               <Input
                 id="expense-desc"
-                placeholder="e.g. Grocery shopping"
+                placeholder="ej. Compras en supermercado"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>Categoría</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                   <SelectContent>
                     {categories.map(c => (
                       <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
@@ -391,7 +391,7 @@ function QuickAddDialog({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="expense-date">Date</Label>
+                <Label htmlFor="expense-date">Fecha</Label>
                 <Input
                   id="expense-date"
                   type="date"
@@ -401,14 +401,14 @@ function QuickAddDialog({
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="expense-recurring">Recurring</Label>
+              <Label htmlFor="expense-recurring">Recurrente</Label>
               <Switch id="expense-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
             </div>
           </TabsContent>
         </Tabs>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button
             onClick={handleSave}
             disabled={!amount || parseFloat(amount) <= 0 || !description.trim() || saving}
@@ -420,7 +420,7 @@ function QuickAddDialog({
             )}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            {type === 'income' ? 'Add Income' : 'Add Expense'}
+            {type === 'income' ? 'Agregar Ingreso' : 'Agregar Gasto'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -498,9 +498,9 @@ export default function Dashboard() {
                 const wantsPct = b.wantsPercent ?? 30
                 const savingsPct = b.savingsPercent ?? 20
                 mapped.budgetVsActual = [
-                  { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
-                  { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
-                  { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+                  { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+                  { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+                  { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
                 ]
               }
             } catch { /* keep mock budgetVsActual */ }
@@ -547,9 +547,9 @@ export default function Dashboard() {
                   const wantsPct = b.wantsPercent ?? 30
                   const savingsPct = b.savingsPercent ?? 20
                   mapped.budgetVsActual = [
-                    { name: 'Needs', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
-                    { name: 'Wants', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
-                    { name: 'Savings', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+                    { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+                    { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+                    { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
                   ]
                 }
               } catch { /* keep mock budgetVsActual */ }
@@ -649,7 +649,7 @@ export default function Dashboard() {
     const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
     const today = now.getDate()
 
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
     const cells: Array<{
       day: number | null
@@ -709,9 +709,9 @@ export default function Dashboard() {
     if (cashFlow.length < 2) {
       const curr = cashFlow.length === 1 ? cashFlow[0] : { income: 0, expenses: 0 }
       return [
-        { label: 'Total Income', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
-        { label: 'Total Expenses', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
-        { label: 'Net Savings', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+        { label: 'Ingresos Totales', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+        { label: 'Gastos Totales', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+        { label: 'Ahorro Neto', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
       ]
     }
     const curr = cashFlow[cashFlow.length - 1]
@@ -726,9 +726,9 @@ export default function Dashboard() {
     const prevNet = prev.income - prev.expenses
 
     return [
-      { label: 'Total Income', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
-      { label: 'Total Expenses', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
-      { label: 'Net Savings', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+      { label: 'Ingresos Totales', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+      { label: 'Gastos Totales', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+      { label: 'Ahorro Neto', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
     ]
   })()
 
@@ -779,7 +779,7 @@ export default function Dashboard() {
     {
       title: 'Deudas Activas',
       value: formatCurrency(d.totalDebt),
-      change: '3 debts',
+      change: '3 deudas',
       trend: 'neutral' as const,
       icon: CreditCard,
       accentColor: '#f59e0b',
@@ -800,14 +800,14 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="module-header">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-foreground">Panel Principal</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            Overview of your financial health
+            Resumen de tu salud financiera
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
           <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
-          Refresh
+          Actualizar
         </Button>
       </div>
 
@@ -834,7 +834,7 @@ export default function Dashboard() {
                     <span className="text-3xl font-bold tabular-nums" style={{ color: healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981' }}>
                       {healthScore}
                     </span>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">of 100</span>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">de 100</span>
                   </div>
                 </div>
               </div>
@@ -842,29 +842,29 @@ export default function Dashboard() {
               {/* Details */}
               <div className="flex-1 text-center sm:text-left space-y-3">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Financial Health Score</h3>
+                  <h3 className="text-lg font-bold text-foreground">Puntuación de Salud Financiera</h3>
                   <p className={cn(
                     'text-sm font-semibold',
                     healthScore <= 40 ? 'text-red-500' : healthScore <= 70 ? 'text-amber-500' : 'text-emerald-500'
                   )}>
-                    {healthScore <= 40 ? 'Needs Work' : healthScore <= 70 ? 'Fair' : 'Excellent'}
+                    {healthScore <= 40 ? 'Necesita Mejora' : healthScore <= 70 ? 'Regular' : 'Excelente'}
                   </p>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Savings Rate</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasa de Ahorro</p>
                     <p className="text-sm font-semibold text-foreground tabular-nums">
                       {d.totalIncome > 0 ? `${Math.max(0, Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100))}%` : '0%'}
                     </p>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Debt Ratio</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ratio de Deuda</p>
                     <p className="text-sm font-semibold text-foreground tabular-nums">
                       {d.totalIncome > 0 ? `${Math.round(d.totalDebt / d.totalIncome * 100)}%` : '0%'}
                     </p>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergency</p>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergencia</p>
                     <p className="text-sm font-semibold text-foreground tabular-nums">
                       {d.totalExpenses > 0 ? `${(d.balance / d.totalExpenses).toFixed(1)}mo` : '0mo'}
                     </p>
@@ -914,7 +914,7 @@ export default function Dashboard() {
                   )}>
                     {m.change}
                   </span>
-                  <span className="text-xs text-muted-foreground ml-1">vs last month</span>
+                  <span className="text-xs text-muted-foreground ml-1">vs mes pasado</span>
                 </div>
               </CardContent>
             </Card>
@@ -945,8 +945,8 @@ export default function Dashboard() {
             >
               <Card className="overflow-hidden">
                 <div className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 px-6 pt-5 pb-0">
-                  <CardTitle className="text-base font-semibold">Monthly Cash Flow</CardTitle>
-                  <CardDescription>Income vs Expenses over the last 6 months</CardDescription>
+                  <CardTitle className="text-base font-semibold">Flujo de Efectivo Mensual</CardTitle>
+                  <CardDescription>Ingresos vs Gastos en los últimos 6 meses</CardDescription>
                 </div>
                 <CardContent className="pt-4">
                   <div className="h-[300px]">
@@ -967,8 +967,8 @@ export default function Dashboard() {
                         <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                         <RechartsTooltip content={EnhancedChartTooltip} />
                         <Legend />
-                        <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
-                        <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="expenses" name="Gastos" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -984,8 +984,8 @@ export default function Dashboard() {
             >
               <Card className="overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 px-6 pt-5 pb-0">
-                  <CardTitle className="text-base font-semibold">Expense Breakdown</CardTitle>
-                  <CardDescription>This month by category</CardDescription>
+                  <CardTitle className="text-base font-semibold">Desglose de Gastos</CardTitle>
+                  <CardDescription>Este mes por categoría</CardDescription>
                 </div>
                 <CardContent className="pt-4">
                   <div className="h-[300px]">
@@ -1042,11 +1042,11 @@ export default function Dashboard() {
                     <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
                       <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Best Saving Month</p>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes de Ahorro</p>
                   </div>
                   <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
                   <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} net` : 'No data'}
+                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} neto` : 'Sin datos'}
                   </p>
                 </CardContent>
               </Card>
@@ -1058,7 +1058,7 @@ export default function Dashboard() {
                     <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
                       <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                     </div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Top Expense</p>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mayor Gasto</p>
                   </div>
                   <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
                   <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
@@ -1074,11 +1074,11 @@ export default function Dashboard() {
                     <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
                       <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                     </div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">On Track</p>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">En Camino</p>
                   </div>
-                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">of {d.savingsGoals.length}</span></p>
+                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">de {d.savingsGoals.length}</span></p>
                   <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
-                    Goals &gt;50% complete
+                    Metas &gt;50% completadas
                   </p>
                 </CardContent>
               </Card>
@@ -1090,7 +1090,7 @@ export default function Dashboard() {
                     <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
                       <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
                     </div>
-                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Cash Flow Trend</p>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tendencia de Flujo</p>
                   </div>
                   <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
                     {insights.hasTrend && (
@@ -1101,7 +1101,7 @@ export default function Dashboard() {
                     {insights.hasTrend ? insights.trendLabel : 'N/A'}
                   </p>
                   <p className={cn('text-xs font-medium', insights.trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
-                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs last month' : 'vs last month') : 'No comparison data'}
+                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs mes pasado' : 'vs mes pasado') : 'Sin datos de comparación'}
                   </p>
                 </CardContent>
               </Card>
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {monthlyComparison.map((item) => {
                 const IconComp = item.icon
-                const isExpense = item.label === 'Total Expenses'
+                const isExpense = item.label === 'Gastos Totales'
                 const isPositive = isExpense ? item.change <= 0 : item.change >= 0
                 return (
                   <Card key={item.label} className={cn('border-l-4', item.color)}>
@@ -1145,7 +1145,7 @@ export default function Dashboard() {
                         {formatCurrency(item.current)}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Last month: {formatCurrency(item.previous)}
+                        Mes pasado: {formatCurrency(item.previous)}
                       </p>
                     </CardContent>
                   </Card>
@@ -1165,19 +1165,19 @@ export default function Dashboard() {
                 <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 px-6 pt-5 pb-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base font-semibold">Spending Heatmap</CardTitle>
-                      <CardDescription>Daily spending for {heatmapData.monthName}</CardDescription>
+                      <CardTitle className="text-base font-semibold">Mapa de Calor de Gastos</CardTitle>
+                      <CardDescription>Gastos diarios de {heatmapData.monthName}</CardDescription>
                     </div>
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] text-muted-foreground">Less</span>
+                    <span className="text-[10px] text-muted-foreground">Menos</span>
                     <div className="w-3.5 h-3.5 rounded-sm bg-muted/40 dark:bg-muted/20" />
                     <div className="w-3.5 h-3.5 rounded-sm bg-emerald-300 dark:bg-emerald-400/60" />
                     <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500 dark:bg-emerald-500/80" />
                     <div className="w-3.5 h-3.5 rounded-sm bg-amber-400 dark:bg-amber-500/80" />
                     <div className="w-3.5 h-3.5 rounded-sm bg-rose-400 dark:bg-rose-500/80" />
-                    <span className="text-[10px] text-muted-foreground">More</span>
+                    <span className="text-[10px] text-muted-foreground">Más</span>
                   </div>
                 </div>
                 <CardContent className="pt-3 pb-4">
@@ -1229,8 +1229,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                     <div>
-                      <CardTitle className="text-base font-semibold">Net Worth Trend</CardTitle>
-                      <CardDescription>Cumulative net position over 6 months</CardDescription>
+                      <CardTitle className="text-base font-semibold">Tendencia de Patrimonio</CardTitle>
+                      <CardDescription>Posición neta acumulada en 6 meses</CardDescription>
                     </div>
                   </div>
                 </div>
@@ -1248,13 +1248,13 @@ export default function Dashboard() {
                         <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
                         <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                         <RechartsTooltip
-                          formatter={(value: number) => [formatCurrency(value), 'Net Worth']}
+                          formatter={(value: number) => [formatCurrency(value), 'Patrimonio']}
                           contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
                         />
                         <Area
                           type="monotone"
                           dataKey="netWorth"
-                          name="Net Worth"
+                          name="Patrimonio"
                           stroke="#14b8a6"
                           fill="url(#netWorthGrad)"
                           strokeWidth={2}
@@ -1277,8 +1277,8 @@ export default function Dashboard() {
           >
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
-                <CardTitle className="text-base font-semibold">Budget vs Actual (50/30/20 Rule)</CardTitle>
-                <CardDescription>Comparing your planned budget with actual spending</CardDescription>
+                <CardTitle className="text-base font-semibold">Presupuesto vs Real (Regla 50/30/20)</CardTitle>
+                <CardDescription>Comparando tu presupuesto planificado con el gasto real</CardDescription>
               </div>
               <CardContent className="pt-4">
                 <div className="h-[240px]">
@@ -1289,8 +1289,8 @@ export default function Dashboard() {
                       <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                       <RechartsTooltip content={EnhancedChartTooltip} />
                       <Legend />
-                      <Bar dataKey="planned" name="Planned" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
-                      <Bar dataKey="actual" name="Actual" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+                      <Bar dataKey="planned" name="Planificado" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+                      <Bar dataKey="actual" name="Real" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1306,8 +1306,8 @@ export default function Dashboard() {
           >
             <Card className="overflow-hidden">
               <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
-                <CardTitle className="text-base font-semibold">Daily Spending Trend</CardTitle>
-                <CardDescription>Your spending pattern this month</CardDescription>
+                <CardTitle className="text-base font-semibold">Tendencia de Gasto Diario</CardTitle>
+                <CardDescription>Tu patrón de gasto este mes</CardDescription>
               </div>
               <CardContent className="pt-4">
                 <div className="h-[200px]">
@@ -1332,13 +1332,13 @@ export default function Dashboard() {
                         tickFormatter={(v) => `$${v}`}
                       />
                       <RechartsTooltip
-                        formatter={(value: number) => [formatCurrency(value), 'Spending']}
+                        formatter={(value: number) => [formatCurrency(value), 'Gastos']}
                         contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
                       />
                       <Area
                         type="monotone"
                         dataKey="amount"
-                        name="Spending"
+                        name="Gastos"
                         stroke="#f59e0b"
                         fill="url(#dailySpendGrad)"
                         strokeWidth={2}
@@ -1362,8 +1362,8 @@ export default function Dashboard() {
             >
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-semibold">Recent Transactions</CardTitle>
-                  <CardDescription>Your latest financial movements</CardDescription>
+                  <CardTitle className="text-base font-semibold">Transacciones Recientes</CardTitle>
+                  <CardDescription>Tus movimientos financieros más recientes</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
@@ -1425,8 +1425,8 @@ export default function Dashboard() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base font-semibold">Savings Goals</CardTitle>
-                      <CardDescription>Track your savings progress</CardDescription>
+                      <CardTitle className="text-base font-semibold">Metas de Ahorro</CardTitle>
+                      <CardDescription>Rastrea el progreso de tus ahorros</CardDescription>
                     </div>
                     <Button
                       variant="ghost"
@@ -1434,7 +1434,7 @@ export default function Dashboard() {
                       className="text-xs text-primary hover:text-primary"
                       onClick={() => setActiveModule('savings')}
                     >
-                      View All
+                      Ver Todo
                       <ArrowUpRight className="w-3 h-3 ml-1" />
                     </Button>
                   </div>
@@ -1472,8 +1472,8 @@ export default function Dashboard() {
                             />
                           </div>
                           <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{formatCurrency(goal.saved)} saved</span>
-                            <span>Goal: {formatCurrency(goal.target)}</span>
+                            <span>{formatCurrency(goal.saved)} ahorrado</span>
+                            <span>Meta: {formatCurrency(goal.target)}</span>
                           </div>
                           {goal.deadline && (
                             <p className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -1539,7 +1539,7 @@ export default function Dashboard() {
           whileTap={{ scale: 0.92 }}
           onClick={() => setShowQuickAdd(true)}
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl flex items-center justify-center"
-          title="Add Transaction"
+          title="Agregar Transacción"
         >
           <Plus className="w-6 h-6" />
         </motion.button>

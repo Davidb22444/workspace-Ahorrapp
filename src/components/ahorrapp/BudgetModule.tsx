@@ -68,9 +68,9 @@ const mockPrevMonth = {
 }
 
 const SPLIT_CONFIG = [
-  { key: 'needs' as const, label: 'Needs', sublabel: 'Essentials', color: '#10b981', bgColor: 'bg-emerald-500' },
-  { key: 'wants' as const, label: 'Wants', sublabel: 'Lifestyle', color: '#f59e0b', bgColor: 'bg-amber-500' },
-  { key: 'savings' as const, label: 'Savings', sublabel: 'Future', color: '#06b6d4', bgColor: 'bg-cyan-500' },
+  { key: 'needs' as const, label: 'Necesidades', sublabel: 'Esenciales', color: '#10b981', bgColor: 'bg-emerald-500' },
+  { key: 'wants' as const, label: 'Deseos', sublabel: 'Estilo de Vida', color: '#f59e0b', bgColor: 'bg-amber-500' },
+  { key: 'savings' as const, label: 'Ahorros', sublabel: 'Futuro', color: '#06b6d4', bgColor: 'bg-cyan-500' },
 ]
 
 export default function BudgetModule() {
@@ -131,7 +131,7 @@ export default function BudgetModule() {
 
   const handleCreate = async () => {
     const total = formPcts.needs + formPcts.wants + formPcts.savings
-    if (total !== 100) { toast.error('Percentages must add up to 100%'); return }
+    if (total !== 100) { toast.error('Los porcentajes deben sumar 100%'); return }
 
     try {
       const res = await fetch('/api/budget', {
@@ -142,7 +142,7 @@ export default function BudgetModule() {
       if (res.ok) {
         const data = await res.json()
         setBudget(data.budget || data)
-        toast.success('Budget created')
+        toast.success('Presupuesto creado')
         setCreateDialogOpen(false)
         return
       }
@@ -159,7 +159,7 @@ export default function BudgetModule() {
       categories: [],
     }
     setBudget(newBudget)
-    toast.success('Budget created')
+    toast.success('Presupuesto creado')
     setCreateDialogOpen(false)
   }
 
@@ -180,35 +180,35 @@ export default function BudgetModule() {
       <div className="space-y-6">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Set up your 50/30/20 budget rule</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Configura tu regla de presupuesto 50/30/20</p>
         </div>
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <PieChart className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-lg font-medium">No budget set up</p>
-          <p className="text-sm mt-1 mb-6">Create your first budget using the 50/30/20 rule</p>
+          <p className="text-lg font-medium">Sin presupuesto configurado</p>
+          <p className="text-sm mt-1 mb-6">Crea tu primer presupuesto usando la regla 50/30/20</p>
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Plus className="w-4 h-4 mr-2" /> Create Budget
+            <Plus className="w-4 h-4 mr-2" /> Crear Presupuesto
           </Button>
         </div>
 
         <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) setCreateDialogOpen(false) }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Create Budget</DialogTitle>
-              <DialogDescription>Allocate your income using the 50/30/20 rule.</DialogDescription>
+              <DialogTitle>Crear Presupuesto</DialogTitle>
+              <DialogDescription>Asigna tu ingreso usando la regla 50/30/20.</DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-2">
-              <BudgetSlider label="Needs (Essentials)" pct={formPcts.needs} color="#10b981" onChange={(v) => {
+              <BudgetSlider label="Necesidades (Esenciales)" pct={formPcts.needs} color="#10b981" onChange={(v) => {
                 const remaining = 100 - v
                 const wantsRatio = budget ? budget.wantsPct / (budget.wantsPct + budget.savingsPct) : 0.6
                 setFormPcts({ needs: v, wants: Math.round(remaining * wantsRatio), savings: Math.round(remaining * (1 - wantsRatio)) })
               }} />
-              <BudgetSlider label="Wants (Lifestyle)" pct={formPcts.wants} color="#6366f1" onChange={(v) => {
+              <BudgetSlider label="Deseos (Estilo de Vida)" pct={formPcts.wants} color="#6366f1" onChange={(v) => {
                 const remaining = 100 - v
                 const needsRatio = budget ? budget.needsPct / (budget.needsPct + budget.savingsPct) : 0.714
                 setFormPcts({ wants: v, needs: Math.round(remaining * needsRatio), savings: Math.round(remaining * (1 - needsRatio)) })
               }} />
-              <BudgetSlider label="Savings" pct={formPcts.savings} color="#f59e0b" onChange={(v) => {
+              <BudgetSlider label="Ahorros" pct={formPcts.savings} color="#f59e0b" onChange={(v) => {
                 const remaining = 100 - v
                 const needsRatio = budget ? budget.needsPct / (budget.needsPct + budget.wantsPct) : 0.625
                 setFormPcts({ savings: v, needs: Math.round(remaining * needsRatio), wants: Math.round(remaining * (1 - needsRatio)) })
@@ -220,8 +220,8 @@ export default function BudgetModule() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground">Create Budget</Button>
+              <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground">Crear Presupuesto</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -230,15 +230,15 @@ export default function BudgetModule() {
   }
 
   const pieData = [
-    { name: 'Needs', value: budget.needs.planned, color: '#10b981' },
-    { name: 'Wants', value: budget.wants.planned, color: '#f59e0b' },
-    { name: 'Savings', value: budget.savings.planned, color: '#06b6d4' },
+    { name: 'Necesidades', value: budget.needs.planned, color: '#10b981' },
+    { name: 'Deseos', value: budget.wants.planned, color: '#f59e0b' },
+    { name: 'Ahorros', value: budget.savings.planned, color: '#06b6d4' },
   ]
 
   const comparisonData = [
-    { name: 'Needs', planned: budget.needs.planned, actual: budget.needs.actual },
-    { name: 'Wants', planned: budget.wants.planned, actual: budget.wants.actual },
-    { name: 'Savings', planned: budget.savings.planned, actual: budget.savings.actual },
+    { name: 'Necesidades', planned: budget.needs.planned, actual: budget.needs.actual },
+    { name: 'Deseos', planned: budget.wants.planned, actual: budget.wants.actual },
+    { name: 'Ahorros', planned: budget.savings.planned, actual: budget.savings.actual },
   ]
 
   const totalPlanned = budget.needs.planned + budget.wants.planned + budget.savings.planned
@@ -248,10 +248,10 @@ export default function BudgetModule() {
 
   // Budget health logic
   const budgetHealth = budgetUsagePct <= 80
-    ? { status: 'good' as const, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', label: 'On Track', desc: 'Spending is well within budget limits' }
+    ? { status: 'good' as const, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', label: 'En Camino', desc: 'El gasto está bien dentro de los límites del presupuesto' }
     : budgetUsagePct <= 100
-      ? { status: 'warning' as const, icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', label: 'Caution', desc: `${budgetUsagePct}% of budget used — watch your spending` }
-      : { status: 'danger' as const, icon: AlertCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', label: 'Over Budget', desc: `You've exceeded your budget by ${formatCurrency(Math.abs(surplus))}` }
+      ? { status: 'warning' as const, icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', label: 'Precaución', desc: `${budgetUsagePct}% del presupuesto usado — cuida tus gastos` }
+      : { status: 'danger' as const, icon: AlertCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', label: 'Sobre Presupuesto', desc: `Has excedido tu presupuesto en ${formatCurrency(Math.abs(surplus))}` }
 
   // Period comparison
   const prevTotalActual = mockPrevMonth.totalActual
@@ -266,14 +266,14 @@ export default function BudgetModule() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">50/30/20 budget rule</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Regla de presupuesto 50/30/20</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+            <RefreshCw className="w-4 h-4 mr-2" /> Actualizar
           </Button>
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
-            <Plus className="w-4 h-4 mr-2" /> New Budget
+            <Plus className="w-4 h-4 mr-2" /> Nuevo Presupuesto
           </Button>
         </div>
       </div>
@@ -281,8 +281,8 @@ export default function BudgetModule() {
       {/* 50/30/20 Split Bars */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Budget Split</CardTitle>
-          <CardDescription>Your income allocation</CardDescription>
+          <CardTitle className="text-base font-semibold">Distribución del Presupuesto</CardTitle>
+          <CardDescription>Asignación de tu ingreso</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {SPLIT_CONFIG.map((item, idx) => {
@@ -301,7 +301,7 @@ export default function BudgetModule() {
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="tabular-nums">{formatCurrency(data.actual)}</span>
-                    <span>of</span>
+                    <span>de</span>
                     <span className="tabular-nums font-medium text-foreground">{formatCurrency(data.planned)}</span>
                   </div>
                 </div>
@@ -321,7 +321,7 @@ export default function BudgetModule() {
                 </div>
                 {isOver && (
                   <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" /> Over by {formatCurrency(data.actual - data.planned)}
+                    <AlertCircle className="w-3 h-3" /> Sobrepasado por {formatCurrency(data.actual - data.planned)}
                   </p>
                 )}
               </div>
@@ -340,7 +340,7 @@ export default function BudgetModule() {
                 <HealthIcon className={cn('w-5 h-5', budgetHealth.color)} />
               </div>
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget Health</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Salud del Presupuesto</p>
                 <p className={cn('text-lg font-bold', budgetHealth.color)}>{budgetHealth.label}</p>
                 <p className="text-xs text-muted-foreground">{budgetHealth.desc}</p>
               </div>
@@ -351,11 +351,11 @@ export default function BudgetModule() {
         {/* Period Comparison */}
         <Card className="stat-card card-hover">
           <CardContent className="p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">This Month vs Last Month</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Este Mes vs Mes Pasado</p>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(currentTotalActual)}</p>
-                <p className="text-xs text-muted-foreground">vs {formatCurrency(prevTotalActual)} last month</p>
+                <p className="text-xs text-muted-foreground">vs {formatCurrency(prevTotalActual)} mes pasado</p>
               </div>
               <div className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold', isImproved ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400')}>
                 {isImproved ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
@@ -373,7 +373,7 @@ export default function BudgetModule() {
             {surplus >= 0 ? <ArrowUpRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> : <ArrowDownRight className="w-6 h-6 text-rose-600 dark:text-rose-400" />}
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {surplus >= 0 ? 'Surplus' : 'Deficit'} This Month
+                {surplus >= 0 ? 'Superávit' : 'Déficit'} Este Mes
               </p>
               <p className={surplus >= 0 ? 'text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400' : 'text-2xl font-bold tabular-nums text-rose-600 dark:text-rose-400'}>
                 {surplus >= 0 ? '+' : ''}{formatCurrency(surplus)}
@@ -381,8 +381,8 @@ export default function BudgetModule() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Planned: {formatCurrency(totalPlanned)}</p>
-            <p className="text-xs text-muted-foreground">Actual: {formatCurrency(totalActual)}</p>
+            <p className="text-xs text-muted-foreground">Planeado: {formatCurrency(totalPlanned)}</p>
+            <p className="text-xs text-muted-foreground">Real: {formatCurrency(totalActual)}</p>
           </div>
         </CardContent>
       </Card>
@@ -391,8 +391,8 @@ export default function BudgetModule() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Budget Allocation</CardTitle>
-            <CardDescription>How your income is distributed</CardDescription>
+            <CardTitle className="text-base font-semibold">Asignación del Presupuesto</CardTitle>
+            <CardDescription>Cómo se distribuye tu ingreso</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[260px] flex items-center justify-center">
@@ -420,8 +420,8 @@ export default function BudgetModule() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Planned vs Actual</CardTitle>
-            <CardDescription>Budget adherence comparison</CardDescription>
+            <CardTitle className="text-base font-semibold">Planeado vs Real</CardTitle>
+            <CardDescription>Comparación de cumplimiento del presupuesto</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -432,8 +432,8 @@ export default function BudgetModule() {
                   <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
                   <RechartsTooltip formatter={(value: number) => formatCurrency(value)} contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }} />
                   <Legend />
-                  <Bar dataKey="planned" name="Planned" fill="#10b981" radius={[4, 4, 0, 0]} barSize={28} />
-                  <Bar dataKey="actual" name="Actual" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={28} />
+                  <Bar dataKey="planned" name="Planeado" fill="#10b981" radius={[4, 4, 0, 0]} barSize={28} />
+                  <Bar dataKey="actual" name="Real" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -445,8 +445,8 @@ export default function BudgetModule() {
       {budget.categories && budget.categories.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Category Breakdown</CardTitle>
-            <CardDescription>Detailed spending per category</CardDescription>
+            <CardTitle className="text-base font-semibold">Desglose por Categoría</CardTitle>
+            <CardDescription>Gastos detallados por categoría</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -481,19 +481,19 @@ export default function BudgetModule() {
       <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) setCreateDialogOpen(false) }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Budget</DialogTitle>
-            <DialogDescription>Allocate your income using the 50/30/20 rule.</DialogDescription>
+            <DialogTitle>Crear Nuevo Presupuesto</DialogTitle>
+            <DialogDescription>Asigna tu ingreso usando la regla 50/30/20.</DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-2">
-            <BudgetSlider label="Needs (Essentials)" pct={formPcts.needs} color="#10b981" onChange={(v) => {
+            <BudgetSlider label="Necesidades (Esenciales)" pct={formPcts.needs} color="#10b981" onChange={(v) => {
               const remaining = 100 - v
               setFormPcts({ needs: v, wants: Math.round(remaining * 0.6), savings: Math.round(remaining * 0.4) })
             }} />
-            <BudgetSlider label="Wants (Lifestyle)" pct={formPcts.wants} color="#6366f1" onChange={(v) => {
+            <BudgetSlider label="Deseos (Estilo de Vida)" pct={formPcts.wants} color="#6366f1" onChange={(v) => {
               const remaining = 100 - v
               setFormPcts({ wants: v, needs: Math.round(remaining * 0.714), savings: Math.round(remaining * 0.286) })
             }} />
-            <BudgetSlider label="Savings" pct={formPcts.savings} color="#f59e0b" onChange={(v) => {
+            <BudgetSlider label="Ahorros" pct={formPcts.savings} color="#f59e0b" onChange={(v) => {
               const remaining = 100 - v
               setFormPcts({ savings: v, needs: Math.round(remaining * 0.625), wants: Math.round(remaining * 0.375) })
             }} />
@@ -504,8 +504,8 @@ export default function BudgetModule() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground">Create Budget</Button>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground">Crear Presupuesto</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

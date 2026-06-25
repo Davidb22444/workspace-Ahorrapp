@@ -82,15 +82,15 @@ export default function SettingsPanel() {
 
   const handleSaveProfile = () => {
     if (!name || !email) {
-      toast.error('Please fill in all fields')
+      toast.error('Por favor completa todos los campos')
       return
     }
-    toast.success('Profile updated')
+    toast.success('Perfil actualizado')
   }
 
   const handleAddCategory = async () => {
     if (!catForm.name) {
-      toast.error('Please enter a category name')
+      toast.error('Por favor ingresa un nombre de categoría')
       return
     }
     try {
@@ -102,33 +102,33 @@ export default function SettingsPanel() {
       if (res.ok) {
         const data = await res.json()
         setCategories((prev) => [...prev, { ...catForm, id: data.category?.id || Date.now().toString(), isDefault: false }])
-        toast.success('Category created')
+        toast.success('Categoría creada')
         setCatDialogOpen(false)
         setCatForm({ name: '', type: 'expense', color: '#6366f1', icon: 'Circle' })
         return
       }
     } catch { /* fallback */ }
     setCategories((prev) => [...prev, { ...catForm, id: Date.now().toString(), isDefault: false }])
-    toast.success('Category created')
+    toast.success('Categoría creada')
     setCatDialogOpen(false)
     setCatForm({ name: '', type: 'expense', color: '#6366f1', icon: 'Circle' })
   }
 
   const handleDeleteCategory = async (cat: CategoryItem) => {
     if (cat.isDefault) {
-      toast.error('Cannot delete default categories')
+      toast.error('No se pueden eliminar categorías predeterminadas')
       return
     }
     try {
       const res = await fetch(`/api/categories/${cat.id}?accountId=${user?.id}`, { method: 'DELETE' })
       if (res.ok) {
         setCategories((prev) => prev.filter((c) => c.id !== cat.id))
-        toast.success('Category deleted')
+        toast.success('Categoría eliminada')
         return
       }
     } catch { /* fallback */ }
     setCategories((prev) => prev.filter((c) => c.id !== cat.id))
-    toast.success('Category deleted')
+    toast.success('Categoría eliminada')
   }
 
   const incomeCategories = categories.filter((c) => c.type === 'income')
@@ -138,7 +138,7 @@ export default function SettingsPanel() {
     if (items.length === 0) {
       return (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          No {typeLabel.toLowerCase()} categories yet
+          Sin categorías de {typeLabel.toLowerCase()} aún
         </p>
       )
     }
@@ -153,9 +153,9 @@ export default function SettingsPanel() {
               />
               <span className="text-sm font-medium text-foreground truncate">{cat.name}</span>
               {cat.isDefault ? (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 shrink-0">System</Badge>
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 shrink-0">Sistema</Badge>
               ) : (
-                <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0">Custom</Badge>
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0">Personalizado</Badge>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -181,14 +181,14 @@ export default function SettingsPanel() {
     <div className="space-y-6 max-w-2xl">
       <div className="module-header">
         <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Manage your account and preferences</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Gestiona tu cuenta y preferencias</p>
       </div>
 
       {/* Profile */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-semibold">Profile</CardTitle>
-          <CardDescription>Your personal information</CardDescription>
+          <CardTitle className="text-base font-semibold">Perfil</CardTitle>
+          <CardDescription>Tu información personal</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -208,7 +208,7 @@ export default function SettingsPanel() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="settings-name">Full Name</Label>
+              <Label htmlFor="settings-name">Nombre Completo</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -220,7 +220,7 @@ export default function SettingsPanel() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="settings-email">Email</Label>
+              <Label htmlFor="settings-email">Correo Electrónico</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -233,7 +233,7 @@ export default function SettingsPanel() {
               </div>
             </div>
             <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              Save Changes
+              Guardar Cambios
             </Button>
           </div>
         </CardContent>
@@ -242,8 +242,8 @@ export default function SettingsPanel() {
       {/* Appearance */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-semibold">Appearance</CardTitle>
-          <CardDescription>Customize how AhorrApp looks</CardDescription>
+          <CardTitle className="text-base font-semibold">Apariencia</CardTitle>
+          <CardDescription>Personaliza la apariencia de AhorrApp</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -254,8 +254,8 @@ export default function SettingsPanel() {
                 <Sun className="w-5 h-5 text-primary" />
               )}
               <div>
-                <p className="text-sm font-medium text-foreground">Dark Mode</p>
-                <p className="text-xs text-muted-foreground">Toggle between light and dark theme</p>
+                <p className="text-sm font-medium text-foreground">Modo Oscuro</p>
+                <p className="text-xs text-muted-foreground">Alterna entre tema claro y oscuro</p>
               </div>
             </div>
             <Switch
@@ -268,15 +268,15 @@ export default function SettingsPanel() {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">System Theme</p>
-              <p className="text-xs text-muted-foreground">Use your system&apos;s color scheme</p>
+              <p className="text-sm font-medium text-foreground">Tema del Sistema</p>
+              <p className="text-xs text-muted-foreground">Usa el esquema de colores de tu sistema</p>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setTheme('system')}
             >
-              Use System
+              Usar Sistema
             </Button>
           </div>
         </CardContent>
@@ -285,15 +285,15 @@ export default function SettingsPanel() {
       {/* Preferences */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-semibold">Preferences</CardTitle>
-          <CardDescription>Customize your experience</CardDescription>
+          <CardTitle className="text-base font-semibold">Preferencias</CardTitle>
+          <CardDescription>Personaliza tu experiencia</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Currency</Label>
+            <Label>Moneda</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Select value={currency} onValueChange={(v) => { setCurrency(v); toast.success(`Currency set to ${v}`) }}>
+              <Select value={currency} onValueChange={(v) => { setCurrency(v); toast.success(`Moneda configurada a ${v}`) }}>
                 <SelectTrigger className="pl-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -306,7 +306,7 @@ export default function SettingsPanel() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-muted-foreground">This affects how amounts are displayed throughout the app.</p>
+            <p className="text-xs text-muted-foreground">Esto afecta cómo se muestran los montos en toda la aplicación.</p>
           </div>
         </CardContent>
       </Card>
@@ -317,12 +317,12 @@ export default function SettingsPanel() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Tags className="w-4 h-4" /> Manage Categories
+                <Tags className="w-4 h-4" /> Gestionar Categorías
               </CardTitle>
-              <CardDescription className="mt-1">Organize your income and expense categories</CardDescription>
+              <CardDescription className="mt-1">Organiza tus categorías de ingresos y gastos</CardDescription>
             </div>
             <Button size="sm" onClick={() => setCatDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="w-3.5 h-3.5 mr-1.5" /> Add
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> Agregar
             </Button>
           </div>
         </CardHeader>
@@ -344,11 +344,11 @@ export default function SettingsPanel() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs font-medium">
-                    Income
+                    Ingresos
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{incomeCategories.length} categories</span>
+                  <span className="text-xs text-muted-foreground">{incomeCategories.length} categorías</span>
                 </div>
-                {renderCategoryList(incomeCategories, 'Income')}
+                {renderCategoryList(incomeCategories, 'Ingresos')}
               </div>
 
               <Separator />
@@ -357,11 +357,11 @@ export default function SettingsPanel() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Badge className="bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-0 text-xs font-medium">
-                    Expense
+                    Gastos
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{expenseCategories.length} categories</span>
+                  <span className="text-xs text-muted-foreground">{expenseCategories.length} categorías</span>
                 </div>
-                {renderCategoryList(expenseCategories, 'Expense')}
+                {renderCategoryList(expenseCategories, 'Gastos')}
               </div>
             </div>
           )}
@@ -371,13 +371,13 @@ export default function SettingsPanel() {
       {/* Account */}
       <Card className="border-destructive/20">
         <CardHeader>
-          <CardTitle className="text-base font-semibold text-destructive">Account</CardTitle>
-          <CardDescription>Danger zone - these actions are irreversible</CardDescription>
+          <CardTitle className="text-base font-semibold text-destructive">Cuenta</CardTitle>
+          <CardDescription>Zona de peligro - estas acciones son irreversibles</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" onClick={logout}>
             <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            Cerrar Sesión
           </Button>
         </CardContent>
       </Card>
@@ -391,33 +391,33 @@ export default function SettingsPanel() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Category</DialogTitle>
-            <DialogDescription>Create a new category for organizing your finances.</DialogDescription>
+            <DialogTitle>Agregar Categoría</DialogTitle>
+            <DialogDescription>Crea una nueva categoría para organizar tus finanzas.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>Nombre</Label>
               <Input
-                placeholder="e.g., Freelance, Subscriptions..."
+                placeholder="ej., Freelance, Suscripciones..."
                 value={catForm.name}
                 onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Tipo</Label>
                 <Select value={catForm.type} onValueChange={(v) => setCatForm({ ...catForm, type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Ingreso</SelectItem>
+                    <SelectItem value="expense">Gasto</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Icon Name</Label>
+                <Label>Nombre del Ícono</Label>
                 <Input
-                  placeholder="e.g., Circle, Star"
+                  placeholder="ej., Círculo, Estrella"
                   value={catForm.icon}
                   onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })}
                 />
@@ -447,10 +447,10 @@ export default function SettingsPanel() {
               setCatDialogOpen(false)
               setCatForm({ name: '', type: 'expense', color: '#6366f1', icon: 'Circle' })
             }}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handleAddCategory} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              Create Category
+              Crear Categoría
             </Button>
           </DialogFooter>
         </DialogContent>

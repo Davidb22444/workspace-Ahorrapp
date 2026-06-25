@@ -19,88 +19,88 @@ interface Message {
 }
 
 const QUICK_QUESTIONS = [
-  { icon: '💰', label: 'How can I save more?' },
-  { icon: '📊', label: 'Analyze my expenses' },
-  { icon: '📋', label: 'Budget recommendations' },
-  { icon: '💳', label: 'Debt payoff strategy' },
-  { icon: '📈', label: 'Investment advice' },
-  { icon: '🎯', label: 'Savings goal tips' },
+  { icon: '💰', label: '¿Cómo puedo ahorrar más?' },
+  { icon: '📊', label: 'Analiza mis gastos' },
+  { icon: '📋', label: 'Recomendaciones de presupuesto' },
+  { icon: '💳', label: 'Estrategia de pago de deudas' },
+  { icon: '📈', label: 'Consejos de inversión' },
+  { icon: '🎯', label: 'Tips para metas de ahorro' },
 ]
 
 const MOCK_RESPONSES: Record<string, string> = {
-  'How can I save more?': `Here are some proven strategies to boost your savings:
+  '¿Cómo puedo ahorrar más?': `Aquí tienes algunas estrategias comprobadas para aumentar tus ahorros:
 
-## 💰 Top Savings Tips
+## 💰 Mejores Tips de Ahorro
 
-1. **Automate your savings** - Set up automatic transfers to your savings account on payday
-2. **The 30-day rule** - Wait 30 days before making any non-essential purchase over $50
-3. **Review subscriptions** - Cancel unused subscriptions (you might save $50-100/month)
-4. **Meal planning** - Plan meals weekly and cook at home (saves $200-400/month)
-5. **Energy savings** - Reduce utility bills by 10-15% with simple habits
+1. **Automatiza tus ahorros** - Configura transferencias automáticas a tu cuenta de ahorros el día de pago
+2. **La regla de los 30 días** - Espera 30 días antes de realizar cualquier compra no esencial mayor a $50
+3. **Revisa tus suscripciones** - Cancela las suscripciones que no uses (podrías ahorrar $50-100/mes)
+4. **Planificación de comidas** - Planifica las comidas semanalmente y cocina en casa (ahorra $200-400/mes)
+5. **Ahorro de energía** - Reduce las facturas de servicios un 10-15% con hábitos simples
 
-## 📊 Based on Your Data
-- You're currently saving **20%** of your income
-- Increasing to **25%** would add an extra **$260/month** to your savings
-- Your food spending is **13%** above the recommended budget
+## 📊 Basado en Tus Datos
+- Actualmente estás ahorrando el **20%** de tus ingresos
+- Aumentar al **25%** agregaría **$260/mes** extra a tus ahorros
+- Tu gasto en alimentación está **13%** por encima del presupuesto recomendado
 
-Would you like me to create a detailed savings plan?`,
-  'Analyze my expenses': `## 📊 Expense Analysis
+¿Te gustaría que cree un plan de ahorro detallado?`,
+  'Analiza mis gastos': `## 📊 Análisis de Gastos
 
-### Current Month Breakdown
-| Category | Amount | % of Budget | Status |
+### Desglose del Mes Actual
+| Categoría | Monto | % del Presupuesto | Estado |
 |----------|--------|-------------|--------|
-| Housing | $1,200 | 46% | ✅ On target |
-| Food | $680 | 20% | ⚠️ Over budget |
-| Transport | $450 | 13% | ⚠️ Slightly over |
-| Entertainment | $320 | 9% | ✅ Under budget |
-| Utilities | $380 | 11% | ✅ On target |
+| Vivienda | $1,200 | 46% | ✅ En objetivo |
+| Alimentación | $680 | 20% | ⚠️ Sobrepasado |
+| Transporte | $450 | 13% | ⚠️ Ligeramente sobrepasado |
+| Entretenimiento | $320 | 9% | ✅ Debajo del presupuesto |
+| Servicios | $380 | 11% | ✅ En objetivo |
 
-### Key Findings
-- **Food spending** is $80 over your planned budget
-- **Transport costs** have increased 15% from last month
-- **Entertainment** is well under budget - great job! 🎉
-- **Housing** is stable at 23% of income (healthy range)
+### Hallazgos Clave
+- El **gasto en alimentación** está $80 por encima de tu presupuesto planeado
+- Los **costos de transporte** han aumentado un 15% respecto al mes pasado
+- **Entretenimiento** está muy por debajo del presupuesto - ¡excelente trabajo! 🎉
+- **Vivienda** es estable en el 23% de los ingresos (rango saludable)
 
-### Recommendations
-1. Consider meal prepping to reduce food costs
-2. Look into public transit options for commuting
-3. Your entertainment budget could be reduced further if needed`,
-  'Budget recommendations': `## 📋 Budget Recommendations
+### Recomendaciones
+1. Considera preparar comidas para reducir los costos de alimentación
+2. Investiga opciones de transporte público para desplazarte
+3. Tu presupuesto de entretenimiento podría reducirse más si es necesario`,
+  'Recomendaciones de presupuesto': `## 📋 Recomendaciones de Presupuesto
 
-### Suggested 50/30/20 Allocation
+### Asignación Sugerida 50/30/20
 
-Based on your income of **$5,200/month**:
+Basado en tus ingresos de **$5,200/mes**:
 
-| Category | Amount | Your Current | Difference |
+| Categoría | Monto | Tu Actual | Diferencia |
 |----------|--------|-------------|------------|
-| **Needs** (50%) | $2,600 | $2,510 | +$90 surplus |
-| **Wants** (30%) | $1,560 | $1,480 | +$80 surplus |
-| **Savings** (20%) | $1,040 | $770 | -$270 deficit |
+| **Necesidades** (50%) | $2,600 | $2,510 | +$90 sobrante |
+| **Deseos** (30%) | $1,560 | $1,480 | +$80 sobrante |
+| **Ahorros** (20%) | $1,040 | $770 | -$270 déficit |
 
-### ⚠️ Action Items
-1. **Prioritize savings** - You're only saving 14.8% instead of 20%
-2. **Redirect surplus** - Move the $170 surplus from needs/wants to savings
-3. **Set up automatic savings** - Make it the first "bill" you pay each month
-4. **Review needs** - Make sure all "needs" are truly essential
+### ⚠️ Acciones a Tomar
+1. **Prioriza el ahorro** - Solo estás ahorrando 14.8% en lugar del 20%
+2. **Redirige el sobrante** - Mueve los $170 sobrantes de necesidades/deseos a ahorros
+3. **Configura ahorros automáticos** - Conviértelo en la primera "factura" que pagas cada mes
+4. **Revisa las necesidades** - Asegúrate de que todas las "necesidades" sean realmente esenciales
 
-### 🎯 Stretch Goal
-Try increasing savings to **25%** over the next 3 months by:
-- Reducing food waste
-- Negotiating bills
-- Finding a side income source`,
+### 🎯 Meta Ambiciosa
+Intenta aumentar los ahorros al **25%** en los próximos 3 meses mediante:
+- Reducir el desperdicio de alimentos
+- Negociar facturas
+- Encontrar una fuente de ingresos adicional`,
 }
 
 function timeAgo(date: Date): string {
   const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  if (seconds < 60) return 'Just now'
+  if (seconds < 60) return 'Ahora mismo'
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
+  if (minutes < 60) return `hace ${minutes}m`
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return `hace ${hours}h`
   const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return `hace ${days}d`
 }
 
 export default function AIAssistant() {
@@ -142,7 +142,7 @@ export default function AIAssistant() {
         const assistantMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.response || data.message || 'I could not process that request.',
+          content: data.response || data.message || 'No pude procesar esa solicitud.',
           timestamp: new Date(),
         }
         setMessages((prev) => [...prev, assistantMsg])
@@ -156,18 +156,18 @@ export default function AIAssistant() {
       const matchedKey = Object.keys(MOCK_RESPONSES).find((k) => content.toLowerCase().includes(k.toLowerCase()))
       const response = matchedKey
         ? MOCK_RESPONSES[matchedKey]
-        : `Great question! Based on your financial data, here's what I'd suggest:
+        : `¡Excelente pregunta! Basándome en tus datos financieros, esto es lo que te sugeriría:
 
-## Financial Insight 💡
+## Perspectiva Financiera 💡
 
-While I'd need more context to give you a fully personalized answer, here are some general tips:
+Aunque necesitaría más contexto para darte una respuesta completamente personalizada, aquí hay algunos consejos generales:
 
-1. **Track every expense** - Awareness is the first step to improvement
-2. **Review your subscriptions** - Small recurring costs add up
-3. **Build an emergency fund** - Aim for 3-6 months of expenses
-4. **Pay high-interest debt first** - The avalanche method saves the most
+1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar
+2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan
+3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos
+4. **Paga primero las deudas con alto interés** - El método avalancha es el que más ahorra
 
-Would you like me to analyze a specific aspect of your finances? Try one of the quick questions for more detailed insights!`
+¿Te gustaría que analice un aspecto específico de tus finanzas? ¡Prueba una de las preguntas rápidas para obtener información más detallada!`
 
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -190,7 +190,7 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
       <div className="flex-shrink-0 mb-4">
         <div className="module-header">
           <h1 className="text-2xl font-bold text-gradient">Asistente IA</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Your AI-powered financial advisor</p>
+          <p className="text-muted-foreground text-sm mt-0.5">Tu asesor financiero impulsado por IA</p>
         </div>
       </div>
 
@@ -209,9 +209,9 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
                     <Wallet className="w-10 h-10 text-primary" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">Ask me anything about your finances</h2>
+                  <h2 className="text-xl font-bold text-foreground mb-1">Pregúntame lo que quieras sobre tus finanzas</h2>
                   <p className="text-sm text-muted-foreground">
-                    I can help with savings strategies, expense analysis, budget planning, and more.
+                    Puedo ayudarte con estrategias de ahorro, análisis de gastos, planificación de presupuesto y más.
                   </p>
                 </motion.div>
 
@@ -222,7 +222,7 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
                   className="w-full"
                 >
                   <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center justify-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> Try a quick question
+                    <Sparkles className="w-3.5 h-3.5" /> Prueba una pregunta rápida
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {QUICK_QUESTIONS.map((q) => (
@@ -322,7 +322,7 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
           {hasUserMessages && !loading && (
             <div className="px-4 pb-3 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                <Lightbulb className="w-3 h-3" /> Quick questions
+                <Lightbulb className="w-3 h-3" /> Preguntas rápidas
               </p>
               <div className="flex flex-wrap gap-2">
                 {QUICK_QUESTIONS.map((q) => (
@@ -345,7 +345,7 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything about your finances..."
+                placeholder="Escribe tu mensaje..."
                 className="flex-1"
                 disabled={loading}
               />

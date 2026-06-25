@@ -94,8 +94,8 @@ function formatCurrency(amount: number): string {
 }
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
 function getGoalEmoji(name: string): string {
@@ -300,7 +300,7 @@ export default function MonthlyReport() {
     const isPositive = diff > 0
     const isZero = diff === 0
 
-    if (isZero) return <span className="text-xs text-muted-foreground ml-2">— no change</span>
+    if (isZero) return <span className="text-xs text-muted-foreground ml-2">— sin cambio</span>
 
     return (
       <span
@@ -343,14 +343,14 @@ export default function MonthlyReport() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
         <div className="module-header">
-          <h2 className="text-2xl font-bold text-foreground">Monthly Report</h2>
+          <h2 className="text-2xl font-bold text-foreground">Reporte Mensual</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Comprehensive financial overview for a selected month
+            Resumen financiero completo de un mes seleccionado
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 print:hidden">
           <Printer className="w-4 h-4" />
-          Print / Export
+          Imprimir / Exportar
         </Button>
       </motion.div>
 
@@ -369,7 +369,7 @@ export default function MonthlyReport() {
             {MONTH_NAMES[selectedMonth]} {selectedYear}
           </h3>
           {isCurrentMonth && (
-            <Badge variant="secondary" className="mt-1 text-[10px]">Current Month</Badge>
+            <Badge variant="secondary" className="mt-1 text-[10px]">Mes Actual</Badge>
           )}
         </div>
         <Button
@@ -396,7 +396,7 @@ export default function MonthlyReport() {
               <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Total Income</span>
+              <span className="text-xs font-medium text-muted-foreground">Ingresos Totales</span>
             </div>
             <p className="text-xl font-bold text-foreground">{formatCurrency(currentMonthData.totalIncome)}</p>
             <Delta current={currentMonthData.totalIncome} previous={prevMonthData.totalIncome} />
@@ -409,7 +409,7 @@ export default function MonthlyReport() {
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
                 <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Total Expenses</span>
+              <span className="text-xs font-medium text-muted-foreground">Gastos Totales</span>
             </div>
             <p className="text-xl font-bold text-foreground">{formatCurrency(currentMonthData.totalExpenses)}</p>
             <Delta current={currentMonthData.totalExpenses} previous={prevMonthData.totalExpenses} />
@@ -422,7 +422,7 @@ export default function MonthlyReport() {
               <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-500/15 flex items-center justify-center">
                 <PiggyBank className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Net Savings</span>
+              <span className="text-xs font-medium text-muted-foreground">Ahorro Neto</span>
             </div>
             <p className={cn(
               'text-xl font-bold',
@@ -442,7 +442,7 @@ export default function MonthlyReport() {
               <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/15 flex items-center justify-center">
                 <Target className="w-4 h-4 text-violet-600 dark:text-violet-400" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Savings Rate</span>
+              <span className="text-xs font-medium text-muted-foreground">Tasa de Ahorro</span>
             </div>
             <p className="text-xl font-bold text-foreground">{currentMonthData.savingsRate.toFixed(1)}%</p>
             <Delta current={currentMonthData.savingsRate} previous={prevMonthData.savingsRate} />
@@ -464,22 +464,22 @@ export default function MonthlyReport() {
                 <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
                   <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                Income Breakdown
+                Desglose de Ingresos
               </CardTitle>
               <CardDescription>
-                {currentMonthData.incomes.length} income record{currentMonthData.incomes.length !== 1 ? 's' : ''} this month
+                {currentMonthData.incomes.length} registro{currentMonthData.incomes.length !== 1 ? 's' : ''} de ingreso este mes
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               {currentMonthData.incomes.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No income this month</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sin ingresos este mes</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Source</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right w-16">% of Total</TableHead>
+                      <TableHead>Fuente</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-right w-16">% del Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -527,15 +527,15 @@ export default function MonthlyReport() {
                 <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
                   <BarChart3 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 </div>
-                Expense Breakdown
+                Desglose de Gastos
               </CardTitle>
               <CardDescription>
-                {expenseByCategory.length} categor{expenseByCategory.length !== 1 ? 'ies' : 'y'}
+                {expenseByCategory.length} categor{expenseByCategory.length !== 1 ? 'ías' : 'ía'}
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               {expenseByCategory.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No expenses this month</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sin gastos este mes</p>
               ) : (
                 <div className="space-y-4">
                   {expenseByCategory.map((cat) => {
@@ -552,7 +552,7 @@ export default function MonthlyReport() {
                             />
                             <span className="text-sm font-medium text-foreground truncate">{cat.name}</span>
                             <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {cat.items.length} item{cat.items.length !== 1 ? 's' : ''}
+                              {cat.items.length} elemento{cat.items.length !== 1 ? 's' : ''}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -610,12 +610,12 @@ export default function MonthlyReport() {
                 <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
                   <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                Savings This Month
+                Ahorros de Este Mes
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               {currentMonthData.savingsContributions.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No contributions this month</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sin contribuciones de ahorro</p>
               ) : (
                 <div className="space-y-3">
                   {(() => {
@@ -649,7 +649,7 @@ export default function MonthlyReport() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{g.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {g.count} contribution{g.count !== 1 ? 's' : ''}
+                            {g.count} contribución{g.count !== 1 ? 'es' : ''}
                           </p>
                         </div>
                         <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
@@ -660,7 +660,7 @@ export default function MonthlyReport() {
                   })()}
                   <div className="pt-2 border-t mt-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Total saved</span>
+                      <span className="text-muted-foreground">Total ahorrado</span>
                       <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                         {formatCurrency(currentMonthData.savingsContributions.reduce((s, c) => s + c.amount, 0))}
                       </span>
@@ -684,12 +684,12 @@ export default function MonthlyReport() {
                 <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
                   <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 </div>
-                Debt Payments
+                Pagos de Deudas
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               {currentMonthData.debtPayments.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No debt payments this month</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sin pagos de deudas</p>
               ) : (
                 <div className="space-y-3">
                   {(() => {
@@ -713,7 +713,7 @@ export default function MonthlyReport() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {d.count} payment{d.count !== 1 ? 's' : ''}
+                            {d.count} pago{d.count !== 1 ? 's' : ''}
                           </p>
                         </div>
                         <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 shrink-0">
@@ -724,7 +724,7 @@ export default function MonthlyReport() {
                   })()}
                   <div className="pt-2 border-t mt-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Total paid</span>
+                      <span className="text-muted-foreground">Total pagado</span>
                       <span className="font-semibold text-amber-600 dark:text-amber-400">
                         {formatCurrency(currentMonthData.debtPayments.reduce((s, p) => s + p.amount, 0))}
                       </span>
@@ -748,12 +748,12 @@ export default function MonthlyReport() {
                 <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
                   <CircleAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 </div>
-                Top 5 Expenses
+                Top 5 Gastos
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               {top5Expenses.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No expenses this month</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sin gastos este mes</p>
               ) : (
                 <div className="space-y-2">
                   {top5Expenses.map((exp, idx) => (

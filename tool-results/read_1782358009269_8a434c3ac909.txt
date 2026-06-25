@@ -1,0 +1,537 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useMemo } from 'react'
+     4→import { motion } from 'framer-motion'
+     5→import {
+     6→  TrendingUp, TrendingDown, DollarSign, Target, CreditCard, AlertTriangle,
+     7→  ChevronLeft, ChevronRight, Calendar, ArrowUpRight, ArrowDownRight, Trophy, Frown,
+     8→} from 'lucide-react'
+     9→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Skeleton } from '@/components/ui/skeleton'
+    13→import { Progress } from '@/components/ui/progress'
+    14→import { useAppStore } from '@/lib/store'
+    15→import { cn } from '@/lib/utils'
+    16→import {
+    17→  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    18→  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
+    19→} from 'recharts'
+    20→import { format } from 'date-fns'
+    21→
+    22→const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
+    23→
+    24→function formatCurrency(amount: number): string {
+    25→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    26→}
+    27→
+    28→interface AnnualData {
+    29→  totalIncome: number
+    30→  totalExpenses: number
+    31→  netSavings: number
+    32→  savingsRate: number
+    33→  totalDebtPaid: number
+    34→  unexpectedCosts: number
+    35→  monthlyData: Array<{ month: string; income: number; expenses: number }>
+    36→  incomeSources: Array<{ name: string; value: number }>
+    37→  topExpenseCategories: Array<{ name: string; amount: number; percentage: number }>
+    38→  savingsGoals: Array<{ name: string; saved: number; target: number }>
+    39→  monthOverMonth: Array<{ month: string; incomeChange: number; expenseChange: number }>
+    40→  bestMonth: { month: string; savings: number } | null
+    41→  worstMonth: { month: string; savings: number } | null
+    42→}
+    43→
+    44→const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    45→
+    46→function generateMockData(year: number): AnnualData {
+    47→  const seed = year * 7
+    48→  const rand = (i: number, min: number, max: number) =>
+    49→    Math.round(((Math.sin(seed + i * 13.37) + 1) / 2) * (max - min) + min)
+    50→
+    51→  const monthlyData = MONTHS.map((month, i) => ({
+    52→    month,
+    53→    income: rand(i, 4200, 5800),
+    54→    expenses: rand(i + 50, 2400, 3800),
+    55→  }))
+    56→
+    57→  const totalIncome = monthlyData.reduce((s, m) => s + m.income, 0)
+    58→  const totalExpenses = monthlyData.reduce((s, m) => s + m.expenses, 0)
+    59→  const netSavings = totalIncome - totalExpenses
+    60→  const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0
+    61→
+    62→  const incomeSources = [
+    63→    { name: 'Salary', value: Math.round(totalIncome * 0.72) },
+    64→    { name: 'Freelance', value: Math.round(totalIncome * 0.15) },
+    65→    { name: 'Investments', value: Math.round(totalIncome * 0.08) },
+    66→    { name: 'Other', value: Math.round(totalIncome * 0.05) },
+    67→  ]
+    68→
+    69→  const topExpenseCategories = [
+    70→    { name: 'Housing', amount: Math.round(totalExpenses * 0.32), percentage: 32 },
+    71→    { name: 'Food', amount: Math.round(totalExpenses * 0.18), percentage: 18 },
+    72→    { name: 'Transport', amount: Math.round(totalExpenses * 0.12), percentage: 12 },
+    73→    { name: 'Entertainment', amount: Math.round(totalExpenses * 0.09), percentage: 9 },
+    74→    { name: 'Utilities', amount: Math.round(totalExpenses * 0.11), percentage: 11 },
+    75→    { name: 'Healthcare', amount: Math.round(totalExpenses * 0.08), percentage: 8 },
+    76→  ]
+    77→
+    78→  const savingsGoals = [
+    79→    { name: 'Emergency Fund', saved: rand(1, 3000, 12000), target: 15000 },
+    80→    { name: 'Vacation', saved: rand(2, 800, 3500), target: 4000 },
+    81→    { name: 'New Laptop', saved: rand(3, 400, 2200), target: 2500 },
+    82→  ]
+    83→
+    84→  const monthOverMonth = monthlyData.map((m, i) => {
+    85→    if (i === 0) return { month: m.month, incomeChange: 0, expenseChange: 0 }
+    86→    const prev = monthlyData[i - 1]
+    87→    return {
+    88→      month: m.month,
+    89→      incomeChange: prev.income > 0 ? Math.round(((m.income - prev.income) / prev.income) * 100) : 0,
+    90→      expenseChange: prev.expenses > 0 ? Math.round(((m.expenses - prev.expenses) / prev.expenses) * 100) : 0,
+    91→    }
+    92→  })
+    93→
+    94→  let bestMonth: { month: string; savings: number } | null = null
+    95→  let worstMonth: { month: string; savings: number } | null = null
+    96→  monthlyData.forEach((m) => {
+    97→    const sav = m.income - m.expenses
+    98→    if (!bestMonth || sav > bestMonth.savings) bestMonth = { month: m.month, savings: sav }
+    99→    if (!worstMonth || sav < worstMonth.savings) worstMonth = { month: m.month, savings: sav }
+   100→  })
+   101→
+   102→  return {
+   103→    totalIncome,
+   104→    totalExpenses,
+   105→    netSavings,
+   106→    savingsRate,
+   107→    totalDebtPaid: rand(90, 4000, 12000),
+   108→    unexpectedCosts: rand(80, 800, 3500),
+   109→    monthlyData,
+   110→    incomeSources,
+   111→    topExpenseCategories,
+   112→    savingsGoals,
+   113→    monthOverMonth,
+   114→    bestMonth,
+   115→    worstMonth,
+   116→  }
+   117→}
+   118→
+   119→function CustomTooltip({ active, payload, label }: any) {
+   120→  if (active && payload && payload.length) {
+   121→    return (
+   122→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   123→        <p className="text-sm font-semibold text-foreground mb-1.5">{label}</p>
+   124→        {payload.map((entry: any, idx: number) => (
+   125→          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+   126→            <div className="flex items-center gap-1.5">
+   127→              <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+   128→              <span className="text-muted-foreground">{entry.name}</span>
+   129→            </div>
+   130→            <span className="font-semibold tabular-nums">
+   131→              {formatCurrency(entry.value)}
+   132→            </span>
+   133→          </div>
+   134→        ))}
+   135→      </div>
+   136→    )
+   137→  }
+   138→  return null
+   139→}
+   140→
+   141→function PieTooltip({ active, payload }: any) {
+   142→  if (active && payload && payload.length) {
+   143→    return (
+   144→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   145→        <div className="flex items-center gap-2 text-xs mb-1">
+   146→          <div className="w-2 h-2 rounded-full" style={{ background: payload[0].payload.fill || CHART_COLORS[0] }} />
+   147→          <span className="font-medium text-foreground">{payload[0].name}</span>
+   148→        </div>
+   149→        <p className="text-sm font-bold tabular-nums">{formatCurrency(payload[0].value)}</p>
+   150→      </div>
+   151→    )
+   152→  }
+   153→  return null
+   154→}
+   155→
+   156→export default function AnnualSummary() {
+   157→  const { user } = useAppStore()
+   158→  const currentYear = new Date().getFullYear()
+   159→  const [selectedYear, setSelectedYear] = useState(currentYear)
+   160→  const [data, setData] = useState<AnnualData | null>(null)
+   161→  const [loading, setLoading] = useState(true)
+   162→
+   163→  useEffect(() => {
+   164→    let cancelled = false
+   165→    const doFetch = async () => {
+   166→      setLoading(true)
+   167→      try {
+   168→        const res = await fetch(`/api/annual-summary?accountId=${user?.id}&year=${selectedYear}`)
+   169→        if (res.ok && !cancelled) {
+   170→          const json = await res.json()
+   171→          if (json.totalIncome !== undefined) {
+   172→            setData(json as AnnualData)
+   173→            setLoading(false)
+   174→            return
+   175→          }
+   176→        }
+   177→      } catch { /* fallback */ }
+   178→      if (!cancelled) {
+   179→        setData(generateMockData(selectedYear))
+   180→        setLoading(false)
+   181→      }
+   182→    }
+   183→    doFetch()
+   184→    return () => { cancelled = true }
+   185→  }, [selectedYear, user?.id])
+   186→
+   187→  const metricCards = useMemo(() => {
+   188→    if (!data) return []
+   189→    return [
+   190→      { label: 'Total Income', value: data.totalIncome, icon: TrendingUp, color: 'emerald', change: 8.2 },
+   191→      { label: 'Total Expenses', value: data.totalExpenses, icon: TrendingDown, color: 'rose', change: -3.1 },
+   192→      { label: 'Net Savings', value: data.netSavings, icon: DollarSign, color: 'cyan', change: 12.5 },
+   193→      { label: 'Savings Rate', value: data.savingsRate, icon: Target, color: 'primary', change: 2.1, isPercent: true },
+   194→      { label: 'Total Debt Paid', value: data.totalDebtPaid, icon: CreditCard, color: 'amber', change: 15.0 },
+   195→      { label: 'Unexpected Costs', value: data.unexpectedCosts, icon: AlertTriangle, color: 'violet', change: -5.4 },
+   196→    ]
+   197→  }, [data])
+   198→
+   199→  const colorMap: Record<string, { bg: string; text: string; darkBg: string }> = {
+   200→    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600 dark:text-emerald-400', darkBg: 'dark:bg-emerald-500/10' },
+   201→    rose: { bg: 'bg-rose-50', text: 'text-rose-600 dark:text-rose-400', darkBg: 'dark:bg-rose-500/10' },
+   202→    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-600 dark:text-cyan-400', darkBg: 'dark:bg-cyan-500/10' },
+   203→    primary: { bg: 'bg-primary/10', text: 'text-primary dark:text-primary', darkBg: '' },
+   204→    amber: { bg: 'bg-amber-50', text: 'text-amber-600 dark:text-amber-400', darkBg: 'dark:bg-amber-500/10' },
+   205→    violet: { bg: 'bg-violet-50', text: 'text-violet-600 dark:text-violet-400', darkBg: 'dark:bg-violet-500/10' },
+   206→  }
+   207→
+   208→  return (
+   209→    <div className="space-y-6">
+   210→      {/* Header + Year Selector */}
+   211→      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+   212→        <div>
+   213→          <h1 className="text-2xl font-bold text-gradient">Annual Summary</h1>
+   214→          <p className="text-muted-foreground text-sm mt-0.5">Year-over-year financial overview</p>
+   215→        </div>
+   216→        <div className="flex items-center gap-2">
+   217→          <Button
+   218→            variant="outline" size="icon" className="h-9 w-9"
+   219→            onClick={() => setSelectedYear((y) => y - 1)}
+   220→          >
+   221→            <ChevronLeft className="w-4 h-4" />
+   222→          </Button>
+   223→          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 min-w-[120px] justify-center">
+   224→            <Calendar className="w-4 h-4 text-muted-foreground" />
+   225→            <span className="font-semibold text-foreground tabular-nums">{selectedYear}</span>
+   226→            {selectedYear === currentYear && (
+   227→              <Badge variant="secondary" className="text-[10px] px-1.5 h-5">Current</Badge>
+   228→            )}
+   229→          </div>
+   230→          <Button
+   231→            variant="outline" size="icon" className="h-9 w-9"
+   232→            onClick={() => setSelectedYear((y) => Math.min(currentYear, y + 1))}
+   233→            disabled={selectedYear >= currentYear}
+   234→          >
+   235→            <ChevronRight className="w-4 h-4" />
+   236→          </Button>
+   237→        </div>
+   238→      </div>
+   239→
+   240→      {/* Key Metrics Row */}
+   241→      {loading ? (
+   242→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+   243→          {Array.from({ length: 6 }).map((_, i) => (
+   244→            <Card key={i} className="stat-card"><CardContent className="p-4"><Skeleton className="h-28 w-full" /></CardContent></Card>
+   245→          ))}
+   246→        </div>
+   247→      ) : (
+   248→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in">
+   249→          {metricCards.map((m, i) => {
+   250→            const Icon = m.icon
+   251→            const cm = colorMap[m.color] || colorMap.emerald
+   252→            return (
+   253→              <motion.div
+   254→                key={m.label}
+   255→                initial={{ opacity: 0, y: 16 }}
+   256→                animate={{ opacity: 1, y: 0 }}
+   257→                transition={{ delay: i * 0.05 }}
+   258→              >
+   259→                <Card className="stat-card card-hover">
+   260→                  <CardContent className="p-4">
+   261→                    <div className="flex items-center justify-between mb-3">
+   262→                      <div className={cn('p-2 rounded-xl', cm.bg, cm.darkBg)}>
+   263→                        <Icon className={cn('w-4 h-4', cm.text)} />
+   264→                      </div>
+   265→                      <div className={cn(
+   266→                        'flex items-center gap-0.5 text-[10px] font-medium',
+   267→                        m.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   268→                      )}>
+   269→                        {m.change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   270→                        {Math.abs(m.change)}%
+   271→                      </div>
+   272→                    </div>
+   273→                    <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
+   274→                      {m.isPercent ? `${m.value}%` : formatCurrency(m.value)}
+   275→                    </p>
+   276→                    <p className="text-[11px] text-muted-foreground mt-0.5">{m.label}</p>
+   277→                  </CardContent>
+   278→                </Card>
+   279→              </motion.div>
+   280→            )
+   281→          })}
+   282→        </div>
+   283→      )}
+   284→
+   285→      {loading ? (
+   286→        <div className="space-y-4">
+   287→          {[1, 2].map((i) => (
+   288→            <Card key={i}><CardContent className="p-6"><Skeleton className="h-72 w-full" /></CardContent></Card>
+   289→          ))}
+   290→        </div>
+   291→      ) : data && (
+   292→        <>
+   293→          {/* Monthly Overview Area Chart */}
+   294→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+   295→            <Card className="card-hover">
+   296→              <CardHeader className="pb-2">
+   297→                <CardTitle className="text-base font-semibold">Monthly Overview</CardTitle>
+   298→                <CardDescription className="text-xs">Income vs expenses across all months</CardDescription>
+   299→              </CardHeader>
+   300→              <CardContent className="p-4 pt-0">
+   301→                <div className="h-72">
+   302→                  <ResponsiveContainer width="100%" height="100%">
+   303→                    <AreaChart data={data.monthlyData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+   304→                      <defs>
+   305→                        <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   306→                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   307→                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   308→                        </linearGradient>
+   309→                        <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   310→                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   311→                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   312→                        </linearGradient>
+   313→                      </defs>
+   314→                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+   315→                      <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+   316→                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} className="text-muted-foreground" />
+   317→                      <RechartsTooltip content={<CustomTooltip />} />
+   318→                      <Area type="monotone" dataKey="income" name="Income" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   319→                      <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   320→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+   321→                    </AreaChart>
+   322→                  </ResponsiveContainer>
+   323→                </div>
+   324→              </CardContent>
+   325→            </Card>
+   326→          </motion.div>
+   327→
+   328→          {/* Income Sources Pie + Top Expenses Side by Side */}
+   329→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   330→            {/* Income Sources Pie Chart */}
+   331→            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+   332→              <Card className="card-hover">
+   333→                <CardHeader className="pb-2">
+   334→                  <CardTitle className="text-base font-semibold">Income Sources</CardTitle>
+   335→                  <CardDescription className="text-xs">Breakdown of where your money comes from</CardDescription>
+   336→                </CardHeader>
+   337→                <CardContent className="p-4 pt-0">
+   338→                  <div className="h-64">
+   339→                    <ResponsiveContainer width="100%" height="100%">
+   340→                      <PieChart>
+   341→                        <Pie
+   342→                          data={data.incomeSources}
+   343→                          cx="50%"
+   344→                          cy="50%"
+   345→                          innerRadius={55}
+   346→                          outerRadius={90}
+   347→                          paddingAngle={3}
+   348→                          dataKey="value"
+   349→                          nameKey="name"
+   350→                        >
+   351→                          {data.incomeSources.map((_, idx) => (
+   352→                            <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+   353→                          ))}
+   354→                        </Pie>
+   355→                        <RechartsTooltip content={<PieTooltip />} />
+   356→                        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+   357→                      </PieChart>
+   358→                    </ResponsiveContainer>
+   359→                  </div>
+   360→                </CardContent>
+   361→              </Card>
+   362→            </motion.div>
+   363→
+   364→            {/* Top Expense Categories - Horizontal Bar */}
+   365→            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+   366→              <Card className="card-hover">
+   367→                <CardHeader className="pb-2">
+   368→                  <CardTitle className="text-base font-semibold">Top Expense Categories</CardTitle>
+   369→                  <CardDescription className="text-xs">Highest spending areas this year</CardDescription>
+   370→                </CardHeader>
+   371→                <CardContent className="p-4 pt-0">
+   372→                  <div className="h-64">
+   373→                    <ResponsiveContainer width="100%" height="100%">
+   374→                      <BarChart data={data.topExpenseCategories} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+   375→                        <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" horizontal={false} />
+   376→                        <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
+   377→                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={85} />
+   378→                        <RechartsTooltip
+   379→                          formatter={(value: number) => formatCurrency(value)}
+   380→                          contentStyle={{ borderRadius: 12, fontSize: 12, border: '1px solid var(--border)', background: 'var(--card)' }}
+   381→                        />
+   382→                        <Bar dataKey="amount" name="Amount" radius={[0, 6, 6, 0]} barSize={18}>
+   383→                          {data.topExpenseCategories.map((_, idx) => (
+   384→                            <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+   385→                          ))}
+   386→                        </Bar>
+   387→                      </BarChart>
+   388→                    </ResponsiveContainer>
+   389→                  </div>
+   390→                </CardContent>
+   391→              </Card>
+   392→            </motion.div>
+   393→          </div>
+   394→
+   395→          {/* Savings Goals Progress */}
+   396→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+   397→            <Card className="card-hover">
+   398→              <CardHeader className="pb-2">
+   399→                <CardTitle className="text-base font-semibold">Savings Goals Progress</CardTitle>
+   400→                <CardDescription className="text-xs">How your savings goals are tracking this year</CardDescription>
+   401→              </CardHeader>
+   402→              <CardContent className="p-4 pt-0 space-y-4">
+   403→                {data.savingsGoals.map((goal, idx) => {
+   404→                  const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+   405→                  return (
+   406→                    <div key={idx}>
+   407→                      <div className="flex items-center justify-between mb-1.5">
+   408→                        <span className="text-sm font-medium text-foreground">{goal.name}</span>
+   409→                        <span className="text-xs text-muted-foreground tabular-nums">
+   410→                          {formatCurrency(goal.saved)} <span className="text-border">/</span> {formatCurrency(goal.target)}
+   411→                        </span>
+   412→                      </div>
+   413→                      <div className="relative">
+   414→                        <Progress value={pct} className="h-2.5" />
+   415→                      </div>
+   416→                      <div className="flex justify-between mt-1">
+   417→                        <span className="text-[10px] text-muted-foreground">{pct}% complete</span>
+   418→                        <span className="text-[10px] text-muted-foreground">{formatCurrency(goal.target - goal.saved)} remaining</span>
+   419→                      </div>
+   420→                    </div>
+   421→                  )
+   422→                })}
+   423→              </CardContent>
+   424→            </Card>
+   425→          </motion.div>
+   426→
+   427→          {/* Month-over-Month Trends */}
+   428→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+   429→            <Card className="card-hover">
+   430→              <CardHeader className="pb-2">
+   431→                <CardTitle className="text-base font-semibold">Month-over-Month Trends</CardTitle>
+   432→                <CardDescription className="text-xs">Percentage change between consecutive months</CardDescription>
+   433→              </CardHeader>
+   434→              <CardContent className="p-4 pt-0">
+   435→                <div className="overflow-x-auto">
+   436→                  <table className="w-full text-sm">
+   437→                    <thead>
+   438→                      <tr className="border-b border-border">
+   439→                        <th className="text-left text-xs font-medium text-muted-foreground pb-2 pr-4">Month</th>
+   440→                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 px-4">Income</th>
+   441→                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 pl-4">Expenses</th>
+   442→                      </tr>
+   443→                    </thead>
+   444→                    <tbody>
+   445→                      {data.monthOverMonth.map((row, idx) => (
+   446→                        <tr key={row.month} className="border-b border-border/50 last:border-0">
+   447→                          <td className="py-2.5 pr-4 font-medium text-foreground">{row.month}</td>
+   448→                          <td className="py-2.5 px-4 text-right">
+   449→                            {idx === 0 ? (
+   450→                              <span className="text-xs text-muted-foreground">—</span>
+   451→                            ) : (
+   452→                              <span className={cn(
+   453→                                'inline-flex items-center gap-1 text-xs font-semibold tabular-nums',
+   454→                                row.incomeChange >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   455→                              )}>
+   456→                                {row.incomeChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   457→                                {Math.abs(row.incomeChange)}%
+   458→                              </span>
+   459→                            )}
+   460→                          </td>
+   461→                          <td className="py-2.5 pl-4 text-right">
+   462→                            {idx === 0 ? (
+   463→                              <span className="text-xs text-muted-foreground">—</span>
+   464→                            ) : (
+   465→                              <span className={cn(
+   466→                                'inline-flex items-center gap-1 text-xs font-semibold tabular-nums',
+   467→                                row.expenseChange <= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   468→                              )}>
+   469→                                {row.expenseChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   470→                                {Math.abs(row.expenseChange)}%
+   471→                              </span>
+   472→                            )}
+   473→                          </td>
+   474→                        </tr>
+   475→                      ))}
+   476→                    </tbody>
+   477→                  </table>
+   478→                </div>
+   479→              </CardContent>
+   480→            </Card>
+   481→          </motion.div>
+   482→
+   483→          {/* Best & Worst Months */}
+   484→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   485→            {data.bestMonth && (
+   486→              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+   487→                <Card className="card-hover card-glow" style={{ '--card-glow-color': 'rgba(16, 185, 129, 0.3)' } as React.CSSProperties}>
+   488→                  <CardContent className="p-5">
+   489→                    <div className="flex items-center gap-3 mb-3">
+   490→                      <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+   491→                        <Trophy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+   492→                      </div>
+   493→                      <div>
+   494→                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Best Month</p>
+   495→                        <p className="text-lg font-bold text-foreground">{data.bestMonth.month}</p>
+   496→                      </div>
+   497→                    </div>
+   498→                    <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   499→                      {formatCurrency(data.bestMonth.savings)}
+   500→                    </p>
+   501→                    <p className="text-xs text-muted-foreground mt-1">Net savings this month</p>
+   502→                  </CardContent>
+   503→                </Card>
+   504→              </motion.div>
+   505→            )}
+   506→            {data.worstMonth && (
+   507→              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+   508→                <Card className="card-hover" style={{ borderColor: data.worstMonth.savings < 0 ? undefined : undefined }}>
+   509→                  <CardContent className="p-5">
+   510→                    <div className="flex items-center gap-3 mb-3">
+   511→                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10">
+   512→                        <Frown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+   513→                      </div>
+   514→                      <div>
+   515→                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Worst Month</p>
+   516→                        <p className="text-lg font-bold text-foreground">{data.worstMonth.month}</p>
+   517→                      </div>
+   518→                    </div>
+   519→                    <p className={cn(
+   520→                      'text-2xl font-bold tabular-nums',
+   521→                      data.worstMonth.savings >= 0
+   522→                        ? 'text-amber-600 dark:text-amber-400'
+   523→                        : 'text-rose-600 dark:text-rose-400',
+   524→                    )}>
+   525→                      {formatCurrency(data.worstMonth.savings)}
+   526→                    </p>
+   527→                    <p className="text-xs text-muted-foreground mt-1">Net savings this month</p>
+   528→                  </CardContent>
+   529→                </Card>
+   530→              </motion.div>
+   531→            )}
+   532→          </div>
+   533→        </>
+   534→      )}
+   535→    </div>
+   536→  )
+   537→}
