@@ -153,7 +153,9 @@ export default function BudgetModule() {
     const newBudget: BudgetData = {
       id: Date.now().toString(),
       totalIncome: income,
-      ...formPcts,
+      needsPct: formPcts.needs,
+      wantsPct: formPcts.wants,
+      savingsPct: formPcts.savings,
       needs: { planned: income * formPcts.needs / 100, actual: 0 },
       wants: { planned: income * formPcts.wants / 100, actual: 0 },
       savings: { planned: income * formPcts.savings / 100, actual: 0 },
@@ -211,17 +213,17 @@ export default function BudgetModule() {
             <div className="space-y-6 py-2">
               <BudgetSlider label="Necesidades (Esenciales)" pct={formPcts.needs} color="#10b981" onChange={(v) => {
                 const remaining = 100 - v
-                const wantsRatio = budget ? budget.wantsPct / (budget.wantsPct + budget.savingsPct) : 0.6
+                const wantsRatio = formPcts.wants > 0 && formPcts.savings > 0 ? formPcts.wants / (formPcts.wants + formPcts.savings) : 0.6
                 setFormPcts({ needs: v, wants: Math.round(remaining * wantsRatio), savings: Math.round(remaining * (1 - wantsRatio)) })
               }} />
               <BudgetSlider label="Deseos (Estilo de Vida)" pct={formPcts.wants} color="#6366f1" onChange={(v) => {
                 const remaining = 100 - v
-                const needsRatio = budget ? budget.needsPct / (budget.needsPct + budget.savingsPct) : 0.714
+                const needsRatio = formPcts.needs > 0 && formPcts.savings > 0 ? formPcts.needs / (formPcts.needs + formPcts.savings) : 0.714
                 setFormPcts({ wants: v, needs: Math.round(remaining * needsRatio), savings: Math.round(remaining * (1 - needsRatio)) })
               }} />
               <BudgetSlider label="Ahorros" pct={formPcts.savings} color="#f59e0b" onChange={(v) => {
                 const remaining = 100 - v
-                const needsRatio = budget ? budget.needsPct / (budget.needsPct + budget.wantsPct) : 0.625
+                const needsRatio = formPcts.needs > 0 && formPcts.wants > 0 ? formPcts.needs / (formPcts.needs + formPcts.wants) : 0.625
                 setFormPcts({ savings: v, needs: Math.round(remaining * needsRatio), wants: Math.round(remaining * (1 - needsRatio)) })
               }} />
               <div className="text-center">
