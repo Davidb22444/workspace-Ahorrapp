@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, ShoppingCart, Trash2, Edit2, Filter, ArrowDownRight, Search, AlertTriangle, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 const CATEGORIES = [
   { id: 'housing', name: 'Vivienda', color: '#10b981' },
@@ -82,20 +84,20 @@ function mapApiExpense(raw: Record<string, unknown>): Expense {
 }
 
 const mockExpenses: Expense[] = [
-  { id: '1', amount: 1200, description: 'Rent Payment', date: '2025-06-02', category: 'housing', categoryColor: '#10b981', isRecurring: true, isUnexpected: false },
-  { id: '2', amount: 156.80, description: 'Grocery Store', date: '2025-06-03', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
-  { id: '3', amount: 120, description: 'Electric Bill', date: '2025-06-04', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
-  { id: '4', amount: 65, description: 'Gas Station', date: '2025-06-06', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: false },
-  { id: '5', amount: 15.99, description: 'Netflix Subscription', date: '2025-06-07', category: 'entertainment', categoryColor: '#6366f1', isRecurring: true, isUnexpected: false },
-  { id: '6', amount: 85.50, description: 'Restaurant Dinner', date: '2025-06-08', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
-  { id: '7', amount: 55, description: 'Phone Bill', date: '2025-06-10', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
-  { id: '8', amount: 45, description: 'Gym Membership', date: '2025-06-01', category: 'health', categoryColor: '#ec4899', isRecurring: true, isUnexpected: false },
+  { id: '1', amount: 1200, description: 'Pago de Renta', date: '2025-06-02', category: 'housing', categoryColor: '#10b981', isRecurring: true, isUnexpected: false },
+  { id: '2', amount: 156.80, description: 'Supermercado', date: '2025-06-03', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
+  { id: '3', amount: 120, description: 'Recibo de Electricidad', date: '2025-06-04', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
+  { id: '4', amount: 65, description: 'Gasolinera', date: '2025-06-06', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: false },
+  { id: '5', amount: 15.99, description: 'Suscripción Netflix', date: '2025-06-07', category: 'entertainment', categoryColor: '#6366f1', isRecurring: true, isUnexpected: false },
+  { id: '6', amount: 85.50, description: 'Cena en Restaurante', date: '2025-06-08', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
+  { id: '7', amount: 55, description: 'Recibo de Teléfono', date: '2025-06-10', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
+  { id: '8', amount: 45, description: 'Membresía de Gimnasio', date: '2025-06-01', category: 'health', categoryColor: '#ec4899', isRecurring: true, isUnexpected: false },
 ]
 
 const mockUnexpected: Expense[] = [
-  { id: 'u1', amount: 350, description: 'Car Repair', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: true },
-  { id: 'u2', amount: 120, description: 'Emergency Dental Visit', date: '2025-05-28', category: 'health', categoryColor: '#ec4899', isRecurring: false, isUnexpected: true },
-  { id: 'u3', amount: 200, description: 'Home Plumbing Fix', date: '2025-05-15', category: 'housing', categoryColor: '#10b981', isRecurring: false, isUnexpected: true },
+  { id: 'u1', amount: 350, description: 'Reparación de Auto', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: true },
+  { id: 'u2', amount: 120, description: 'Visita Dental de Emergencia', date: '2025-05-28', category: 'health', categoryColor: '#ec4899', isRecurring: false, isUnexpected: true },
+  { id: 'u3', amount: 200, description: 'Reparación de Plomería', date: '2025-05-15', category: 'housing', categoryColor: '#10b981', isRecurring: false, isUnexpected: true },
 ]
 
 function formatCurrency(amount: number): string {
@@ -260,11 +262,14 @@ export default function ExpenseModule() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-rose-100/20 dark:bg-rose-500/3" />
           </div>
           <div className="relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
-              {isUnexp
-                ? <AlertTriangle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
-                : <ShoppingCart className="w-8 h-8 text-rose-500 dark:text-rose-400" />}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-4"
+            >
+              <Image src="/images/empty-state.png" alt={isUnexp ? "Sin gastos imprevistos" : "Sin gastos"} width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+            </motion.div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Sin {isUnexp ? 'gastos imprevistos' : 'gastos'} aún</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               {isUnexp

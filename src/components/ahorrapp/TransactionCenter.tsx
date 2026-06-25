@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import {
   Search, ArrowUpRight, ArrowDownRight, Filter, ChevronDown,
   ChevronLeft, ChevronRight, Calendar, DollarSign,
@@ -212,6 +213,12 @@ export default function TransactionCenter() {
     { key: 'expense', label: 'Gastos' },
     { key: 'unexpected', label: 'Imprevisto' },
   ]
+
+  const TYPE_LABELS: Record<string, string> = {
+    income: 'Ingreso',
+    expense: 'Gasto',
+    unexpected: 'Imprevisto',
+  }
 
   return (
     <div className="space-y-4">
@@ -440,7 +447,14 @@ export default function TransactionCenter() {
           animate={{ opacity: 1, y: 0 }}
           className="empty-state rounded-xl p-10 text-center"
         >
-          <Search className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <Image src="/images/empty-state.png" alt={hasActiveFilters ? "Sin resultados" : "Sin transacciones"} width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+          </motion.div>
           <h3 className="text-lg font-semibold text-foreground mb-1">
             {hasActiveFilters ? 'Sin transacciones encontradas' : 'Sin transacciones aún'}
           </h3>
@@ -561,7 +575,7 @@ export default function TransactionCenter() {
                   >
                     {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground capitalize">{t.type}</p>
+                  <p className="text-[10px] text-muted-foreground">{TYPE_LABELS[t.type] || t.type}</p>
                 </div>
               </motion.div>
             ))}

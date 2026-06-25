@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   Trophy, Target, DollarSign, PiggyBank, Shield, BarChart3,
@@ -145,9 +146,22 @@ export default function AchievementsModule() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Logros</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">Rastrea tus metas financieras</p>
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            <h1 className="text-2xl font-bold text-gradient">Logros</h1>
+          </div>
+          <p className="text-muted-foreground text-sm mt-0.5">Rastrea tus metas financieras</p>
+        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+          animate={{ opacity: 1, scale: 1, rotate: 0 }}
+          transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
+          className="hidden sm:block"
+        >
+          <Image src="/images/achievements.png" alt="Logros" width={80} height={80} className="h-20 w-20 object-contain" />
+        </motion.div>
       </div>
 
       {/* Summary Stats */}
@@ -240,11 +254,22 @@ export default function AchievementsModule() {
           ))}
         </div>
       ) : achievements.length === 0 ? (
-        <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
-          <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <Image src="/images/empty-state.png" alt="Sin logros" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+          </motion.div>
           <p className="text-lg font-medium">Sin logros aún</p>
           <p className="text-sm mt-1">Comienza a usar la app para desbloquear tu primer logro</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-children">
           {achievements.map((achievement, idx) => {

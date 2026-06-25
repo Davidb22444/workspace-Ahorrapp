@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, AlertTriangle, Trash2, Edit2, ArrowDownRight, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 const CATEGORIES = [
   { id: 'transport', name: 'Transporte', color: '#f43f5e' },
@@ -70,11 +72,11 @@ function mapApiUnexpected(raw: Record<string, unknown>): UnexpectedExpense {
 }
 
 const mockUnexpected: UnexpectedExpense[] = [
-  { id: 'u1', amount: 350, description: 'Car Repair', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e' },
-  { id: 'u2', amount: 120, description: 'Emergency Dental Visit', date: '2025-05-28', category: 'health', categoryColor: '#ec4899' },
-  { id: 'u3', amount: 200, description: 'Home Plumbing Fix', date: '2025-05-15', category: 'housing', categoryColor: '#10b981' },
-  { id: 'u4', amount: 75, description: 'Lost Phone Charger', date: '2025-05-10', category: 'other', categoryColor: '#64748b' },
-  { id: 'u5', amount: 450, description: 'Emergency Vet Visit', date: '2025-04-20', category: 'health', categoryColor: '#ec4899' },
+  { id: 'u1', amount: 350, description: 'Reparación de Auto', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e' },
+  { id: 'u2', amount: 120, description: 'Visita Dental de Emergencia', date: '2025-05-28', category: 'health', categoryColor: '#ec4899' },
+  { id: 'u3', amount: 200, description: 'Reparación de Plomería', date: '2025-05-15', category: 'housing', categoryColor: '#10b981' },
+  { id: 'u4', amount: 75, description: 'Cargador de Teléfono Perdido', date: '2025-05-10', category: 'other', categoryColor: '#64748b' },
+  { id: 'u5', amount: 450, description: 'Visita de Emergencia al Veterinario', date: '2025-04-20', category: 'health', categoryColor: '#ec4899' },
 ]
 
 function formatCurrency(amount: number): string {
@@ -227,7 +229,14 @@ export default function UnexpectedModule() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
-              <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="mb-4"
+              >
+                <Image src="/images/empty-state.png" alt="Sin gastos imprevistos" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+              </motion.div>
               <p>No se encontraron gastos imprevistos</p>
               <p className="text-sm mt-1">Registra gastos imprevistos para identificar patrones</p>
             </div>

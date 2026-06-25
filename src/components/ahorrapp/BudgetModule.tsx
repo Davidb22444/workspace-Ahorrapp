@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, PieChart, ArrowUpRight, ArrowDownRight, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -47,14 +48,14 @@ const mockBudget: BudgetData = {
   wants: { planned: 1560, actual: 1480 },
   savings: { planned: 1040, actual: 770 },
   categories: [
-    { name: 'Housing', planned: 1200, actual: 1200, color: '#10b981' },
-    { name: 'Food', planned: 600, actual: 680, color: '#f59e0b' },
-    { name: 'Transport', planned: 400, actual: 450, color: '#f43f5e' },
-    { name: 'Utilities', planned: 250, actual: 280, color: '#06b6d4' },
-    { name: 'Entertainment', planned: 800, actual: 720, color: '#6366f1' },
-    { name: 'Shopping', planned: 460, actual: 390, color: '#8b5cf6' },
-    { name: 'Savings', planned: 1040, actual: 770, color: '#14b8a6' },
-    { name: 'Other', planned: 450, actual: 410, color: '#64748b' },
+    { name: 'Vivienda', planned: 1200, actual: 1200, color: '#10b981' },
+    { name: 'Alimentación', planned: 600, actual: 680, color: '#f59e0b' },
+    { name: 'Transporte', planned: 400, actual: 450, color: '#f43f5e' },
+    { name: 'Servicios', planned: 250, actual: 280, color: '#06b6d4' },
+    { name: 'Entretenimiento', planned: 800, actual: 720, color: '#6366f1' },
+    { name: 'Compras', planned: 460, actual: 390, color: '#8b5cf6' },
+    { name: 'Ahorros', planned: 1040, actual: 770, color: '#14b8a6' },
+    { name: 'Otro', planned: 450, actual: 410, color: '#64748b' },
   ],
 }
 
@@ -178,12 +179,22 @@ export default function BudgetModule() {
   if (!budget) {
     return (
       <div className="space-y-6">
-        <div className="module-header">
-          <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Configura tu regla de presupuesto 50/30/20</p>
+        <div className="flex items-center gap-3 module-header">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Configura tu regla de presupuesto 50/30/20</p>
+          </div>
+          <Image src="/images/budget-planning.png" alt="Presupuesto" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
         </div>
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
-          <PieChart className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <Image src="/images/empty-state.png" alt="Sin presupuesto" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+          </motion.div>
           <p className="text-lg font-medium">Sin presupuesto configurado</p>
           <p className="text-sm mt-1 mb-6">Crea tu primer presupuesto usando la regla 50/30/20</p>
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -264,9 +275,12 @@ export default function BudgetModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="module-header">
-          <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Regla de presupuesto 50/30/20</p>
+        <div className="flex items-center gap-3 module-header">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Regla de presupuesto 50/30/20</p>
+          </div>
+          <Image src="/images/budget-planning.png" alt="Presupuesto" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>

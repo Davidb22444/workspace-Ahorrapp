@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import {
   Repeat, DollarSign, Calendar, Plus, Trash2, Edit2, Clock,
@@ -61,25 +62,25 @@ const FREQUENCY_OPTIONS = [
 ]
 
 const mockBills: RecurringBill[] = [
-  { id: 'b1', description: 'Netflix Subscription', amount: 15.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 3), 'yyyy-MM-dd'), startDate: '2024-01-01', isPaid: false, category: { id: 'ent', name: 'Entertainment', icon: '🎬', color: '#6366f1', type: 'expense' } },
-  { id: 'b2', description: 'Spotify Premium', amount: 9.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 12), 'yyyy-MM-dd'), startDate: '2024-02-01', isPaid: false, category: { id: 'ent', name: 'Entertainment', icon: '🎬', color: '#6366f1', type: 'expense' } },
-  { id: 'b3', description: 'Gym Membership', amount: 49.99, categoryId: 'hth', frequency: 'monthly', nextDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'), startDate: '2024-01-15', isPaid: false, category: { id: 'hth', name: 'Healthcare', icon: '🏥', color: '#ec4899', type: 'expense' } },
-  { id: 'b4', description: 'Internet Service', amount: 79.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 8), 'yyyy-MM-dd'), startDate: '2023-06-01', isPaid: false, category: { id: 'util', name: 'Utilities', icon: '⚡', color: '#06b6d4', type: 'expense' } },
-  { id: 'b5', description: 'Car Insurance', amount: 150.00, categoryId: 'trn', frequency: 'monthly', nextDate: format(addDays(new Date(), 2), 'yyyy-MM-dd'), startDate: '2023-01-01', isPaid: false, category: { id: 'trn', name: 'Transport', icon: '🚗', color: '#f43f5e', type: 'expense' } },
-  { id: 'b6', description: 'Cloud Storage', amount: 2.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 18), 'yyyy-MM-dd'), startDate: '2024-03-01', isPaid: false, category: { id: 'util', name: 'Utilities', icon: '⚡', color: '#06b6d4', type: 'expense' } },
-  { id: 'b7', description: 'Rent', amount: 1200.00, categoryId: 'hsg', frequency: 'monthly', nextDate: format(addDays(new Date(), 5), 'yyyy-MM-dd'), startDate: '2022-01-01', isPaid: false, category: { id: 'hsg', name: 'Housing', icon: '🏠', color: '#10b981', type: 'expense' } },
-  { id: 'b8', description: 'Phone Bill', amount: 55.00, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 25), 'yyyy-MM-dd'), startDate: '2023-03-01', isPaid: false, category: { id: 'util', name: 'Utilities', icon: '⚡', color: '#06b6d4', type: 'expense' } },
+  { id: 'b1', description: 'Suscripción Netflix', amount: 15.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 3), 'yyyy-MM-dd'), startDate: '2024-01-01', isPaid: false, category: { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' } },
+  { id: 'b2', description: 'Spotify Premium', amount: 9.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 12), 'yyyy-MM-dd'), startDate: '2024-02-01', isPaid: false, category: { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' } },
+  { id: 'b3', description: 'Membresía de Gimnasio', amount: 49.99, categoryId: 'hth', frequency: 'monthly', nextDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'), startDate: '2024-01-15', isPaid: false, category: { id: 'hth', name: 'Salud', icon: '🏥', color: '#ec4899', type: 'expense' } },
+  { id: 'b4', description: 'Servicio de Internet', amount: 79.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 8), 'yyyy-MM-dd'), startDate: '2023-06-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
+  { id: 'b5', description: 'Seguro de Auto', amount: 150.00, categoryId: 'trn', frequency: 'monthly', nextDate: format(addDays(new Date(), 2), 'yyyy-MM-dd'), startDate: '2023-01-01', isPaid: false, category: { id: 'trn', name: 'Transporte', icon: '🚗', color: '#f43f5e', type: 'expense' } },
+  { id: 'b6', description: 'Almacenamiento en la Nube', amount: 2.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 18), 'yyyy-MM-dd'), startDate: '2024-03-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
+  { id: 'b7', description: 'Renta', amount: 1200.00, categoryId: 'hsg', frequency: 'monthly', nextDate: format(addDays(new Date(), 5), 'yyyy-MM-dd'), startDate: '2022-01-01', isPaid: false, category: { id: 'hsg', name: 'Vivienda', icon: '🏠', color: '#10b981', type: 'expense' } },
+  { id: 'b8', description: 'Recibo de Teléfono', amount: 55.00, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 25), 'yyyy-MM-dd'), startDate: '2023-03-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
 ]
 
 const mockCategories: Category[] = [
-  { id: 'hsg', name: 'Housing', icon: '🏠', color: '#10b981', type: 'expense' },
-  { id: 'food', name: 'Food', icon: '🍕', color: '#f59e0b', type: 'expense' },
-  { id: 'trn', name: 'Transport', icon: '🚗', color: '#f43f5e', type: 'expense' },
-  { id: 'ent', name: 'Entertainment', icon: '🎬', color: '#6366f1', type: 'expense' },
-  { id: 'util', name: 'Utilities', icon: '⚡', color: '#06b6d4', type: 'expense' },
-  { id: 'hth', name: 'Healthcare', icon: '🏥', color: '#ec4899', type: 'expense' },
-  { id: 'edu', name: 'Education', icon: '📚', color: '#8b5cf6', type: 'expense' },
-  { id: 'oth', name: 'Other', icon: '📦', color: '#14b8a6', type: 'expense' },
+  { id: 'hsg', name: 'Vivienda', icon: '🏠', color: '#10b981', type: 'expense' },
+  { id: 'food', name: 'Alimentación', icon: '🍕', color: '#f59e0b', type: 'expense' },
+  { id: 'trn', name: 'Transporte', icon: '🚗', color: '#f43f5e', type: 'expense' },
+  { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' },
+  { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' },
+  { id: 'hth', name: 'Salud', icon: '🏥', color: '#ec4899', type: 'expense' },
+  { id: 'edu', name: 'Educación', icon: '📚', color: '#8b5cf6', type: 'expense' },
+  { id: 'oth', name: 'Otro', icon: '📦', color: '#14b8a6', type: 'expense' },
 ]
 
 function getDaysUntilText(nextDate: string): { text: string; colorClass: string } {
@@ -343,14 +344,25 @@ export default function RecurringBills() {
           ))}
         </div>
       ) : bills.length === 0 ? (
-        <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
-          <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <Image src="/images/empty-state.png" alt="Sin pagos recurrentes" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+          </motion.div>
           <p className="text-lg font-medium">Sin pagos recurrentes</p>
           <p className="text-sm mt-1 mb-6">Agrega tus suscripciones y pagos recurrentes para rastrearlos</p>
           <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             <Plus className="w-4 h-4 mr-2" /> Agregar Primer Pago
           </Button>
-        </div>
+        </motion.div>
       ) : (
         <>
           {/* Upcoming Bills List */}

@@ -1,0 +1,530 @@
+  1030→
+  1031→          {/* ── D. Financial Insights Section ── */}
+  1032→          <motion.div
+  1033→            initial={{ opacity: 0, y: 20 }}
+  1034→            animate={{ opacity: 1, y: 0 }}
+  1035→            transition={{ duration: 0.5, delay: 0.45 }}
+  1036→          >
+  1037→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1038→              {/* Best Saving Month */}
+  1039→              <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-500/5 dark:to-teal-500/3 border-emerald-200/50 dark:border-emerald-500/10">
+  1040→                <CardContent className="p-4">
+  1041→                  <div className="flex items-center gap-2 mb-2">
+  1042→                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+  1043→                      <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+  1044→                    </div>
+  1045→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes de Ahorro</p>
+  1046→                  </div>
+  1047→                  <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
+  1048→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+  1049→                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} neto` : 'Sin datos'}
+  1050→                  </p>
+  1051→                </CardContent>
+  1052→              </Card>
+  1053→
+  1054→              {/* Biggest Expense Category */}
+  1055→              <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/30 dark:from-rose-500/5 dark:to-pink-500/3 border-rose-200/50 dark:border-rose-500/10">
+  1056→                <CardContent className="p-4">
+  1057→                  <div className="flex items-center gap-2 mb-2">
+  1058→                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
+  1059→                      <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+  1060→                    </div>
+  1061→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mayor Gasto</p>
+  1062→                  </div>
+  1063→                  <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
+  1064→                  <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+  1065→                    {formatCurrency(insights.biggestCat.value)}
+  1066→                  </p>
+  1067→                </CardContent>
+  1068→              </Card>
+  1069→
+  1070→              {/* Savings On Track */}
+  1071→              <Card className="bg-gradient-to-br from-cyan-50/50 to-sky-50/30 dark:from-cyan-500/5 dark:to-sky-500/3 border-cyan-200/50 dark:border-cyan-500/10">
+  1072→                <CardContent className="p-4">
+  1073→                  <div className="flex items-center gap-2 mb-2">
+  1074→                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
+  1075→                      <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+  1076→                    </div>
+  1077→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">En Camino</p>
+  1078→                  </div>
+  1079→                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">de {d.savingsGoals.length}</span></p>
+  1080→                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+  1081→                    Metas &gt;50% completadas
+  1082→                  </p>
+  1083→                </CardContent>
+  1084→              </Card>
+  1085→
+  1086→              {/* Net Worth Trend */}
+  1087→              <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-500/5 dark:to-purple-500/3 border-violet-200/50 dark:border-violet-500/10">
+  1088→                <CardContent className="p-4">
+  1089→                  <div className="flex items-center gap-2 mb-2">
+  1090→                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
+  1091→                      <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+  1092→                    </div>
+  1093→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tendencia de Flujo</p>
+  1094→                  </div>
+  1095→                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
+  1096→                    {insights.hasTrend && (
+  1097→                      insights.trend >= 0
+  1098→                        ? <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+  1099→                        : <ArrowDownRight className="w-5 h-5 text-rose-500" />
+  1100→                    )}
+  1101→                    {insights.hasTrend ? insights.trendLabel : 'N/A'}
+  1102→                  </p>
+  1103→                  <p className={cn('text-xs font-medium', insights.trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
+  1104→                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs mes pasado' : 'vs mes pasado') : 'Sin datos de comparación'}
+  1105→                  </p>
+  1106→                </CardContent>
+  1107→              </Card>
+  1108→            </div>
+  1109→          </motion.div>
+  1110→
+  1111→          {/* ── Monthly Comparison Cards (This Month vs Last Month) ── */}
+  1112→          <motion.div
+  1113→            initial={{ opacity: 0, y: 20 }}
+  1114→            animate={{ opacity: 1, y: 0 }}
+  1115→            transition={{ duration: 0.5, delay: 0.48 }}
+  1116→          >
+  1117→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  1118→              {monthlyComparison.map((item) => {
+  1119→                const IconComp = item.icon
+  1120→                const isExpense = item.label === 'Gastos Totales'
+  1121→                const isPositive = isExpense ? item.change <= 0 : item.change >= 0
+  1122→                return (
+  1123→                  <Card key={item.label} className={cn('border-l-4', item.color)}>
+  1124→                    <CardContent className="p-4">
+  1125→                      <div className="flex items-center justify-between mb-2">
+  1126→                        <div className="flex items-center gap-2">
+  1127→                          <IconComp className={cn('w-4 h-4', item.textColor)} />
+  1128→                          <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+  1129→                        </div>
+  1130→                        {item.change !== 0 && (
+  1131→                          <div className={cn(
+  1132→                            'flex items-center gap-0.5 text-xs font-semibold',
+  1133→                            isPositive ? 'text-emerald-500' : 'text-rose-500'
+  1134→                          )}>
+  1135→                            {item.change > 0 ? (
+  1136→                              <ArrowUpRight className="w-3.5 h-3.5" />
+  1137→                            ) : (
+  1138→                              <ArrowDownRight className="w-3.5 h-3.5" />
+  1139→                            )}
+  1140→                            {Math.abs(item.change)}%
+  1141→                          </div>
+  1142→                        )}
+  1143→                      </div>
+  1144→                      <p className="text-xl font-bold tabular-nums text-foreground">
+  1145→                        {formatCurrency(item.current)}
+  1146→                      </p>
+  1147→                      <p className="text-xs text-muted-foreground mt-1">
+  1148→                        Mes pasado: {formatCurrency(item.previous)}
+  1149→                      </p>
+  1150→                    </CardContent>
+  1151→                  </Card>
+  1152→                )
+  1153→              })}
+  1154→            </div>
+  1155→          </motion.div>
+  1156→
+  1157→          {/* ── Spending Heatmap Calendar ── */}
+  1158→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1159→            <motion.div
+  1160→              initial={{ opacity: 0, y: 20 }}
+  1161→              animate={{ opacity: 1, y: 0 }}
+  1162→              transition={{ duration: 0.5, delay: 0.50 }}
+  1163→            >
+  1164→              <Card className="overflow-hidden">
+  1165→                <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 px-6 pt-5 pb-3">
+  1166→                  <div className="flex items-center justify-between">
+  1167→                    <div>
+  1168→                      <CardTitle className="text-base font-semibold">Mapa de Calor de Gastos</CardTitle>
+  1169→                      <CardDescription>Gastos diarios de {heatmapData.monthName}</CardDescription>
+  1170→                    </div>
+  1171→                    <Calendar className="w-4 h-4 text-muted-foreground" />
+  1172→                  </div>
+  1173→                  <div className="flex items-center gap-2 mt-2">
+  1174→                    <span className="text-[10px] text-muted-foreground">Menos</span>
+  1175→                    <div className="w-3.5 h-3.5 rounded-sm bg-muted/40 dark:bg-muted/20" />
+  1176→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-300 dark:bg-emerald-400/60" />
+  1177→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500 dark:bg-emerald-500/80" />
+  1178→                    <div className="w-3.5 h-3.5 rounded-sm bg-amber-400 dark:bg-amber-500/80" />
+  1179→                    <div className="w-3.5 h-3.5 rounded-sm bg-rose-400 dark:bg-rose-500/80" />
+  1180→                    <span className="text-[10px] text-muted-foreground">Más</span>
+  1181→                  </div>
+  1182→                </div>
+  1183→                <CardContent className="pt-3 pb-4">
+  1184→                  <div className="grid grid-cols-7 gap-1">
+  1185→                    {heatmapData.dayNames.map((name) => (
+  1186→                      <div key={name} className="text-[10px] font-medium text-muted-foreground text-center pb-1">
+  1187→                        {name}
+  1188→                      </div>
+  1189→                    ))}
+  1190→                    {heatmapData.cells.map((cell, idx) => (
+  1191→                      <div
+  1192→                        key={idx}
+  1193→                        className={cn(
+  1194→                          'aspect-square rounded-sm flex items-center justify-center text-[10px] font-medium transition-colors relative group',
+  1195→                          cell.colorClass,
+  1196→                          cell.isFuture && 'opacity-40',
+  1197→                          !cell.day && 'invisible'
+  1198→                        )}
+  1199→                        title={cell.day ? `${formatCurrency(cell.amount)}` : undefined}
+  1200→                      >
+  1201→                        {cell.day && (
+  1202→                          <>
+  1203→                            <span className={cn(
+  1204→                              'tabular-nums',
+  1205→                              cell.amount > 50 ? 'text-white dark:text-white' : 'text-muted-foreground dark:text-muted-foreground'
+  1206→                            )}>
+  1207→                              {cell.day}
+  1208→                            </span>
+  1209→                            {cell.isToday && (
+  1210→                              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+  1211→                            )}
+  1212→                          </>
+  1213→                        )}
+  1214→                      </div>
+  1215→                    ))}
+  1216→                  </div>
+  1217→                </CardContent>
+  1218→              </Card>
+  1219→            </motion.div>
+  1220→
+  1221→            {/* ── Net Worth Trend Chart ── */}
+  1222→            <motion.div
+  1223→              initial={{ opacity: 0, y: 20 }}
+  1224→              animate={{ opacity: 1, y: 0 }}
+  1225→              transition={{ duration: 0.5, delay: 0.52 }}
+  1226→            >
+  1227→              <Card className="overflow-hidden">
+  1228→                <div className="bg-gradient-to-r from-teal-500/5 to-emerald-500/5 dark:from-teal-500/10 dark:to-emerald-500/10 px-6 pt-5 pb-0">
+  1229→                  <div className="flex items-center gap-2">
+  1230→                    <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+  1231→                    <div>
+  1232→                      <CardTitle className="text-base font-semibold">Tendencia de Patrimonio</CardTitle>
+  1233→                      <CardDescription>Posición neta acumulada en 6 meses</CardDescription>
+  1234→                    </div>
+  1235→                  </div>
+  1236→                </div>
+  1237→                <CardContent className="pt-4">
+  1238→                  <div className="h-[240px]">
+  1239→                    <ResponsiveContainer width="100%" height="100%">
+  1240→                      <AreaChart data={netWorthData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1241→                        <defs>
+  1242→                          <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
+  1243→                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+  1244→                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+  1245→                          </linearGradient>
+  1246→                        </defs>
+  1247→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1248→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1249→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1250→                        <RechartsTooltip
+  1251→                          formatter={(value: number) => [formatCurrency(value), 'Patrimonio']}
+  1252→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1253→                        />
+  1254→                        <Area
+  1255→                          type="monotone"
+  1256→                          dataKey="netWorth"
+  1257→                          name="Patrimonio"
+  1258→                          stroke="#14b8a6"
+  1259→                          fill="url(#netWorthGrad)"
+  1260→                          strokeWidth={2}
+  1261→                          dot={{ r: 3, strokeWidth: 0, fill: '#14b8a6' }}
+  1262→                          activeDot={{ r: 5, strokeWidth: 0, fill: '#14b8a6' }}
+  1263→                        />
+  1264→                      </AreaChart>
+  1265→                    </ResponsiveContainer>
+  1266→                  </div>
+  1267→                </CardContent>
+  1268→              </Card>
+  1269→            </motion.div>
+  1270→          </div>
+  1271→
+  1272→          {/* ── Budget vs Actual ── */}
+  1273→          <motion.div
+  1274→            initial={{ opacity: 0, y: 20 }}
+  1275→            animate={{ opacity: 1, y: 0 }}
+  1276→            transition={{ duration: 0.5, delay: 0.54 }}
+  1277→          >
+  1278→            <Card className="overflow-hidden">
+  1279→              <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
+  1280→                <CardTitle className="text-base font-semibold">Presupuesto vs Real (Regla 50/30/20)</CardTitle>
+  1281→                <CardDescription>Comparando tu presupuesto planificado con el gasto real</CardDescription>
+  1282→              </div>
+  1283→              <CardContent className="pt-4">
+  1284→                <div className="h-[240px]">
+  1285→                  <ResponsiveContainer width="100%" height="100%">
+  1286→                    <BarChart data={d.budgetVsActual} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1287→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1288→                      <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1289→                      <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1290→                      <RechartsTooltip content={EnhancedChartTooltip} />
+  1291→                      <Legend />
+  1292→                      <Bar dataKey="planned" name="Planificado" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+  1293→                      <Bar dataKey="actual" name="Real" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+  1294→                    </BarChart>
+  1295→                  </ResponsiveContainer>
+  1296→                </div>
+  1297→              </CardContent>
+  1298→            </Card>
+  1299→          </motion.div>
+  1300→
+  1301→          {/* ── E. Spending Trend Sparkline ── */}
+  1302→          <motion.div
+  1303→            initial={{ opacity: 0, y: 20 }}
+  1304→            animate={{ opacity: 1, y: 0 }}
+  1305→            transition={{ duration: 0.5, delay: 0.58 }}
+  1306→          >
+  1307→            <Card className="overflow-hidden">
+  1308→              <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
+  1309→                <CardTitle className="text-base font-semibold">Tendencia de Gasto Diario</CardTitle>
+  1310→                <CardDescription>Tu patrón de gasto este mes</CardDescription>
+  1311→              </div>
+  1312→              <CardContent className="pt-4">
+  1313→                <div className="h-[200px]">
+  1314→                  <ResponsiveContainer width="100%" height="100%">
+  1315→                    <AreaChart data={dailySpending} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1316→                      <defs>
+  1317→                        <linearGradient id="dailySpendGrad" x1="0" y1="0" x2="0" y2="1">
+  1318→                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+  1319→                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+  1320→                        </linearGradient>
+  1321→                      </defs>
+  1322→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1323→                      <XAxis
+  1324→                        dataKey="day"
+  1325→                        tick={{ fontSize: 10 }}
+  1326→                        stroke="var(--muted-foreground)"
+  1327→                        interval="preserveStartEnd"
+  1328→                      />
+  1329→                      <YAxis
+  1330→                        tick={{ fontSize: 10 }}
+  1331→                        stroke="var(--muted-foreground)"
+  1332→                        tickFormatter={(v) => `$${v}`}
+  1333→                      />
+  1334→                      <RechartsTooltip
+  1335→                        formatter={(value: number) => [formatCurrency(value), 'Gastos']}
+  1336→                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1337→                      />
+  1338→                      <Area
+  1339→                        type="monotone"
+  1340→                        dataKey="amount"
+  1341→                        name="Gastos"
+  1342→                        stroke="#f59e0b"
+  1343→                        fill="url(#dailySpendGrad)"
+  1344→                        strokeWidth={2}
+  1345→                        dot={false}
+  1346→                        activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }}
+  1347→                      />
+  1348→                    </AreaChart>
+  1349→                  </ResponsiveContainer>
+  1350→                </div>
+  1351→              </CardContent>
+  1352→            </Card>
+  1353→          </motion.div>
+  1354→
+  1355→          {/* ── Bottom Row ── */}
+  1356→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1357→            {/* Recent Transactions */}
+  1358→            <motion.div
+  1359→              initial={{ opacity: 0, y: 20 }}
+  1360→              animate={{ opacity: 1, y: 0 }}
+  1361→              transition={{ duration: 0.5, delay: 0.62 }}
+  1362→            >
+  1363→              <Card>
+  1364→                <CardHeader className="pb-2">
+  1365→                  <CardTitle className="text-base font-semibold">Transacciones Recientes</CardTitle>
+  1366→                  <CardDescription>Tus movimientos financieros más recientes</CardDescription>
+  1367→                </CardHeader>
+  1368→                <CardContent>
+  1369→                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+  1370→                    {d.recentTransactions.map((tx) => (
+  1371→                      <motion.div
+  1372→                        key={tx.id}
+  1373→                        initial={{ opacity: 0, x: -10 }}
+  1374→                        animate={{ opacity: 1, x: 0 }}
+  1375→                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+  1376→                      >
+  1377→                        <div className="flex items-center gap-3 min-w-0">
+  1378→                          <div className={cn(
+  1379→                            'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+  1380→                            tx.type === 'income'
+  1381→                              ? 'bg-emerald-50 dark:bg-emerald-500/10'
+  1382→                              : 'bg-rose-50 dark:bg-rose-500/10'
+  1383→                          )}>
+  1384→                            {tx.type === 'income'
+  1385→                              ? <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+  1386→                              : <ArrowDownRight className="w-4 h-4 text-rose-500" />
+  1387→                            }
+  1388→                          </div>
+  1389→                          <div className="min-w-0">
+  1390→                            <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
+  1391→                            <div className="flex items-center gap-2">
+  1392→                              <span className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</span>
+  1393→                              {tx.category && (
+  1394→                                <Badge
+  1395→                                  variant="secondary"
+  1396→                                  className="text-[10px] h-4 px-1.5"
+  1397→                                  style={{ backgroundColor: (tx.categoryColor || '#64748b') + '20', color: tx.categoryColor || '#64748b' }}
+  1398→                                >
+  1399→                                  {tx.category}
+  1400→                                </Badge>
+  1401→                              )}
+  1402→                            </div>
+  1403→                          </div>
+  1404→                        </div>
+  1405→                        <span className={cn(
+  1406→                          'text-sm font-semibold tabular-nums shrink-0',
+  1407→                          tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+  1408→                        )}>
+  1409→                          {tx.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+  1410→                        </span>
+  1411→                      </motion.div>
+  1412→                    ))}
+  1413→                  </div>
+  1414→                </CardContent>
+  1415→              </Card>
+  1416→            </motion.div>
+  1417→
+  1418→            {/* ── F. Enhanced Savings Section ── */}
+  1419→            <motion.div
+  1420→              initial={{ opacity: 0, y: 20 }}
+  1421→              animate={{ opacity: 1, y: 0 }}
+  1422→              transition={{ duration: 0.5, delay: 0.67 }}
+  1423→            >
+  1424→              <Card>
+  1425→                <CardHeader className="pb-2">
+  1426→                  <div className="flex items-center justify-between">
+  1427→                    <div>
+  1428→                      <CardTitle className="text-base font-semibold">Metas de Ahorro</CardTitle>
+  1429→                      <CardDescription>Rastrea el progreso de tus ahorros</CardDescription>
+  1430→                    </div>
+  1431→                    <Button
+  1432→                      variant="ghost"
+  1433→                      size="sm"
+  1434→                      className="text-xs text-primary hover:text-primary"
+  1435→                      onClick={() => setActiveModule('savings')}
+  1436→                    >
+  1437→                      Ver Todo
+  1438→                      <ArrowUpRight className="w-3 h-3 ml-1" />
+  1439→                    </Button>
+  1440→                  </div>
+  1441→                </CardHeader>
+  1442→                <CardContent>
+  1443→                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+  1444→                    {d.savingsGoals.map((goal, idx) => {
+  1445→                      const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+  1446→                      const goalColor = goalColors[idx % goalColors.length]
+  1447→                      return (
+  1448→                        <motion.div
+  1449→                          key={goal.id}
+  1450→                          initial={{ opacity: 0, y: 10 }}
+  1451→                          animate={{ opacity: 1, y: 0 }}
+  1452→                          transition={{ delay: 0.05 * idx }}
+  1453→                          className="space-y-2 rounded-lg border-l-[3px] pl-3"
+  1454→                          style={{ borderLeftColor: goalColor }}
+  1455→                        >
+  1456→                          <div className="flex items-center justify-between">
+  1457→                            <div className="flex items-center gap-2">
+  1458→                              <span className="text-base">{getGoalEmoji(goal.name)}</span>
+  1459→                              <span className="text-sm font-medium text-foreground">{goal.name}</span>
+  1460→                            </div>
+  1461→                            <span className="text-xs font-semibold tabular-nums" style={{ color: goalColor }}>
+  1462→                              {pct}%
+  1463→                            </span>
+  1464→                          </div>
+  1465→                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+  1466→                            <motion.div
+  1467→                              className="h-full rounded-full"
+  1468→                              style={{ background: goalColor }}
+  1469→                              initial={{ width: 0 }}
+  1470→                              animate={{ width: `${pct}%` }}
+  1471→                              transition={{ duration: 0.8, delay: 0.2 + idx * 0.1, ease: 'easeOut' }}
+  1472→                            />
+  1473→                          </div>
+  1474→                          <div className="flex justify-between text-xs text-muted-foreground">
+  1475→                            <span>{formatCurrency(goal.saved)} ahorrado</span>
+  1476→                            <span>Meta: {formatCurrency(goal.target)}</span>
+  1477→                          </div>
+  1478→                          {goal.deadline && (
+  1479→                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+  1480→                              <Calendar className="w-3 h-3" />
+  1481→                              {format(new Date(goal.deadline), 'MMM d, yyyy')}
+  1482→                            </p>
+  1483→                          )}
+  1484→                        </motion.div>
+  1485→                      )
+  1486→                    })}
+  1487→                  </div>
+  1488→                </CardContent>
+  1489→              </Card>
+  1490→            </motion.div>
+  1491→          </div>
+  1492→        </>
+  1493→      )}
+  1494→
+  1495→      {/* ── C. Quick Transaction FAB ── */}
+  1496→      <AnimatePresence>
+  1497→        {showQuickAdd && (
+  1498→          <motion.div
+  1499→            className="fixed bottom-6 right-6 z-50 flex items-end gap-3"
+  1500→            initial={{ opacity: 0, scale: 0.8 }}
+  1501→            animate={{ opacity: 1, scale: 1 }}
+  1502→            exit={{ opacity: 0, scale: 0.8 }}
+  1503→            transition={{ duration: 0.2 }}
+  1504→          >
+  1505→            <motion.button
+  1506→              whileHover={{ scale: 1.05 }}
+  1507→              whileTap={{ scale: 0.95 }}
+  1508→              onClick={() => { setQuickAddType('income'); setShowQuickAdd(true) }}
+  1509→              className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center justify-center"
+  1510→            >
+  1511→              <ArrowUpRight className="w-5 h-5" />
+  1512→            </motion.button>
+  1513→            <motion.button
+  1514→              whileHover={{ scale: 1.05 }}
+  1515→              whileTap={{ scale: 0.95 }}
+  1516→              onClick={() => { setQuickAddType('expense'); setShowQuickAdd(true) }}
+  1517→              className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg flex items-center justify-center"
+  1518→            >
+  1519→              <ArrowDownRight className="w-5 h-5" />
+  1520→            </motion.button>
+  1521→            <motion.button
+  1522→              whileHover={{ scale: 1.05 }}
+  1523→              whileTap={{ scale: 0.95 }}
+  1524→              onClick={() => setShowQuickAdd(false)}
+  1525→              className="w-10 h-10 rounded-full bg-muted text-muted-foreground shadow-md flex items-center justify-center"
+  1526→            >
+  1527→              <X className="w-4 h-4" />
+  1528→            </motion.button>
+  1529→          </motion.div>
+  1530→        )}
+  1531→      </AnimatePresence>
+  1532→
+  1533→      {/* Main FAB */}
+  1534→      {!showQuickAdd && (
+  1535→        <motion.button
+  1536→          initial={{ opacity: 0, scale: 0 }}
+  1537→          animate={{ opacity: 1, scale: 1 }}
+  1538→          whileHover={{ scale: 1.08 }}
+  1539→          whileTap={{ scale: 0.92 }}
+  1540→          onClick={() => setShowQuickAdd(true)}
+  1541→          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl flex items-center justify-center"
+  1542→          title="Agregar Transacción"
+  1543→        >
+  1544→          <Plus className="w-6 h-6" />
+  1545→        </motion.button>
+  1546→      )}
+  1547→
+  1548→      {/* Quick Add Dialog */}
+  1549→      <QuickAddDialog
+  1550→        open={showQuickAdd}
+  1551→        onOpenChange={setShowQuickAdd}
+  1552→        type={quickAddType}
+  1553→        onTypeChange={setQuickAddType}
+  1554→        accountId={user?.id || ''}
+  1555→        onSaved={doFetchData}
+  1556→      />
+  1557→    </div>
+  1558→  )
+  1559→}

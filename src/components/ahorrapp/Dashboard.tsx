@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import {
   DollarSign,
   TrendingUp,
@@ -20,6 +21,10 @@ import {
   Loader2,
   Wallet,
   PiggyBank,
+  Lightbulb,
+  ShoppingCart,
+  Bot,
+  Coins,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -50,7 +55,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
 } from 'recharts'
-import { format, startOfMonth, getDay, getDaysInMonth } from 'date-fns'
+import { format, startOfMonth, getDay, getDaysInMonth, startOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { type Module } from '@/lib/store'
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
 
@@ -795,16 +802,239 @@ export default function Dashboard() {
   // ── Savings goal colors ──
   const goalColors = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899']
 
+  // ── Greeting Logic ──
+  const hour = new Date().getHours()
+  const greeting = hour >= 5 && hour < 12 ? { text: '¡Buenos días', emoji: '👋' }
+    : hour >= 12 && hour < 18 ? { text: '¡Buenas tardes', emoji: '☀️' }
+    : hour >= 18 && hour < 22 ? { text: '¡Buenas noches', emoji: '🌙' }
+    : { text: '¡Descansa bien', emoji: '💤' }
+  const userName = user?.name?.split(' ')[0] || 'Usuario'
+
+  // ── Daily Quote ──
+  const dailyQuotes = [
+    'El mejor momento para empezar a ahorrar fue ayer. El segundo mejor momento es ahora.',
+    'No esperes a tener mucho para empezar a dar. Da lo que tienes, y verás cómo crece.',
+    'Un presupuesto es decirle a tu dinero dónde tiene que ir en lugar de preguntarse dónde se fue.',
+    'La libertad financiera está disponible para quienes aprenden sobre ella y la trabajan.',
+    'Cada dólar que ahorras es un dólar que trabaja para ti.',
+    'La disciplina es el puente entre las metas y los logros financieros.',
+    'Invertir en conocimiento paga el mejor interés.',
+  ]
+  const todayQuote = dailyQuotes[new Date().getDay() % dailyQuotes.length]
+
+  // ── Tip of the Day ──
+  const tips = [
+    { text: 'Revisa tus suscripciones mensuales. Podrías ahorrar hasta $100/mes cancelando las que no usas.', category: 'Ahorro' },
+    { text: 'Aplica la regla 24 horas: espera un día antes de hacer compras impulsivas mayores a $50.', category: 'Gastos' },
+    { text: 'Automatiza tus ahorros. Configura transferencias automáticas el día de pago.', category: 'Ahorro' },
+    { text: 'La regla 50/30/20: 50% necesidades, 30% deseos, 20% ahorro. ¡Sigue este plan!', category: 'Presupuesto' },
+    { text: 'Paga primero tus deudas con mayor tasa de interés. Ahorrarás miles a largo plazo.', category: 'Deudas' },
+    { text: 'Lleva un registro diario de gastos. Conocer es el primer paso para mejorar.', category: 'Educación' },
+    { text: 'Cocina en casa. Preparar tus comidas puede ahorrarte $200-400 al mes.', category: 'Ahorro' },
+    { text: 'Establece un fondo de emergencia que cubra al menos 3 meses de gastos.', category: 'Ahorro' },
+    { text: 'Revisa tu seguro de auto y salud anualmente. Podrías encontrar mejores tarifas.', category: 'Gastos' },
+    { text: 'Diversifica tus ingresos. Un ingreso extra puede acelerar tus metas financieras.', category: 'Inversión' },
+  ]
+  const todayTip = tips[Math.floor((new Date().getDate()) % tips.length)]
+
+  // ── Mini Calendar Logic ──
+  const now = new Date()
+  const calMonthStart = startOfMonth(now)
+  const calStart = startOfWeek(calMonthStart, { weekStartsOn: 1 })
+  const calDays: Array<{ date: Date; isCurrentMonth: boolean; isToday: boolean; isPayday: boolean }> = []
+  for (let i = 0; i < 42; i++) {
+    const date = addDays(calStart, i)
+    calDays.push({
+      date,
+      isCurrentMonth: isSameMonth(date, now),
+      isToday: isSameDay(date, now),
+      isPayday: date.getDate() === 1 || date.getDate() === 15,
+    })
+  }
+  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
   return (
     <div className="space-y-6 pb-20">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="module-header">
-          <h1 className="text-2xl font-bold text-foreground">Panel Principal</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Resumen de tu salud financiera
-          </p>
-        </div>
+      {/* ── Greeting Banner ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Card className="overflow-hidden border-0 shadow-lg">
+          <div className="relative bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-cyan-500/10 dark:from-emerald-500/20 dark:via-teal-500/20 dark:to-cyan-500/20 p-6">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center gap-5">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                  {greeting.text}, {userName}! {greeting.emoji}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-2 italic leading-relaxed">
+                  &ldquo;{todayQuote}&rdquo;
+                </p>
+                <div className="flex items-center gap-2 mt-3">
+                  <span className="text-xs font-medium text-muted-foreground bg-background/50 dark:bg-background/30 px-3 py-1.5 rounded-full">
+                    {format(now, "EEEE d 'de' MMMM, yyyy", { locale: es })}
+                  </span>
+                </div>
+              </div>
+              <div className="relative w-28 h-28 sm:w-36 sm:h-36 shrink-0 hidden sm:block">
+                <Image src="/images/dashboard-welcome.png" alt="Bienvenida" fill className="object-contain drop-shadow-lg" priority />
+              </div>
+            </div>
+            {/* Decorative dots */}
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl" />
+            <div className="absolute bottom-0 left-1/3 w-24 h-24 rounded-full bg-teal-400/10 blur-2xl" />
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* ── Quick Actions ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+      >
+        {[
+          { icon: Plus, label: 'Agregar Ingreso', module: 'income' as Module, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' },
+          { icon: ShoppingCart, label: 'Registrar Gasto', module: 'expenses' as Module, color: 'text-rose-500 bg-rose-50 dark:bg-rose-500/10' },
+          { icon: PiggyBank, label: 'Contribuir Ahorro', module: 'savings' as Module, color: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10' },
+          { icon: Bot, label: 'Preguntar a IA', module: 'ai-assistant' as Module, color: 'text-purple-500 bg-purple-50 dark:bg-purple-500/10' },
+        ].map((action) => (
+          <Card
+            key={action.module}
+            className="cursor-pointer group card-hover border-0 shadow-sm"
+            onClick={() => setActiveModule(action.module)}
+          >
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className={cn('p-2.5 rounded-xl transition-transform group-hover:scale-110', action.color)}>
+                <action.icon className="w-5 h-5" />
+              </div>
+              <span className="text-sm font-medium text-foreground">{action.label}</span>
+            </CardContent>
+          </Card>
+        ))}
+      </motion.div>
+
+      {/* ── Tip of the Day + Mini Calendar Row ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Tip of the Day */}
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="lg:col-span-3"
+        >
+          <Card className="card-hover overflow-hidden border-0 shadow-sm">
+            <CardContent className="p-0">
+              <div className="flex">
+                <div className="relative w-24 sm:w-32 shrink-0 hidden sm:block">
+                  <Image src="/images/financial-tips.png" alt="Consejo" fill className="object-cover" />
+                </div>
+                <div className="p-4 flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                      Consejo del Día
+                    </span>
+                    <Badge variant="secondary" className="text-[10px] h-5">{todayTip.category}</Badge>
+                  </div>
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {todayTip.text}
+                  </p>
+                  <button
+                    onClick={() => setActiveModule('tips')}
+                    className="mt-3 text-xs font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1 group"
+                  >
+                    Ver más consejos
+                    <ArrowUpRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Mini Calendar */}
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="lg:col-span-2"
+        >
+          <Card className="card-hover border-0 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {format(now, 'MMMM yyyy', { locale: es })}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <Coins className="w-3 h-3 text-amber-500" />
+                  <span>Días de pago</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-7 gap-0.5">
+                {weekDays.map((d) => (
+                  <div key={d} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+                    {d}
+                  </div>
+                ))}
+                {calDays.slice(0, 35).map((day, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'text-center text-xs py-1.5 rounded-md relative font-medium transition-colors',
+                      day.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground/30',
+                      day.isToday && 'bg-primary text-primary-foreground font-bold',
+                      day.isPayday && !day.isToday && 'text-amber-600 dark:text-amber-400',
+                    )}
+                  >
+                    {day.date.getDate()}
+                    {day.isPayday && !day.isToday && (
+                      <span className="absolute -bottom-px left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-amber-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* ── Net Worth Card ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.25 }}
+      >
+        <Card className="overflow-hidden border-0 shadow-md stat-card">
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-700 dark:to-teal-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-emerald-100 text-xs font-medium uppercase tracking-wider">Patrimonio Neto</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white mt-1 tabular-nums number-pop">
+                  {formatCurrency(d.balance - d.totalDebt)}
+                </p>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="flex items-center gap-1 text-emerald-100 text-xs">
+                    <TrendingUp className="w-3 h-3" />
+                    {d.totalIncome > 0 ? `+${Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100)}%` : '0%'} flujo positivo
+                  </span>
+                </div>
+              </div>
+              <div className="hidden sm:block">
+                <Wallet className="w-16 h-16 text-white/20" />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Header (compact, right-aligned) */}
+      <div className="flex items-center justify-end">
         <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
           <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
           Actualizar

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, Users, Trash2, Edit2, DollarSign, UserCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -191,11 +192,22 @@ export default function DependentsModule() {
           {[1, 2, 3].map((i) => <Card key={i}><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>)}
         </div>
       ) : dependents.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16 text-muted-foreground"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <Image src="/images/empty-state.png" alt="Sin dependientes" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+          </motion.div>
           <p className="text-lg font-medium">Sin dependientes aún</p>
           <p className="text-sm mt-1">Agrega a los miembros de tu familia para rastrear el gasto por dependiente</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {dependents.map((dep, idx) => (

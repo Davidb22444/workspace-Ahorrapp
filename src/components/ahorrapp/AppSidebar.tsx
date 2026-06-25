@@ -22,6 +22,7 @@ import {
   FileBarChart,
   Trophy,
   CalendarDays,
+  Lightbulb,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { id: 'budget', label: 'Presupuesto', icon: PieChart },
   { id: 'recurring', label: 'Pagos Recurrentes', icon: Repeat },
   { id: 'ai-assistant', label: 'Asistente IA', icon: Bot },
+  { id: 'tips', label: 'Consejos Financieros', icon: Lightbulb },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, badge: true },
   { id: 'dependents', label: 'Dependientes', icon: Users },
   { id: 'transactions', label: 'Centro de Transacciones', icon: Search },

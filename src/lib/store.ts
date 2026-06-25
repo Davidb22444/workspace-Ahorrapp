@@ -13,6 +13,7 @@ export type Module =
   | 'notifications'
   | 'dependents'
   | 'transactions'
+  | 'tips'
   | 'report'
   | 'achievements'
   | 'annual-summary'

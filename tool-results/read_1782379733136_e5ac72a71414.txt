@@ -1,0 +1,537 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useMemo } from 'react'
+     4→     4→import { motion } from 'framer-motion'
+     5→     5→import {
+     6→     6→  TrendingUp, TrendingDown, DollarSign, Target, CreditCard, AlertTriangle,
+     7→     7→  ChevronLeft, ChevronRight, Calendar, ArrowUpRight, ArrowDownRight, Trophy, Frown,
+     8→     8→} from 'lucide-react'
+     9→     9→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    10→    10→import { Button } from '@/components/ui/button'
+    11→    11→import { Badge } from '@/components/ui/badge'
+    12→    12→import { Skeleton } from '@/components/ui/skeleton'
+    13→    13→import { Progress } from '@/components/ui/progress'
+    14→    14→import { useAppStore } from '@/lib/store'
+    15→    15→import { cn } from '@/lib/utils'
+    16→    16→import {
+    17→    17→  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    18→    18→  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
+    19→    19→} from 'recharts'
+    20→    20→import { format } from 'date-fns'
+    21→    21→
+    22→    22→const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
+    23→    23→
+    24→    24→function formatCurrency(amount: number): string {
+    25→    25→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    26→    26→}
+    27→    27→
+    28→    28→interface AnnualData {
+    29→    29→  totalIncome: number
+    30→    30→  totalExpenses: number
+    31→    31→  netSavings: number
+    32→    32→  savingsRate: number
+    33→    33→  totalDebtPaid: number
+    34→    34→  unexpectedCosts: number
+    35→    35→  monthlyData: Array<{ month: string; income: number; expenses: number }>
+    36→    36→  incomeSources: Array<{ name: string; value: number }>
+    37→    37→  topExpenseCategories: Array<{ name: string; amount: number; percentage: number }>
+    38→    38→  savingsGoals: Array<{ name: string; saved: number; target: number }>
+    39→    39→  monthOverMonth: Array<{ month: string; incomeChange: number; expenseChange: number }>
+    40→    40→  bestMonth: { month: string; savings: number } | null
+    41→    41→  worstMonth: { month: string; savings: number } | null
+    42→    42→}
+    43→    43→
+    44→    44→const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    45→    45→
+    46→    46→function generateMockData(year: number): AnnualData {
+    47→    47→  const seed = year * 7
+    48→    48→  const rand = (i: number, min: number, max: number) =>
+    49→    49→    Math.round(((Math.sin(seed + i * 13.37) + 1) / 2) * (max - min) + min)
+    50→    50→
+    51→    51→  const monthlyData = MONTHS.map((month, i) => ({
+    52→    52→    month,
+    53→    53→    income: rand(i, 4200, 5800),
+    54→    54→    expenses: rand(i + 50, 2400, 3800),
+    55→    55→  }))
+    56→    56→
+    57→    57→  const totalIncome = monthlyData.reduce((s, m) => s + m.income, 0)
+    58→    58→  const totalExpenses = monthlyData.reduce((s, m) => s + m.expenses, 0)
+    59→    59→  const netSavings = totalIncome - totalExpenses
+    60→    60→  const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0
+    61→    61→
+    62→    62→  const incomeSources = [
+    63→    63→    { name: 'Salary', value: Math.round(totalIncome * 0.72) },
+    64→    64→    { name: 'Freelance', value: Math.round(totalIncome * 0.15) },
+    65→    65→    { name: 'Investments', value: Math.round(totalIncome * 0.08) },
+    66→    66→    { name: 'Other', value: Math.round(totalIncome * 0.05) },
+    67→    67→  ]
+    68→    68→
+    69→    69→  const topExpenseCategories = [
+    70→    70→    { name: 'Housing', amount: Math.round(totalExpenses * 0.32), percentage: 32 },
+    71→    71→    { name: 'Food', amount: Math.round(totalExpenses * 0.18), percentage: 18 },
+    72→    72→    { name: 'Transport', amount: Math.round(totalExpenses * 0.12), percentage: 12 },
+    73→    73→    { name: 'Entertainment', amount: Math.round(totalExpenses * 0.09), percentage: 9 },
+    74→    74→    { name: 'Utilities', amount: Math.round(totalExpenses * 0.11), percentage: 11 },
+    75→    75→    { name: 'Healthcare', amount: Math.round(totalExpenses * 0.08), percentage: 8 },
+    76→    76→  ]
+    77→    77→
+    78→    78→  const savingsGoals = [
+    79→    79→    { name: 'Emergency Fund', saved: rand(1, 3000, 12000), target: 15000 },
+    80→    80→    { name: 'Vacation', saved: rand(2, 800, 3500), target: 4000 },
+    81→    81→    { name: 'New Laptop', saved: rand(3, 400, 2200), target: 2500 },
+    82→    82→  ]
+    83→    83→
+    84→    84→  const monthOverMonth = monthlyData.map((m, i) => {
+    85→    85→    if (i === 0) return { month: m.month, incomeChange: 0, expenseChange: 0 }
+    86→    86→    const prev = monthlyData[i - 1]
+    87→    87→    return {
+    88→    88→      month: m.month,
+    89→    89→      incomeChange: prev.income > 0 ? Math.round(((m.income - prev.income) / prev.income) * 100) : 0,
+    90→    90→      expenseChange: prev.expenses > 0 ? Math.round(((m.expenses - prev.expenses) / prev.expenses) * 100) : 0,
+    91→    91→    }
+    92→    92→  })
+    93→    93→
+    94→    94→  let bestMonth: { month: string; savings: number } | null = null
+    95→    95→  let worstMonth: { month: string; savings: number } | null = null
+    96→    96→  monthlyData.forEach((m) => {
+    97→    97→    const sav = m.income - m.expenses
+    98→    98→    if (!bestMonth || sav > bestMonth.savings) bestMonth = { month: m.month, savings: sav }
+    99→    99→    if (!worstMonth || sav < worstMonth.savings) worstMonth = { month: m.month, savings: sav }
+   100→   100→  })
+   101→   101→
+   102→   102→  return {
+   103→   103→    totalIncome,
+   104→   104→    totalExpenses,
+   105→   105→    netSavings,
+   106→   106→    savingsRate,
+   107→   107→    totalDebtPaid: rand(90, 4000, 12000),
+   108→   108→    unexpectedCosts: rand(80, 800, 3500),
+   109→   109→    monthlyData,
+   110→   110→    incomeSources,
+   111→   111→    topExpenseCategories,
+   112→   112→    savingsGoals,
+   113→   113→    monthOverMonth,
+   114→   114→    bestMonth,
+   115→   115→    worstMonth,
+   116→   116→  }
+   117→   117→}
+   118→   118→
+   119→   119→function CustomTooltip({ active, payload, label }: any) {
+   120→   120→  if (active && payload && payload.length) {
+   121→   121→    return (
+   122→   122→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   123→   123→        <p className="text-sm font-semibold text-foreground mb-1.5">{label}</p>
+   124→   124→        {payload.map((entry: any, idx: number) => (
+   125→   125→          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+   126→   126→            <div className="flex items-center gap-1.5">
+   127→   127→              <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+   128→   128→              <span className="text-muted-foreground">{entry.name}</span>
+   129→   129→            </div>
+   130→   130→            <span className="font-semibold tabular-nums">
+   131→   131→              {formatCurrency(entry.value)}
+   132→   132→            </span>
+   133→   133→          </div>
+   134→   134→        ))}
+   135→   135→      </div>
+   136→   136→    )
+   137→   137→  }
+   138→   138→  return null
+   139→   139→}
+   140→   140→
+   141→   141→function PieTooltip({ active, payload }: any) {
+   142→   142→  if (active && payload && payload.length) {
+   143→   143→    return (
+   144→   144→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   145→   145→        <div className="flex items-center gap-2 text-xs mb-1">
+   146→   146→          <div className="w-2 h-2 rounded-full" style={{ background: payload[0].payload.fill || CHART_COLORS[0] }} />
+   147→   147→          <span className="font-medium text-foreground">{payload[0].name}</span>
+   148→   148→        </div>
+   149→   149→        <p className="text-sm font-bold tabular-nums">{formatCurrency(payload[0].value)}</p>
+   150→   150→      </div>
+   151→   151→    )
+   152→   152→  }
+   153→   153→  return null
+   154→   154→}
+   155→   155→
+   156→   156→export default function AnnualSummary() {
+   157→   157→  const { user } = useAppStore()
+   158→   158→  const currentYear = new Date().getFullYear()
+   159→   159→  const [selectedYear, setSelectedYear] = useState(currentYear)
+   160→   160→  const [data, setData] = useState<AnnualData | null>(null)
+   161→   161→  const [loading, setLoading] = useState(true)
+   162→   162→
+   163→   163→  useEffect(() => {
+   164→   164→    let cancelled = false
+   165→   165→    const doFetch = async () => {
+   166→   166→      setLoading(true)
+   167→   167→      try {
+   168→   168→        const res = await fetch(`/api/annual-summary?accountId=${user?.id}&year=${selectedYear}`)
+   169→   169→        if (res.ok && !cancelled) {
+   170→   170→          const json = await res.json()
+   171→   171→          if (json.totalIncome !== undefined) {
+   172→   172→            setData(json as AnnualData)
+   173→   173→            setLoading(false)
+   174→   174→            return
+   175→   175→          }
+   176→   176→        }
+   177→   177→      } catch { /* fallback */ }
+   178→   178→      if (!cancelled) {
+   179→   179→        setData(generateMockData(selectedYear))
+   180→   180→        setLoading(false)
+   181→   181→      }
+   182→   182→    }
+   183→   183→    doFetch()
+   184→   184→    return () => { cancelled = true }
+   185→   185→  }, [selectedYear, user?.id])
+   186→   186→
+   187→   187→  const metricCards = useMemo(() => {
+   188→   188→    if (!data) return []
+   189→   189→    return [
+   190→   190→      { label: 'Ingresos Totales', value: data.totalIncome, icon: TrendingUp, color: 'emerald', change: 8.2 },
+   191→   191→      { label: 'Gastos Totales', value: data.totalExpenses, icon: TrendingDown, color: 'rose', change: -3.1 },
+   192→   192→      { label: 'Ahorro Neto', value: data.netSavings, icon: DollarSign, color: 'cyan', change: 12.5 },
+   193→   193→      { label: 'Tasa de Ahorro', value: data.savingsRate, icon: Target, color: 'primary', change: 2.1, isPercent: true },
+   194→   194→      { label: 'Total Deudas Pagadas', value: data.totalDebtPaid, icon: CreditCard, color: 'amber', change: 15.0 },
+   195→   195→      { label: 'Costos Imprevistos', value: data.unexpectedCosts, icon: AlertTriangle, color: 'violet', change: -5.4 },
+   196→   196→    ]
+   197→   197→  }, [data])
+   198→   198→
+   199→   199→  const colorMap: Record<string, { bg: string; text: string; darkBg: string }> = {
+   200→   200→    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600 dark:text-emerald-400', darkBg: 'dark:bg-emerald-500/10' },
+   201→   201→    rose: { bg: 'bg-rose-50', text: 'text-rose-600 dark:text-rose-400', darkBg: 'dark:bg-rose-500/10' },
+   202→   202→    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-600 dark:text-cyan-400', darkBg: 'dark:bg-cyan-500/10' },
+   203→   203→    primary: { bg: 'bg-primary/10', text: 'text-primary dark:text-primary', darkBg: '' },
+   204→   204→    amber: { bg: 'bg-amber-50', text: 'text-amber-600 dark:text-amber-400', darkBg: 'dark:bg-amber-500/10' },
+   205→   205→    violet: { bg: 'bg-violet-50', text: 'text-violet-600 dark:text-violet-400', darkBg: 'dark:bg-violet-500/10' },
+   206→   206→  }
+   207→   207→
+   208→   208→  return (
+   209→   209→    <div className="space-y-6">
+   210→   210→      {/* Header + Year Selector */}
+   211→   211→      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+   212→   212→        <div>
+   213→   213→          <h1 className="text-2xl font-bold text-gradient">Resumen Anual</h1>
+   214→   214→          <p className="text-muted-foreground text-sm mt-0.5">Resumen financiero año tras año</p>
+   215→   215→        </div>
+   216→   216→        <div className="flex items-center gap-2">
+   217→   217→          <Button
+   218→   218→            variant="outline" size="icon" className="h-9 w-9"
+   219→   219→            onClick={() => setSelectedYear((y) => y - 1)}
+   220→   220→          >
+   221→   221→            <ChevronLeft className="w-4 h-4" />
+   222→   222→          </Button>
+   223→   223→          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 min-w-[120px] justify-center">
+   224→   224→            <Calendar className="w-4 h-4 text-muted-foreground" />
+   225→   225→            <span className="font-semibold text-foreground tabular-nums">{selectedYear}</span>
+   226→   226→            {selectedYear === currentYear && (
+   227→   227→              <Badge variant="secondary" className="text-[10px] px-1.5 h-5">Actual</Badge>
+   228→   228→            )}
+   229→   229→          </div>
+   230→   230→          <Button
+   231→   231→            variant="outline" size="icon" className="h-9 w-9"
+   232→   232→            onClick={() => setSelectedYear((y) => Math.min(currentYear, y + 1))}
+   233→   233→            disabled={selectedYear >= currentYear}
+   234→   234→          >
+   235→   235→            <ChevronRight className="w-4 h-4" />
+   236→   236→          </Button>
+   237→   237→        </div>
+   238→   238→      </div>
+   239→   239→
+   240→   240→      {/* Key Metrics Row */}
+   241→   241→      {loading ? (
+   242→   242→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+   243→   243→          {Array.from({ length: 6 }).map((_, i) => (
+   244→   244→            <Card key={i} className="stat-card"><CardContent className="p-4"><Skeleton className="h-28 w-full" /></CardContent></Card>
+   245→   245→          ))}
+   246→   246→        </div>
+   247→   247→      ) : (
+   248→   248→        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in">
+   249→   249→          {metricCards.map((m, i) => {
+   250→   250→            const Icon = m.icon
+   251→   251→            const cm = colorMap[m.color] || colorMap.emerald
+   252→   252→            return (
+   253→   253→              <motion.div
+   254→   254→                key={m.label}
+   255→   255→                initial={{ opacity: 0, y: 16 }}
+   256→   256→                animate={{ opacity: 1, y: 0 }}
+   257→   257→                transition={{ delay: i * 0.05 }}
+   258→   258→              >
+   259→   259→                <Card className="stat-card card-hover">
+   260→   260→                  <CardContent className="p-4">
+   261→   261→                    <div className="flex items-center justify-between mb-3">
+   262→   262→                      <div className={cn('p-2 rounded-xl', cm.bg, cm.darkBg)}>
+   263→   263→                        <Icon className={cn('w-4 h-4', cm.text)} />
+   264→   264→                      </div>
+   265→   265→                      <div className={cn(
+   266→   266→                        'flex items-center gap-0.5 text-[10px] font-medium',
+   267→   267→                        m.change >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   268→   268→                      )}>
+   269→   269→                        {m.change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   270→   270→                        {Math.abs(m.change)}%
+   271→   271→                      </div>
+   272→   272→                    </div>
+   273→   273→                    <p className="text-lg font-bold tabular-nums text-foreground leading-tight">
+   274→   274→                      {m.isPercent ? `${m.value}%` : formatCurrency(m.value)}
+   275→   275→                    </p>
+   276→   276→                    <p className="text-[11px] text-muted-foreground mt-0.5">{m.label}</p>
+   277→   277→                  </CardContent>
+   278→   278→                </Card>
+   279→   279→              </motion.div>
+   280→   280→            )
+   281→   281→          })}
+   282→   282→        </div>
+   283→   283→      )}
+   284→   284→
+   285→   285→      {loading ? (
+   286→   286→        <div className="space-y-4">
+   287→   287→          {[1, 2].map((i) => (
+   288→   288→            <Card key={i}><CardContent className="p-6"><Skeleton className="h-72 w-full" /></CardContent></Card>
+   289→   289→          ))}
+   290→   290→        </div>
+   291→   291→      ) : data && (
+   292→   292→        <>
+   293→   293→          {/* Monthly Overview Area Chart */}
+   294→   294→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+   295→   295→            <Card className="card-hover">
+   296→   296→              <CardHeader className="pb-2">
+   297→   297→                <CardTitle className="text-base font-semibold">Vista Mensual</CardTitle>
+   298→   298→                <CardDescription className="text-xs">Ingresos vs gastos a lo largo de todos los meses</CardDescription>
+   299→   299→              </CardHeader>
+   300→   300→              <CardContent className="p-4 pt-0">
+   301→   301→                <div className="h-72">
+   302→   302→                  <ResponsiveContainer width="100%" height="100%">
+   303→   303→                    <AreaChart data={data.monthlyData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
+   304→   304→                      <defs>
+   305→   305→                        <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   306→   306→                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   307→   307→                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   308→   308→                        </linearGradient>
+   309→   309→                        <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   310→   310→                          <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   311→   311→                          <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   312→   312→                        </linearGradient>
+   313→   313→                      </defs>
+   314→   314→                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" />
+   315→   315→                      <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
+   316→   316→                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} className="text-muted-foreground" />
+   317→   317→                      <RechartsTooltip content={<CustomTooltip />} />
+   318→   318→                      <Area type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   319→   319→                      <Area type="monotone" dataKey="expenses" name="Gastos" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   320→   320→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+   321→   321→                    </AreaChart>
+   322→   322→                  </ResponsiveContainer>
+   323→   323→                </div>
+   324→   324→              </CardContent>
+   325→   325→            </Card>
+   326→   326→          </motion.div>
+   327→   327→
+   328→   328→          {/* Income Sources Pie + Top Expenses Side by Side */}
+   329→   329→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   330→   330→            {/* Income Sources Pie Chart */}
+   331→   331→            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+   332→   332→              <Card className="card-hover">
+   333→   333→                <CardHeader className="pb-2">
+   334→   334→                  <CardTitle className="text-base font-semibold">Fuentes de Ingreso</CardTitle>
+   335→   335→                  <CardDescription className="text-xs">Desglose de dónde proviene tu dinero</CardDescription>
+   336→   336→                </CardHeader>
+   337→   337→                <CardContent className="p-4 pt-0">
+   338→   338→                  <div className="h-64">
+   339→   339→                    <ResponsiveContainer width="100%" height="100%">
+   340→   340→                      <PieChart>
+   341→   341→                        <Pie
+   342→   342→                          data={data.incomeSources}
+   343→   343→                          cx="50%"
+   344→   344→                          cy="50%"
+   345→   345→                          innerRadius={55}
+   346→   346→                          outerRadius={90}
+   347→   347→                          paddingAngle={3}
+   348→   348→                          dataKey="value"
+   349→   349→                          nameKey="name"
+   350→   350→                        >
+   351→   351→                          {data.incomeSources.map((_, idx) => (
+   352→   352→                            <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+   353→   353→                          ))}
+   354→   354→                        </Pie>
+   355→   355→                        <RechartsTooltip content={<PieTooltip />} />
+   356→   356→                        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+   357→   357→                      </PieChart>
+   358→   358→                    </ResponsiveContainer>
+   359→   359→                  </div>
+   360→   360→                </CardContent>
+   361→   361→              </Card>
+   362→   362→            </motion.div>
+   363→   363→
+   364→   364→            {/* Top Expense Categories - Horizontal Bar */}
+   365→   365→            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+   366→   366→              <Card className="card-hover">
+   367→   367→                <CardHeader className="pb-2">
+   368→   368→                  <CardTitle className="text-base font-semibold">Categorías de Mayor Gasto</CardTitle>
+   369→   369→                  <CardDescription className="text-xs">Áreas de mayor gasto este año</CardDescription>
+   370→   370→                </CardHeader>
+   371→   371→                <CardContent className="p-4 pt-0">
+   372→   372→                  <div className="h-64">
+   373→   373→                    <ResponsiveContainer width="100%" height="100%">
+   374→   374→                      <BarChart data={data.topExpenseCategories} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+   375→   375→                        <CartesianGrid strokeDasharray="3 3" className="stroke-border/40" horizontal={false} />
+   376→   376→                        <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`} />
+   377→   377→                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={85} />
+   378→   378→                        <RechartsTooltip
+   379→   379→                          formatter={(value: number) => formatCurrency(value)}
+   380→   380→                          contentStyle={{ borderRadius: 12, fontSize: 12, border: '1px solid var(--border)', background: 'var(--card)' }}
+   381→   381→                        />
+   382→   382→                        <Bar dataKey="amount" name="Monto" radius={[0, 6, 6, 0]} barSize={18}>
+   383→   383→                          {data.topExpenseCategories.map((_, idx) => (
+   384→   384→                            <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+   385→   385→                          ))}
+   386→   386→                        </Bar>
+   387→   387→                      </BarChart>
+   388→   388→                    </ResponsiveContainer>
+   389→   389→                  </div>
+   390→   390→                </CardContent>
+   391→   391→              </Card>
+   392→   392→            </motion.div>
+   393→   393→          </div>
+   394→   394→
+   395→   395→          {/* Savings Goals Progress */}
+   396→   396→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+   397→   397→            <Card className="card-hover">
+   398→   398→              <CardHeader className="pb-2">
+   399→   399→                <CardTitle className="text-base font-semibold">Progreso de Metas de Ahorro</CardTitle>
+   400→   400→                <CardDescription className="text-xs">Cómo van tus metas de ahorro este año</CardDescription>
+   401→   401→              </CardHeader>
+   402→   402→              <CardContent className="p-4 pt-0 space-y-4">
+   403→   403→                {data.savingsGoals.map((goal, idx) => {
+   404→   404→                  const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+   405→   405→                  return (
+   406→   406→                    <div key={idx}>
+   407→   407→                      <div className="flex items-center justify-between mb-1.5">
+   408→   408→                        <span className="text-sm font-medium text-foreground">{goal.name}</span>
+   409→   409→                        <span className="text-xs text-muted-foreground tabular-nums">
+   410→   410→                          {formatCurrency(goal.saved)} <span className="text-border">/</span> {formatCurrency(goal.target)}
+   411→   411→                        </span>
+   412→   412→                      </div>
+   413→   413→                      <div className="relative">
+   414→   414→                        <Progress value={pct} className="h-2.5" />
+   415→   415→                      </div>
+   416→   416→                      <div className="flex justify-between mt-1">
+   417→   417→                        <span className="text-[10px] text-muted-foreground">{pct}% completado</span>
+   418→   418→                        <span className="text-[10px] text-muted-foreground">{formatCurrency(goal.target - goal.saved)} restante</span>
+   419→   419→                      </div>
+   420→   420→                    </div>
+   421→   421→                  )
+   422→   422→                })}
+   423→   423→              </CardContent>
+   424→   424→            </Card>
+   425→   425→          </motion.div>
+   426→   426→
+   427→   427→          {/* Month-over-Month Trends */}
+   428→   428→          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+   429→   429→            <Card className="card-hover">
+   430→   430→              <CardHeader className="pb-2">
+   431→   431→                <CardTitle className="text-base font-semibold">Tendencias Mes a Mes</CardTitle>
+   432→   432→                <CardDescription className="text-xs">Cambio porcentual entre meses consecutivos</CardDescription>
+   433→   433→              </CardHeader>
+   434→   434→              <CardContent className="p-4 pt-0">
+   435→   435→                <div className="overflow-x-auto">
+   436→   436→                  <table className="w-full text-sm">
+   437→   437→                    <thead>
+   438→   438→                      <tr className="border-b border-border">
+   439→   439→                        <th className="text-left text-xs font-medium text-muted-foreground pb-2 pr-4">Mes</th>
+   440→   440→                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 px-4">Ingresos</th>
+   441→   441→                        <th className="text-right text-xs font-medium text-muted-foreground pb-2 pl-4">Gastos</th>
+   442→   442→                      </tr>
+   443→   443→                    </thead>
+   444→   444→                    <tbody>
+   445→   445→                      {data.monthOverMonth.map((row, idx) => (
+   446→   446→                        <tr key={row.month} className="border-b border-border/50 last:border-0">
+   447→   447→                          <td className="py-2.5 pr-4 font-medium text-foreground">{row.month}</td>
+   448→   448→                          <td className="py-2.5 px-4 text-right">
+   449→   449→                            {idx === 0 ? (
+   450→   450→                              <span className="text-xs text-muted-foreground">—</span>
+   451→   451→                            ) : (
+   452→   452→                              <span className={cn(
+   453→   453→                                'inline-flex items-center gap-1 text-xs font-semibold tabular-nums',
+   454→   454→                                row.incomeChange >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   455→   455→                              )}>
+   456→   456→                                {row.incomeChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   457→   457→                                {Math.abs(row.incomeChange)}%
+   458→   458→                              </span>
+   459→   459→                            )}
+   460→   460→                          </td>
+   461→   461→                          <td className="py-2.5 pl-4 text-right">
+   462→   462→                            {idx === 0 ? (
+   463→   463→                              <span className="text-xs text-muted-foreground">—</span>
+   464→   464→                            ) : (
+   465→   465→                              <span className={cn(
+   466→   466→                                'inline-flex items-center gap-1 text-xs font-semibold tabular-nums',
+   467→   467→                                row.expenseChange <= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+   468→   468→                              )}>
+   469→   469→                                {row.expenseChange >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+   470→   470→                                {Math.abs(row.expenseChange)}%
+   471→   471→                              </span>
+   472→   472→                            )}
+   473→   473→                          </td>
+   474→   474→                        </tr>
+   475→   475→                      ))}
+   476→   476→                    </tbody>
+   477→   477→                  </table>
+   478→   478→                </div>
+   479→   479→              </CardContent>
+   480→   480→            </Card>
+   481→   481→          </motion.div>
+   482→   482→
+   483→   483→          {/* Best & Worst Months */}
+   484→   484→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   485→   485→            {data.bestMonth && (
+   486→   486→              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+   487→   487→                <Card className="card-hover card-glow" style={{ '--card-glow-color': 'rgba(16, 185, 129, 0.3)' } as React.CSSProperties}>
+   488→   488→                  <CardContent className="p-5">
+   489→   489→                    <div className="flex items-center gap-3 mb-3">
+   490→   490→                      <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+   491→   491→                        <Trophy className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+   492→   492→                      </div>
+   493→   493→                      <div>
+   494→   494→                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes</p>
+   495→   495→                        <p className="text-lg font-bold text-foreground">{data.bestMonth.month}</p>
+   496→   496→                      </div>
+   497→   497→                    </div>
+   498→   498→                    <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+   499→   499→                      {formatCurrency(data.bestMonth.savings)}
+   500→   500→                    </p>
+   501→   501→                    <p className="text-xs text-muted-foreground mt-1">Ahorro neto este mes</p>
+   502→   502→                  </CardContent>
+   503→   503→                </Card>
+   504→   504→              </motion.div>
+   505→   505→            )}
+   506→   506→            {data.worstMonth && (
+   507→   507→              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+   508→   508→                <Card className="card-hover" style={{ borderColor: data.worstMonth.savings < 0 ? undefined : undefined }}>
+   509→   509→                  <CardContent className="p-5">
+   510→   510→                    <div className="flex items-center gap-3 mb-3">
+   511→   511→                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-500/10">
+   512→   512→                        <Frown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+   513→   513→                      </div>
+   514→   514→                      <div>
+   515→   515→                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Peor Mes</p>
+   516→   516→                        <p className="text-lg font-bold text-foreground">{data.worstMonth.month}</p>
+   517→   517→                      </div>
+   518→   518→                    </div>
+   519→   519→                    <p className={cn(
+   520→   520→                      'text-2xl font-bold tabular-nums',
+   521→   521→                      data.worstMonth.savings >= 0
+   522→   522→                        ? 'text-amber-600 dark:text-amber-400'
+   523→   523→                        : 'text-rose-600 dark:text-rose-400',
+   524→   524→                    )}>
+   525→   525→                      {formatCurrency(data.worstMonth.savings)}
+   526→   526→                    </p>
+   527→   527→                    <p className="text-xs text-muted-foreground mt-1">Ahorro neto este mes</p>
+   528→   528→                  </CardContent>
+   529→   529→                </Card>
+   530→   530→              </motion.div>
+   531→   531→            )}
+   532→   532→          </div>
+   533→   533→        </>
+   534→   534→      )}
+   535→   535→    </div>
+   536→   536→  )
+   537→   537→}

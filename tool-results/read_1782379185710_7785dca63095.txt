@@ -1,0 +1,502 @@
+   600→   600→    })
+   601→   601→
+   602→   602→    // Biggest expense category
+   603→   603→    const cats = d.expenseCategories || []
+   604→   604→    const biggestCat = cats.length > 0
+   605→   605→      ? cats.reduce((a, b) => a.value > b.value ? a : b)
+   606→   606→      : { name: 'N/A', value: 0 }
+   607→   607→
+   608→   608→    // Savings on track (>50% progress)
+   609→   609→    const onTrackCount = d.savingsGoals.filter(g => {
+   610→   610→      const pct = g.target > 0 ? g.saved / g.target : 0
+   611→   611→      return pct > 0.5
+   612→   612→    }).length
+   613→   613→
+   614→   614→    // Net worth trend (current vs last month)
+   615→   615→    let trend = 0
+   616→   616→    let trendLabel = 'N/A'
+   617→   617→    if (cashFlow.length >= 2) {
+   618→   618→      const current = cashFlow[cashFlow.length - 1]
+   619→   619→      const previous = cashFlow[cashFlow.length - 2]
+   620→   620→      trend = (current.income - current.expenses) - (previous.income - previous.expenses)
+   621→   621→      trendLabel = formatCurrency(Math.abs(trend))
+   622→   622→    }
+   623→   623→
+   624→   624→    return { bestMonth, bestNet, biggestCat, onTrackCount, trend, trendLabel, hasTrend: cashFlow.length >= 2 }
+   625→   625→  })()
+   626→   626→
+   627→   627→  // ── Generate daily spending sparkline data ──
+   628→   628→  const dailySpending = (() => {
+   629→   629→    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+   630→   630→    const today = new Date().getDate()
+   631→   631→    const data: Array<{ day: string; amount: number }> = []
+   632→   632→    for (let i = 1; i <= Math.min(today, daysInMonth); i++) {
+   633→   633→      // Distribute expenses across days with some randomness but deterministic
+   634→   634→      const baseDaily = d.totalExpenses / 30
+   635→   635→      const variation = Math.sin(i * 2.7 + 1.3) * baseDaily * 0.6
+   636→   636→      data.push({ day: `${i}`, amount: Math.max(0, Math.round((baseDaily + variation) * 100) / 100) })
+   637→   637→    }
+   638→   638→    return data
+   639→   639→  })()
+   640→   640→
+   641→   641→  // ── Spending Heatmap Calendar Data ──
+   642→   642→  const heatmapData = (() => {
+   643→   643→    const now = new Date()
+   644→   644→    const year = now.getFullYear()
+   645→   645→    const month = now.getMonth()
+   646→   646→    const daysInMonth = getDaysInMonth(now)
+   647→   647→    const firstDayOfWeek = getDay(startOfMonth(now)) // 0=Sun
+   648→   648→    // Adjust so Monday=0
+   649→   649→    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+   650→   650→    const today = now.getDate()
+   651→   651→
+   652→   652→    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+   653→   653→
+   654→   654→    const cells: Array<{
+   655→   655→      day: number | null
+   656→   656→      amount: number
+   657→   657→      isToday: boolean
+   658→   658→      isFuture: boolean
+   659→   659→      colorClass: string
+   660→   660→    }> = []
+   661→   661→
+   662→   662→    // Add empty cells for offset
+   663→   663→    for (let i = 0; i < startOffset; i++) {
+   664→   664→      cells.push({ day: null, amount: 0, isToday: false, isFuture: false, colorClass: '' })
+   665→   665→    }
+   666→   666→
+   667→   667→    // Add day cells
+   668→   668→    for (let day = 1; day <= daysInMonth; day++) {
+   669→   669→      const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd')
+   670→   670→      const match = dailySpendingData.find(d => d.date === dateStr)
+   671→   671→      const amount = match ? match.amount : 0
+   672→   672→      const isToday = day === today
+   673→   673→      const isFuture = day > today
+   674→   674→
+   675→   675→      let colorClass = 'bg-muted/40 dark:bg-muted/20' // No spending (gray)
+   676→   676→      if (!isFuture) {
+   677→   677→        if (amount > 500) colorClass = 'bg-rose-400 dark:bg-rose-500/80'
+   678→   678→        else if (amount > 200) colorClass = 'bg-amber-400 dark:bg-amber-500/80'
+   679→   679→        else if (amount > 50) colorClass = 'bg-emerald-500 dark:bg-emerald-500/80'
+   680→   680→        else if (amount >= 1) colorClass = 'bg-emerald-300 dark:bg-emerald-400/60'
+   681→   681→      } else {
+   682→   682→        colorClass = 'bg-muted/20 dark:bg-muted/10'
+   683→   683→      }
+   684→   684→
+   685→   685→      cells.push({ day, amount, isToday, isFuture, colorClass })
+   686→   686→    }
+   687→   687→
+   688→   688→    return { dayNames, cells, monthName: format(now, 'MMMM yyyy') }
+   689→   689→  })()
+   690→   690→
+   691→   691→  // ── Net Worth Trend Data ──
+   692→   692→  const netWorthData = (() => {
+   693→   693→    const cashFlow = d.monthlyCashFlow || []
+   694→   694→    if (cashFlow.length === 0) return []
+   695→   695→    // Cumulative net = running sum of (income - expenses)
+   696→   696→    let cumulative = d.balance - cashFlow.reduce((sum, m) => sum + m.income - m.expenses, 0)
+   697→   697→    return cashFlow.map(m => {
+   698→   698→      cumulative += m.income - m.expenses
+   699→   699→      return {
+   700→   700→        month: m.month?.split(' ')[0] || m.month,
+   701→   701→        netWorth: Number(cumulative.toFixed(2)),
+   702→   702→      }
+   703→   703→    })
+   704→   704→  })()
+   705→   705→
+   706→   706→  // ── Monthly Comparison Data ──
+   707→   707→  const monthlyComparison = (() => {
+   708→   708→    const cashFlow = d.monthlyCashFlow || []
+   709→   709→    if (cashFlow.length < 2) {
+   710→   710→      const curr = cashFlow.length === 1 ? cashFlow[0] : { income: 0, expenses: 0 }
+   711→   711→      return [
+   712→   712→        { label: 'Ingresos Totales', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   713→   713→        { label: 'Gastos Totales', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   714→   714→        { label: 'Ahorro Neto', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   715→   715→      ]
+   716→   716→    }
+   717→   717→    const curr = cashFlow[cashFlow.length - 1]
+   718→   718→    const prev = cashFlow[cashFlow.length - 2]
+   719→   719→
+   720→   720→    const calcChange = (currVal: number, prevVal: number) => {
+   721→   721→      if (prevVal === 0) return currVal > 0 ? 100 : 0
+   722→   722→      return Number(((currVal - prevVal) / Math.abs(prevVal) * 100).toFixed(1))
+   723→   723→    }
+   724→   724→
+   725→   725→    const currNet = curr.income - curr.expenses
+   726→   726→    const prevNet = prev.income - prev.expenses
+   727→   727→
+   728→   728→    return [
+   729→   729→      { label: 'Ingresos Totales', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   730→   730→      { label: 'Gastos Totales', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   731→   731→      { label: 'Ahorro Neto', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   732→   732→    ]
+   733→   733→  })()
+   734→   734→
+   735→   735→  // ── Metric cards ──
+   736→   736→  const metrics = [
+   737→   737→    {
+   738→   738→      title: 'Balance Actual',
+   739→   739→      value: formatCurrency(d.balance),
+   740→   740→      change: '+12.5%',
+   741→   741→      trend: 'up' as const,
+   742→   742→      icon: DollarSign,
+   743→   743→      accentColor: '#10b981',
+   744→   744→      gradientFrom: 'from-emerald-500/10',
+   745→   745→      gradientTo: 'to-teal-500/5',
+   746→   746→      iconBg: 'bg-emerald-100 dark:bg-emerald-500/15',
+   747→   747→      iconColor: 'text-emerald-600 dark:text-emerald-400',
+   748→   748→      cardAccentFrom: '#10b981',
+   749→   749→      cardAccentTo: '#06b6d4',
+   750→   750→    },
+   751→   751→    {
+   752→   752→      title: 'Ingresos Totales',
+   753→   753→      value: formatCurrency(d.totalIncome),
+   754→   754→      change: '+4.2%',
+   755→   755→      trend: 'up' as const,
+   756→   756→      icon: TrendingUp,
+   757→   757→      accentColor: '#06b6d4',
+   758→   758→      gradientFrom: 'from-cyan-500/10',
+   759→   759→      gradientTo: 'to-sky-500/5',
+   760→   760→      iconBg: 'bg-cyan-100 dark:bg-cyan-500/15',
+   761→   761→      iconColor: 'text-cyan-600 dark:text-cyan-400',
+   762→   762→      cardAccentFrom: '#10b981',
+   763→   763→      cardAccentTo: '#34d399',
+   764→   764→    },
+   765→   765→    {
+   766→   766→      title: 'Gastos Totales',
+   767→   767→      value: formatCurrency(d.totalExpenses),
+   768→   768→      change: '-2.1%',
+   769→   769→      trend: 'down' as const,
+   770→   770→      icon: TrendingDown,
+   771→   771→      accentColor: '#f43f5e',
+   772→   772→      gradientFrom: 'from-rose-500/10',
+   773→   773→      gradientTo: 'to-pink-500/5',
+   774→   774→      iconBg: 'bg-rose-100 dark:bg-rose-500/15',
+   775→   775→      iconColor: 'text-rose-600 dark:text-rose-400',
+   776→   776→      cardAccentFrom: '#f43f5e',
+   777→   777→      cardAccentTo: '#fb7185',
+   778→   778→    },
+   779→   779→    {
+   780→   780→      title: 'Deudas Activas',
+   781→   781→      value: formatCurrency(d.totalDebt),
+   782→   782→      change: '3 deudas',
+   783→   783→      trend: 'neutral' as const,
+   784→   784→      icon: CreditCard,
+   785→   785→      accentColor: '#f59e0b',
+   786→   786→      gradientFrom: 'from-amber-500/10',
+   787→   787→      gradientTo: 'to-orange-500/5',
+   788→   788→      iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+   789→   789→      iconColor: 'text-amber-600 dark:text-amber-400',
+   790→   790→      cardAccentFrom: '#f59e0b',
+   791→   791→      cardAccentTo: '#fbbf24',
+   792→   792→    },
+   793→   793→  ]
+   794→   794→
+   795→   795→  // ── Savings goal colors ──
+   796→   796→  const goalColors = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899']
+   797→   797→
+   798→   798→  return (
+   799→   799→    <div className="space-y-6 pb-20">
+   800→   800→      {/* Header */}
+   801→   801→      <div className="flex items-center justify-between">
+   802→   802→        <div className="module-header">
+   803→   803→          <h1 className="text-2xl font-bold text-foreground">Panel Principal</h1>
+   804→   804→          <p className="text-muted-foreground text-sm mt-0.5">
+   805→   805→            Resumen de tu salud financiera
+   806→   806→          </p>
+   807→   807→        </div>
+   808→   808→        <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
+   809→   809→          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+   810→   810→          Actualizar
+   811→   811→        </Button>
+   812→   812→      </div>
+   813→   813→
+   814→   814→      {/* ── A. Financial Health Score ── */}
+   815→   815→      <motion.div
+   816→   816→        initial={{ opacity: 0, y: 16 }}
+   817→   817→        animate={{ opacity: 1, y: 0 }}
+   818→   818→        transition={{ duration: 0.5, ease: 'easeOut' }}
+   819→   819→      >
+   820→   820→        {/* Inline the gauge content since we can't pass data to a sub-component easily */}
+   821→   821→        <Card className="overflow-hidden border-0 shadow-lg">
+   822→   822→          <div className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-6">
+   823→   823→            <div className="flex flex-col sm:flex-row items-center gap-6">
+   824→   824→              {/* Gauge Circle */}
+   825→   825→              <div className="relative w-36 h-36 shrink-0">
+   826→   826→                <div
+   827→   827→                  className="w-full h-full rounded-full flex items-center justify-center"
+   828→   828→                  style={{
+   829→   829→                    background: `conic-gradient(${healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981'} ${(healthScore / 100) * 360}deg, var(--muted) ${(healthScore / 100) * 360}deg)`,
+   830→   830→                    transition: 'all 0.8s ease-out',
+   831→   831→                  }}
+   832→   832→                >
+   833→   833→                  <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-inner">
+   834→   834→                    <span className="text-3xl font-bold tabular-nums" style={{ color: healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981' }}>
+   835→   835→                      {healthScore}
+   836→   836→                    </span>
+   837→   837→                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">de 100</span>
+   838→   838→                  </div>
+   839→   839→                </div>
+   840→   840→              </div>
+   841→   841→
+   842→   842→              {/* Details */}
+   843→   843→              <div className="flex-1 text-center sm:text-left space-y-3">
+   844→   844→                <div>
+   845→   845→                  <h3 className="text-lg font-bold text-foreground">Puntuación de Salud Financiera</h3>
+   846→   846→                  <p className={cn(
+   847→   847→                    'text-sm font-semibold',
+   848→   848→                    healthScore <= 40 ? 'text-red-500' : healthScore <= 70 ? 'text-amber-500' : 'text-emerald-500'
+   849→   849→                  )}>
+   850→   850→                    {healthScore <= 40 ? 'Necesita Mejora' : healthScore <= 70 ? 'Regular' : 'Excelente'}
+   851→   851→                  </p>
+   852→   852→                </div>
+   853→   853→                <div className="grid grid-cols-3 gap-3 text-center">
+   854→   854→                  <div className="space-y-0.5">
+   855→   855→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasa de Ahorro</p>
+   856→   856→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   857→   857→                      {d.totalIncome > 0 ? `${Math.max(0, Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100))}%` : '0%'}
+   858→   858→                    </p>
+   859→   859→                  </div>
+   860→   860→                  <div className="space-y-0.5">
+   861→   861→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ratio de Deuda</p>
+   862→   862→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   863→   863→                      {d.totalIncome > 0 ? `${Math.round(d.totalDebt / d.totalIncome * 100)}%` : '0%'}
+   864→   864→                    </p>
+   865→   865→                  </div>
+   866→   866→                  <div className="space-y-0.5">
+   867→   867→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergencia</p>
+   868→   868→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   869→   869→                      {d.totalExpenses > 0 ? `${(d.balance / d.totalExpenses).toFixed(1)}mo` : '0mo'}
+   870→   870→                    </p>
+   871→   871→                  </div>
+   872→   872→                </div>
+   873→   873→              </div>
+   874→   874→            </div>
+   875→   875→          </div>
+   876→   876→        </Card>
+   877→   877→      </motion.div>
+   878→   878→
+   879→   879→      {/* ── B. Enhanced Metric Cards with Gradients ── */}
+   880→   880→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   881→   881→        {metrics.map((m, idx) => (
+   882→   882→          <motion.div
+   883→   883→            key={m.title}
+   884→   884→            initial={{ opacity: 0, y: 20 }}
+   885→   885→            animate={{ opacity: 1, y: 0 }}
+   886→   886→            transition={{ duration: 0.4, delay: idx * 0.08, ease: 'easeOut' }}
+   887→   887→          >
+   888→   888→            <Card className="card-hover card-accent overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px', '--card-accent-from': m.cardAccentFrom, '--card-accent-to': m.cardAccentTo } as React.CSSProperties}>
+   889→   889→              <CardContent className="p-4">
+   890→   890→                <div className="flex items-start justify-between">
+   891→   891→                  <div className="space-y-1">
+   892→   892→                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.title}</p>
+   893→   893→                    <p className={cn(
+   894→   894→                      'text-2xl font-bold tabular-nums',
+   895→   895→                      d.balance >= 0 && m.title === 'Balance Actual' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+   896→   896→                    )}>
+   897→   897→                      {m.value}
+   898→   898→                    </p>
+   899→   899→                  </div>
+   900→   900→                  <div className={cn(
+   901→   901→                    'p-2.5 rounded-xl bg-gradient-to-br',
+   902→   902→                    m.gradientFrom,
+   903→   903→                    m.gradientTo
+   904→   904→                  )}>
+   905→   905→                    <m.icon className={cn('w-5 h-5', m.iconColor)} />
+   906→   906→                  </div>
+   907→   907→                </div>
+   908→   908→                <div className="flex items-center gap-1 mt-2">
+   909→   909→                  {m.trend === 'up' && <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />}
+   910→   910→                  {m.trend === 'down' && <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />}
+   911→   911→                  <span className={cn(
+   912→   912→                    'text-xs font-medium',
+   913→   913→                    m.trend === 'up' ? 'text-emerald-500' : m.trend === 'down' ? 'text-rose-500' : 'text-muted-foreground'
+   914→   914→                  )}>
+   915→   915→                    {m.change}
+   916→   916→                  </span>
+   917→   917→                  <span className="text-xs text-muted-foreground ml-1">vs mes pasado</span>
+   918→   918→                </div>
+   919→   919→              </CardContent>
+   920→   920→            </Card>
+   921→   921→          </motion.div>
+   922→   922→        ))}
+   923→   923→      </div>
+   924→   924→
+   925→   925→      {/* ── Charts ── */}
+   926→   926→      {loading ? (
+   927→   927→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   928→   928→          {[1, 2, 3].map((i) => (
+   929→   929→            <Card key={i}>
+   930→   930→              <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+   931→   931→              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+   932→   932→            </Card>
+   933→   933→          ))}
+   934→   934→        </div>
+   935→   935→      ) : (
+   936→   936→        <>
+   937→   937→          {/* ── E. Enhanced Charts Row 1 ── */}
+   938→   938→          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   939→   939→            {/* Cash Flow Chart */}
+   940→   940→            <motion.div
+   941→   941→              initial={{ opacity: 0, y: 20 }}
+   942→   942→              animate={{ opacity: 1, y: 0 }}
+   943→   943→              transition={{ duration: 0.5, delay: 0.35 }}
+   944→   944→              className="lg:col-span-2"
+   945→   945→            >
+   946→   946→              <Card className="overflow-hidden">
+   947→   947→                <div className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 px-6 pt-5 pb-0">
+   948→   948→                  <CardTitle className="text-base font-semibold">Flujo de Efectivo Mensual</CardTitle>
+   949→   949→                  <CardDescription>Ingresos vs Gastos en los últimos 6 meses</CardDescription>
+   950→   950→                </div>
+   951→   951→                <CardContent className="pt-4">
+   952→   952→                  <div className="h-[300px]">
+   953→   953→                    <ResponsiveContainer width="100%" height="100%">
+   954→   954→                      <AreaChart data={d.monthlyCashFlow} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+   955→   955→                        <defs>
+   956→   956→                          <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   957→   957→                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   958→   958→                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   959→   959→                          </linearGradient>
+   960→   960→                          <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   961→   961→                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   962→   962→                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   963→   963→                          </linearGradient>
+   964→   964→                        </defs>
+   965→   965→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+   966→   966→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+   967→   967→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+   968→   968→                        <RechartsTooltip content={EnhancedChartTooltip} />
+   969→   969→                        <Legend />
+   970→   970→                        <Area type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   971→   971→                        <Area type="monotone" dataKey="expenses" name="Gastos" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   972→   972→                      </AreaChart>
+   973→   973→                    </ResponsiveContainer>
+   974→   974→                  </div>
+   975→   975→                </CardContent>
+   976→   976→              </Card>
+   977→   977→            </motion.div>
+   978→   978→
+   979→   979→            {/* Expense Distribution */}
+   980→   980→            <motion.div
+   981→   981→              initial={{ opacity: 0, y: 20 }}
+   982→   982→              animate={{ opacity: 1, y: 0 }}
+   983→   983→              transition={{ duration: 0.5, delay: 0.4 }}
+   984→   984→            >
+   985→   985→              <Card className="overflow-hidden">
+   986→   986→                <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 px-6 pt-5 pb-0">
+   987→   987→                  <CardTitle className="text-base font-semibold">Desglose de Gastos</CardTitle>
+   988→   988→                  <CardDescription>Este mes por categoría</CardDescription>
+   989→   989→                </div>
+   990→   990→                <CardContent className="pt-4">
+   991→   991→                  <div className="h-[300px]">
+   992→   992→                    <ResponsiveContainer width="100%" height="100%">
+   993→   993→                      <PieChart>
+   994→   994→                        <Pie
+   995→   995→                          data={d.expenseCategories || []}
+   996→   996→                          cx="50%"
+   997→   997→                          cy="42%"
+   998→   998→                          innerRadius={50}
+   999→   999→                          outerRadius={82}
+  1000→  1000→                          paddingAngle={3}
+  1001→  1001→                          dataKey="value"
+  1002→  1002→                        >
+  1003→  1003→                          {(d.expenseCategories || []).map((entry, idx) => (
+  1004→  1004→                            <Cell key={idx} fill={entry.color || CHART_COLORS[idx % CHART_COLORS.length]} />
+  1005→  1005→                          ))}
+  1006→  1006→                        </Pie>
+  1007→  1007→                        <RechartsTooltip
+  1008→  1008→                          formatter={(value: number, name: string, props: any) => {
+  1009→  1009→                            const total = (d.expenseCategories || []).reduce((s, c) => s + c.value, 0)
+  1010→  1010→                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+  1011→  1011→                            return [`${formatCurrency(value)} (${pct}%)`, props.payload.name]
+  1012→  1012→                          }}
+  1013→  1013→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1014→  1014→                        />
+  1015→  1015→                      </PieChart>
+  1016→  1016→                    </ResponsiveContainer>
+  1017→  1017→                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+  1018→  1018→                      {(d.expenseCategories || []).slice(0, 4).map((cat) => (
+  1019→  1019→                        <div key={cat.name} className="flex items-center gap-2 text-xs">
+  1020→  1020→                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+  1021→  1021→                          <span className="text-muted-foreground truncate">{cat.name}</span>
+  1022→  1022→                        </div>
+  1023→  1023→                      ))}
+  1024→  1024→                    </div>
+  1025→  1025→                  </div>
+  1026→  1026→                </CardContent>
+  1027→  1027→              </Card>
+  1028→  1028→            </motion.div>
+  1029→  1029→          </div>
+  1030→  1030→
+  1031→  1031→          {/* ── D. Financial Insights Section ── */}
+  1032→  1032→          <motion.div
+  1033→  1033→            initial={{ opacity: 0, y: 20 }}
+  1034→  1034→            animate={{ opacity: 1, y: 0 }}
+  1035→  1035→            transition={{ duration: 0.5, delay: 0.45 }}
+  1036→  1036→          >
+  1037→  1037→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1038→  1038→              {/* Best Saving Month */}
+  1039→  1039→              <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-500/5 dark:to-teal-500/3 border-emerald-200/50 dark:border-emerald-500/10">
+  1040→  1040→                <CardContent className="p-4">
+  1041→  1041→                  <div className="flex items-center gap-2 mb-2">
+  1042→  1042→                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+  1043→  1043→                      <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+  1044→  1044→                    </div>
+  1045→  1045→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes de Ahorro</p>
+  1046→  1046→                  </div>
+  1047→  1047→                  <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
+  1048→  1048→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+  1049→  1049→                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} neto` : 'Sin datos'}
+  1050→  1050→                  </p>
+  1051→  1051→                </CardContent>
+  1052→  1052→              </Card>
+  1053→  1053→
+  1054→  1054→              {/* Biggest Expense Category */}
+  1055→  1055→              <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/30 dark:from-rose-500/5 dark:to-pink-500/3 border-rose-200/50 dark:border-rose-500/10">
+  1056→  1056→                <CardContent className="p-4">
+  1057→  1057→                  <div className="flex items-center gap-2 mb-2">
+  1058→  1058→                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
+  1059→  1059→                      <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+  1060→  1060→                    </div>
+  1061→  1061→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mayor Gasto</p>
+  1062→  1062→                  </div>
+  1063→  1063→                  <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
+  1064→  1064→                  <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+  1065→  1065→                    {formatCurrency(insights.biggestCat.value)}
+  1066→  1066→                  </p>
+  1067→  1067→                </CardContent>
+  1068→  1068→              </Card>
+  1069→  1069→
+  1070→  1070→              {/* Savings On Track */}
+  1071→  1071→              <Card className="bg-gradient-to-br from-cyan-50/50 to-sky-50/30 dark:from-cyan-500/5 dark:to-sky-500/3 border-cyan-200/50 dark:border-cyan-500/10">
+  1072→  1072→                <CardContent className="p-4">
+  1073→  1073→                  <div className="flex items-center gap-2 mb-2">
+  1074→  1074→                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
+  1075→  1075→                      <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+  1076→  1076→                    </div>
+  1077→  1077→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">En Camino</p>
+  1078→  1078→                  </div>
+  1079→  1079→                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">de {d.savingsGoals.length}</span></p>
+  1080→  1080→                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+  1081→  1081→                    Metas &gt;50% completadas
+  1082→  1082→                  </p>
+  1083→  1083→                </CardContent>
+  1084→  1084→              </Card>
+  1085→  1085→
+  1086→  1086→              {/* Net Worth Trend */}
+  1087→  1087→              <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-500/5 dark:to-purple-500/3 border-violet-200/50 dark:border-violet-500/10">
+  1088→  1088→                <CardContent className="p-4">
+  1089→  1089→                  <div className="flex items-center gap-2 mb-2">
+  1090→  1090→                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
+  1091→  1091→                      <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+  1092→  1092→                    </div>
+  1093→  1093→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tendencia de Flujo</p>
+  1094→  1094→                  </div>
+  1095→  1095→                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
+  1096→  1096→                    {insights.hasTrend && (
+  1097→  1097→                      insights.trend >= 0
+  1098→  1098→                        ? <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+  1099→  1099→                        : <ArrowDownRight className="w-5 h-5 text-rose-500" />
+
+[showing lines 600-1099 of 1559; use offset=1100 with limit to continue reading]

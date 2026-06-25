@@ -1,0 +1,799 @@
+     1→     1→'use client'
+     2→     2→
+     3→     3→import { useState, useEffect, useMemo, useCallback } from 'react'
+     4→     4→import {
+     5→     5→  ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
+     6→     6→  Printer, PiggyBank, CreditCard, ArrowUpRight,
+     7→     7→  ArrowDownRight, Target, BarChart3,
+     8→     8→  CircleAlert,
+     9→     9→} from 'lucide-react'
+    10→    10→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    11→    11→import { Button } from '@/components/ui/button'
+    12→    12→import { Badge } from '@/components/ui/badge'
+    13→    13→import { Skeleton } from '@/components/ui/skeleton'
+    14→    14→import {
+    15→    15→  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+    16→    16→} from '@/components/ui/table'
+    17→    17→import { useAppStore } from '@/lib/store'
+    18→    18→import { cn } from '@/lib/utils'
+    19→    19→import { motion } from 'framer-motion'
+    20→    20→import {
+    21→    21→  format, startOfMonth, endOfMonth, subMonths,
+    22→    22→  parseISO, isWithinInterval, getYear, getMonth,
+    23→    23→} from 'date-fns'
+    24→    24→
+    25→    25→// --- Types ---
+    26→    26→
+    27→    27→interface Category {
+    28→    28→  id: string
+    29→    29→  name: string
+    30→    30→  icon: string
+    31→    31→  color: string
+    32→    32→  type: string
+    33→    33→}
+    34→    34→
+    35→    35→interface IncomeRecord {
+    36→    36→  id: string
+    37→    37→  source: string
+    38→    38→  amount: number
+    39→    39→  description: string | null
+    40→    40→  date: string
+    41→    41→  frequency: string
+    42→    42→  category: Category | null
+    43→    43→}
+    44→    44→
+    45→    45→interface ExpenseRecord {
+    46→    46→  id: string
+    47→    47→  amount: number
+    48→    48→  description: string
+    49→    49→  date: string
+    50→    50→  category: Category | null
+    51→    51→  isRecurring: boolean
+    52→    52→}
+    53→    53→
+    54→    54→interface UnexpectedRecord {
+    55→    55→  id: string
+    56→    56→  amount: number
+    57→    57→  description: string
+    58→    58→  date: string
+    59→    59→  category: Category | null
+    60→    60→  resolved: boolean
+    61→    61→}
+    62→    62→
+    63→    63→interface SavingsGoal {
+    64→    64→  id: string
+    65→    65→  name: string
+    66→    66→  targetAmount: number
+    67→    67→  savedAmount: number
+    68→    68→  icon: string
+    69→    69→  color: string
+    70→    70→  contributions: { id: string; amount: number; date: string; note: string | null }[]
+    71→    71→}
+    72→    72→
+    73→    73→interface Debt {
+    74→    74→  id: string
+    75→    75→  name: string
+    76→    76→  totalAmount: number
+    77→    77→  paidAmount: number
+    78→    78→  payments: { id: string; amount: number; date: string; note: string | null }[]
+    79→    79→}
+    80→    80→
+    81→    81→interface MonthData {
+    82→    82→  totalIncome: number
+    83→    83→  totalExpenses: number
+    84→    84→  netSavings: number
+    85→    85→  savingsRate: number
+    86→    86→  incomes: IncomeRecord[]
+    87→    87→  expenses: (ExpenseRecord | UnexpectedRecord)[]
+    88→    88→  savingsContributions: { goalName: string; goalColor: string; goalIcon: string; amount: number; date: string }[]
+    89→    89→  debtPayments: { debtName: string; amount: number; date: string }[]
+    90→    90→}
+    91→    91→
+    92→    92→function formatCurrency(amount: number): string {
+    93→    93→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    94→    94→}
+    95→    95→
+    96→    96→const MONTH_NAMES = [
+    97→    97→  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    98→    98→  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    99→    99→]
+   100→   100→
+   101→   101→function getGoalEmoji(name: string): string {
+   102→   102→  const n = name.toLowerCase()
+   103→   103→  if (n.includes('travel') || n.includes('vacation') || n.includes('viaje')) return '✈️'
+   104→   104→  if (n.includes('emergency') || n.includes('emergencia')) return '🛡️'
+   105→   105→  if (n.includes('laptop') || n.includes('computer') || n.includes('tech')) return '💻'
+   106→   106→  if (n.includes('car') || n.includes('auto') || n.includes('coche')) return '🚗'
+   107→   107→  if (n.includes('house') || n.includes('home') || n.includes('casa')) return '🏠'
+   108→   108→  if (n.includes('wedding') || n.includes('boda')) return '💍'
+   109→   109→  if (n.includes('education') || n.includes('study') || n.includes('estudio')) return '🎓'
+   110→   110→  return '💰'
+   111→   111→}
+   112→   112→
+   113→   113→// --- Component ---
+   114→   114→
+   115→   115→export default function MonthlyReport() {
+   116→   116→  const { user } = useAppStore()
+   117→   117→  const [loading, setLoading] = useState(true)
+   118→   118→
+   119→   119→  // All data (we filter client-side per month)
+   120→   120→  const [allIncomes, setAllIncomes] = useState<IncomeRecord[]>([])
+   121→   121→  const [allExpenses, setAllExpenses] = useState<ExpenseRecord[]>([])
+   122→   122→  const [allUnexpected, setAllUnexpected] = useState<UnexpectedRecord[]>([])
+   123→   123→  const [allSavings, setAllSavings] = useState<SavingsGoal[]>([])
+   124→   124→  const [allDebts, setAllDebts] = useState<Debt[]>([])
+   125→   125→
+   126→   126→  // Selected month (0-indexed)
+   127→   127→  const now = new Date()
+   128→   128→  const [selectedYear, setSelectedYear] = useState(getYear(now))
+   129→   129→  const [selectedMonth, setSelectedMonth] = useState(getMonth(now))
+   130→   130→
+   131→   131→  const fetchData = useCallback(async () => {
+   132→   132→    if (!user?.id) return
+   133→   133→    setLoading(true)
+   134→   134→    try {
+   135→   135→      const [incomeRes, expenseRes, unexpectedRes, savingsRes, debtsRes] = await Promise.all([
+   136→   136→        fetch(`/api/income?accountId=${user.id}`),
+   137→   137→        fetch(`/api/expenses?accountId=${user.id}`),
+   138→   138→        fetch(`/api/unexpected?accountId=${user.id}`),
+   139→   139→        fetch(`/api/savings?accountId=${user.id}`),
+   140→   140→        fetch(`/api/debts?accountId=${user.id}`),
+   141→   141→      ])
+   142→   142→
+   143→   143→      const incomeData = await incomeRes.json()
+   144→   144→      const expenseData = await expenseRes.json()
+   145→   145→      const unexpectedData = await unexpectedRes.json()
+   146→   146→      const savingsData = await savingsRes.json()
+   147→   147→      const debtsData = await debtsRes.json()
+   148→   148→
+   149→   149→      const incomeList = Array.isArray(incomeData) ? incomeData : (incomeData.incomes || [])
+   150→   150→      const expenseList = expenseData.expenses || []
+   151→   151→      const unexpectedList = unexpectedData.unexpecteds || []
+   152→   152→      const savingsGoals = savingsData.savingsGoals || []
+   153→   153→      const debts = debtsData.debts || []
+   154→   154→
+   155→   155→      setAllIncomes(incomeList as IncomeRecord[])
+   156→   156→      setAllExpenses(expenseList as ExpenseRecord[])
+   157→   157→      setAllUnexpected(unexpectedList as UnexpectedRecord[])
+   158→   158→      setAllSavings(savingsGoals as SavingsGoal[])
+   159→   159→      setAllDebts(debts as Debt[])
+   160→   160→    } catch (err) {
+   161→   161→      console.error('MonthlyReport fetch error:', err)
+   162→   162→    } finally {
+   163→   163→      setLoading(false)
+   164→   164→    }
+   165→   165→  }, [user?.id])
+   166→   166→
+   167→   167→  useEffect(() => { fetchData() }, [fetchData])
+   168→   168→
+   169→   169→  // Compute data for selected month
+   170→   170→  const currentMonthData: MonthData = useMemo(() => {
+   171→   171→    const monthStart = startOfMonth(new Date(selectedYear, selectedMonth))
+   172→   172→    const monthEnd = endOfMonth(new Date(selectedYear, selectedMonth))
+   173→   173→
+   174→   174→    const inRange = (dateStr: string) =>
+   175→   175→      isWithinInterval(parseISO(dateStr), { start: monthStart, end: monthEnd })
+   176→   176→
+   177→   177→    const monthIncomes = allIncomes.filter((i) => inRange(i.date))
+   178→   178→    const monthExpenses = allExpenses.filter((e) => inRange(e.date))
+   179→   179→    const monthUnexpected = allUnexpected.filter((u) => inRange(u.date))
+   180→   180→    const allMonthOutflows = [...monthExpenses, ...monthUnexpected]
+   181→   181→
+   182→   182→    const totalIncome = monthIncomes.reduce((s, i) => s + i.amount, 0)
+   183→   183→    const totalExpenses = allMonthOutflows.reduce((s, e) => s + e.amount, 0)
+   184→   184→    const netSavings = totalIncome - totalExpenses
+   185→   185→    const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0
+   186→   186→
+   187→   187→    // Savings contributions this month
+   188→   188→    const savingsContributions: MonthData['savingsContributions'] = []
+   189→   189→    for (const goal of allSavings) {
+   190→   190→      for (const c of goal.contributions) {
+   191→   191→        if (inRange(c.date)) {
+   192→   192→          savingsContributions.push({
+   193→   193→            goalName: goal.name,
+   194→   194→            goalColor: goal.color,
+   195→   195→            goalIcon: goal.icon,
+   196→   196→            amount: c.amount,
+   197→   197→            date: c.date,
+   198→   198→          })
+   199→   199→        }
+   200→   200→      }
+   201→   201→    }
+   202→   202→
+   203→   203→    // Debt payments this month
+   204→   204→    const debtPayments: MonthData['debtPayments'] = []
+   205→   205→    for (const debt of allDebts) {
+   206→   206→      for (const p of debt.payments) {
+   207→   207→        if (inRange(p.date)) {
+   208→   208→          debtPayments.push({
+   209→   209→            debtName: debt.name,
+   210→   210→            amount: p.amount,
+   211→   211→            date: p.date,
+   212→   212→          })
+   213→   213→        }
+   214→   214→      }
+   215→   215→    }
+   216→   216→
+   217→   217→    return {
+   218→   218→      totalIncome,
+   219→   219→      totalExpenses,
+   220→   220→      netSavings,
+   221→   221→      savingsRate,
+   222→   222→      incomes: monthIncomes,
+   223→   223→      expenses: allMonthOutflows,
+   224→   224→      savingsContributions,
+   225→   225→      debtPayments,
+   226→   226→    }
+   227→   227→  }, [allIncomes, allExpenses, allUnexpected, allSavings, allDebts, selectedYear, selectedMonth])
+   228→   228→
+   229→   229→  // Previous month data for comparison
+   230→   230→  const prevMonthData: MonthData = useMemo(() => {
+   231→   231→    const pm = selectedMonth === 0 ? 11 : selectedMonth - 1
+   232→   232→    const py = selectedMonth === 0 ? selectedYear - 1 : selectedYear
+   233→   233→    const monthStart = startOfMonth(new Date(py, pm))
+   234→   234→    const monthEnd = endOfMonth(new Date(py, pm))
+   235→   235→
+   236→   236→    const inRange = (dateStr: string) =>
+   237→   237→      isWithinInterval(parseISO(dateStr), { start: monthStart, end: monthEnd })
+   238→   238→
+   239→   239→    const incomes = allIncomes.filter((i) => inRange(i.date))
+   240→   240→    const expenses = allExpenses.filter((e) => inRange(e.date))
+   241→   241→    const unexpected = allUnexpected.filter((u) => inRange(u.date))
+   242→   242→    const allOutflows = [...expenses, ...unexpected]
+   243→   243→
+   244→   244→    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0)
+   245→   245→    const totalExpenses = allOutflows.reduce((s, e) => s + e.amount, 0)
+   246→   246→    const netSavings = totalIncome - totalExpenses
+   247→   247→    const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : 0
+   248→   248→
+   249→   249→    return { totalIncome, totalExpenses, netSavings, savingsRate, incomes, expenses: allOutflows, savingsContributions: [], debtPayments: [] }
+   250→   250→  }, [allIncomes, allExpenses, allUnexpected, selectedYear, selectedMonth])
+   251→   251→
+   252→   252→  // Expense breakdown by category
+   253→   253→  const expenseByCategory = useMemo(() => {
+   254→   254→    const map = new Map<string, { name: string; color: string; items: MonthData['expenses']; total: number }>()
+   255→   255→    for (const e of currentMonthData.expenses) {
+   256→   256→      const catName = e.category?.name || 'Uncategorized'
+   257→   257→      const catColor = e.category?.color || '#94a3b8'
+   258→   258→      if (!map.has(catName)) {
+   259→   259→        map.set(catName, { name: catName, color: catColor, items: [], total: 0 })
+   260→   260→      }
+   261→   261→      const entry = map.get(catName)!
+   262→   262→      entry.items.push(e)
+   263→   263→      entry.total += e.amount
+   264→   264→    }
+   265→   265→    return Array.from(map.values()).sort((a, b) => b.total - a.total)
+   266→   266→  }, [currentMonthData.expenses])
+   267→   267→
+   268→   268→  // Top 5 expenses
+   269→   269→  const top5Expenses = useMemo(() => {
+   270→   270→    return [...currentMonthData.expenses]
+   271→   271→      .sort((a, b) => b.amount - a.amount)
+   272→   272→      .slice(0, 5)
+   273→   273→  }, [currentMonthData.expenses])
+   274→   274→
+   275→   275→  // Navigation
+   276→   276→  const goToPrevMonth = () => {
+   277→   277→    if (selectedMonth === 0) {
+   278→   278→      setSelectedMonth(11)
+   279→   279→      setSelectedYear((y) => y - 1)
+   280→   280→    } else {
+   281→   281→      setSelectedMonth((m) => m - 1)
+   282→   282→    }
+   283→   283→  }
+   284→   284→
+   285→   285→  const goToNextMonth = () => {
+   286→   286→    if (selectedMonth === 11) {
+   287→   287→      setSelectedMonth(0)
+   288→   288→      setSelectedYear((y) => y + 1)
+   289→   289→    } else {
+   290→   290→      setSelectedMonth((m) => m + 1)
+   291→   291→    }
+   292→   292→  }
+   293→   293→
+   294→   294→  const isCurrentMonth = selectedYear === getYear(now) && selectedMonth === getMonth(now)
+   295→   295→
+   296→   296→  // Delta helper
+   297→   297→  const Delta = ({ current, previous }: { current: number; previous: number }) => {
+   298→   298→    const diff = current - previous
+   299→   299→    const pct = previous !== 0 ? ((diff / Math.abs(previous)) * 100) : (current > 0 ? 100 : 0)
+   300→   300→    const isPositive = diff > 0
+   301→   301→    const isZero = diff === 0
+   302→   302→
+   303→   303→    if (isZero) return <span className="text-xs text-muted-foreground ml-2">— sin cambio</span>
+   304→   304→
+   305→   305→    return (
+   306→   306→      <span
+   307→   307→        className={cn(
+   308→   308→          'inline-flex items-center gap-0.5 text-xs font-medium ml-2',
+   309→   309→          isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+   310→   310→        )}
+   311→   311→      >
+   312→   312→        {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+   313→   313→        {Math.abs(pct).toFixed(1)}%
+   314→   314→      </span>
+   315→   315→    )
+   316→   316→  }
+   317→   317→
+   318→   318→  const handlePrint = () => {
+   319→   319→    window.print()
+   320→   320→  }
+   321→   321→
+   322→   322→  if (loading) {
+   323→   323→    return (
+   324→   324→      <div className="space-y-4">
+   325→   325→        <Skeleton className="h-10 w-64" />
+   326→   326→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   327→   327→          {Array.from({ length: 4 }).map((_, i) => (
+   328→   328→            <Skeleton key={i} className="h-28 rounded-xl" />
+   329→   329→          ))}
+   330→   330→        </div>
+   331→   331→        <Skeleton className="h-64 rounded-xl" />
+   332→   332→        <Skeleton className="h-64 rounded-xl" />
+   333→   333→      </div>
+   334→   334→    )
+   335→   335→  }
+   336→   336→
+   337→   337→  return (
+   338→   338→    <div className="space-y-6 monthly-report">
+   339→   339→      {/* Header with Month Navigator */}
+   340→   340→      <motion.div
+   341→   341→        initial={{ opacity: 0, y: -8 }}
+   342→   342→        animate={{ opacity: 1, y: 0 }}
+   343→   343→        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+   344→   344→      >
+   345→   345→        <div className="module-header">
+   346→   346→          <h2 className="text-2xl font-bold text-foreground">Reporte Mensual</h2>
+   347→   347→          <p className="text-sm text-muted-foreground mt-0.5">
+   348→   348→            Resumen financiero completo de un mes seleccionado
+   349→   349→          </p>
+   350→   350→        </div>
+   351→   351→        <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2 print:hidden">
+   352→   352→          <Printer className="w-4 h-4" />
+   353→   353→          Imprimir / Exportar
+   354→   354→        </Button>
+   355→   355→      </motion.div>
+   356→   356→
+   357→   357→      {/* Month Navigator */}
+   358→   358→      <motion.div
+   359→   359→        initial={{ opacity: 0, y: -4 }}
+   360→   360→        animate={{ opacity: 1, y: 0 }}
+   361→   361→        transition={{ delay: 0.05 }}
+   362→   362→        className="flex items-center justify-center gap-4"
+   363→   363→      >
+   364→   364→        <Button variant="outline" size="icon" className="h-9 w-9 print:hidden" onClick={goToPrevMonth}>
+   365→   365→          <ChevronLeft className="w-4 h-4" />
+   366→   366→        </Button>
+   367→   367→        <div className="text-center min-w-[200px]">
+   368→   368→          <h3 className="text-xl font-bold text-foreground">
+   369→   369→            {MONTH_NAMES[selectedMonth]} {selectedYear}
+   370→   370→          </h3>
+   371→   371→          {isCurrentMonth && (
+   372→   372→            <Badge variant="secondary" className="mt-1 text-[10px]">Mes Actual</Badge>
+   373→   373→          )}
+   374→   374→        </div>
+   375→   375→        <Button
+   376→   376→          variant="outline"
+   377→   377→          size="icon"
+   378→   378→          className="h-9 w-9 print:hidden"
+   379→   379→          onClick={goToNextMonth}
+   380→   380→          disabled={isCurrentMonth}
+   381→   381→        >
+   382→   382→          <ChevronRight className="w-4 h-4" />
+   383→   383→        </Button>
+   384→   384→      </motion.div>
+   385→   385→
+   386→   386→      {/* Key Metrics Summary Card */}
+   387→   387→      <motion.div
+   388→   388→        initial={{ opacity: 0, y: 8 }}
+   389→   389→        animate={{ opacity: 1, y: 0 }}
+   390→   390→        transition={{ delay: 0.1 }}
+   391→   391→        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+   392→   392→      >
+   393→   393→        <Card className="card-accent border-l-[3px] border-l-emerald-500" style={{ '--card-accent-from': '#10b981', '--card-accent-to': '#06b6d4' } as React.CSSProperties}>
+   394→   394→          <CardContent className="p-4">
+   395→   395→            <div className="flex items-center gap-2 mb-2">
+   396→   396→              <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
+   397→   397→                <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+   398→   398→              </div>
+   399→   399→              <span className="text-xs font-medium text-muted-foreground">Ingresos Totales</span>
+   400→   400→            </div>
+   401→   401→            <p className="text-xl font-bold text-foreground">{formatCurrency(currentMonthData.totalIncome)}</p>
+   402→   402→            <Delta current={currentMonthData.totalIncome} previous={prevMonthData.totalIncome} />
+   403→   403→          </CardContent>
+   404→   404→        </Card>
+   405→   405→
+   406→   406→        <Card className="card-accent border-l-[3px] border-l-rose-500" style={{ '--card-accent-from': '#f43f5e', '--card-accent-to': '#fb7185' } as React.CSSProperties}>
+   407→   407→          <CardContent className="p-4">
+   408→   408→            <div className="flex items-center gap-2 mb-2">
+   409→   409→              <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
+   410→   410→                <ArrowDownRight className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+   411→   411→              </div>
+   412→   412→              <span className="text-xs font-medium text-muted-foreground">Gastos Totales</span>
+   413→   413→            </div>
+   414→   414→            <p className="text-xl font-bold text-foreground">{formatCurrency(currentMonthData.totalExpenses)}</p>
+   415→   415→            <Delta current={currentMonthData.totalExpenses} previous={prevMonthData.totalExpenses} />
+   416→   416→          </CardContent>
+   417→   417→        </Card>
+   418→   418→
+   419→   419→        <Card className="card-accent border-l-[3px] border-l-cyan-500" style={{ '--card-accent-from': '#06b6d4', '--card-accent-to': '#22d3ee' } as React.CSSProperties}>
+   420→   420→          <CardContent className="p-4">
+   421→   421→            <div className="flex items-center gap-2 mb-2">
+   422→   422→              <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-500/15 flex items-center justify-center">
+   423→   423→                <PiggyBank className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+   424→   424→              </div>
+   425→   425→              <span className="text-xs font-medium text-muted-foreground">Ahorro Neto</span>
+   426→   426→            </div>
+   427→   427→            <p className={cn(
+   428→   428→              'text-xl font-bold',
+   429→   429→              currentMonthData.netSavings >= 0
+   430→   430→                ? 'text-emerald-600 dark:text-emerald-400'
+   431→   431→                : 'text-rose-600 dark:text-rose-400'
+   432→   432→            )}>
+   433→   433→              {formatCurrency(currentMonthData.netSavings)}
+   434→   434→            </p>
+   435→   435→            <Delta current={currentMonthData.netSavings} previous={prevMonthData.netSavings} />
+   436→   436→          </CardContent>
+   437→   437→        </Card>
+   438→   438→
+   439→   439→        <Card className="card-accent border-l-[3px] border-l-violet-500" style={{ '--card-accent-from': '#8b5cf6', '--card-accent-to': '#a78bfa' } as React.CSSProperties}>
+   440→   440→          <CardContent className="p-4">
+   441→   441→            <div className="flex items-center gap-2 mb-2">
+   442→   442→              <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/15 flex items-center justify-center">
+   443→   443→                <Target className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+   444→   444→              </div>
+   445→   445→              <span className="text-xs font-medium text-muted-foreground">Tasa de Ahorro</span>
+   446→   446→            </div>
+   447→   447→            <p className="text-xl font-bold text-foreground">{currentMonthData.savingsRate.toFixed(1)}%</p>
+   448→   448→            <Delta current={currentMonthData.savingsRate} previous={prevMonthData.savingsRate} />
+   449→   449→          </CardContent>
+   450→   450→        </Card>
+   451→   451→      </motion.div>
+   452→   452→
+   453→   453→      {/* Two-column layout: Income + Expense Breakdown */}
+   454→   454→      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+   455→   455→        {/* Income Breakdown */}
+   456→   456→        <motion.div
+   457→   457→          initial={{ opacity: 0, y: 12 }}
+   458→   458→          animate={{ opacity: 1, y: 0 }}
+   459→   459→          transition={{ delay: 0.15 }}
+   460→   460→        >
+   461→   461→          <Card className="h-full">
+   462→   462→            <CardHeader className="pb-3">
+   463→   463→              <CardTitle className="text-base flex items-center gap-2">
+   464→   464→                <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
+   465→   465→                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+   466→   466→                </div>
+   467→   467→                Desglose de Ingresos
+   468→   468→              </CardTitle>
+   469→   469→              <CardDescription>
+   470→   470→                {currentMonthData.incomes.length} registro{currentMonthData.incomes.length !== 1 ? 's' : ''} de ingreso este mes
+   471→   471→              </CardDescription>
+   472→   472→            </CardHeader>
+   473→   473→            <CardContent className="pt-0">
+   474→   474→              {currentMonthData.incomes.length === 0 ? (
+   475→   475→                <p className="text-sm text-muted-foreground py-4 text-center">Sin ingresos este mes</p>
+   476→   476→              ) : (
+   477→   477→                <Table>
+   478→   478→                  <TableHeader>
+   479→   479→                    <TableRow>
+   480→   480→                      <TableHead>Fuente</TableHead>
+   481→   481→                      <TableHead className="text-right">Monto</TableHead>
+   482→   482→                      <TableHead className="text-right w-16">% del Total</TableHead>
+   483→   483→                    </TableRow>
+   484→   484→                  </TableHeader>
+   485→   485→                  <TableBody>
+   486→   486→                    {currentMonthData.incomes.map((inc) => {
+   487→   487→                      const pct = currentMonthData.totalIncome > 0
+   488→   488→                        ? (inc.amount / currentMonthData.totalIncome) * 100
+   489→   489→                        : 0
+   490→   490→                      return (
+   491→   491→                        <TableRow key={inc.id} className="table-row-interactive">
+   492→   492→                          <TableCell>
+   493→   493→                            <div>
+   494→   494→                              <p className="text-sm font-medium text-foreground capitalize">{inc.source}</p>
+   495→   495→                              {inc.description && inc.description !== inc.source && (
+   496→   496→                                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+   497→   497→                                  {inc.description}
+   498→   498→                                </p>
+   499→   499→                              )}
+   500→   500→                            </div>
+   501→   501→                          </TableCell>
+   502→   502→                          <TableCell className="text-right text-sm font-medium text-emerald-600 dark:text-emerald-400">
+   503→   503→                            {formatCurrency(inc.amount)}
+   504→   504→                          </TableCell>
+   505→   505→                          <TableCell className="text-right text-xs text-muted-foreground">
+   506→   506→                            {pct.toFixed(1)}%
+   507→   507→                          </TableCell>
+   508→   508→                        </TableRow>
+   509→   509→                      )
+   510→   510→                    })}
+   511→   511→                  </TableBody>
+   512→   512→                </Table>
+   513→   513→              )}
+   514→   514→            </CardContent>
+   515→   515→          </Card>
+   516→   516→        </motion.div>
+   517→   517→
+   518→   518→        {/* Expense Breakdown by Category */}
+   519→   519→        <motion.div
+   520→   520→          initial={{ opacity: 0, y: 12 }}
+   521→   521→          animate={{ opacity: 1, y: 0 }}
+   522→   522→          transition={{ delay: 0.2 }}
+   523→   523→        >
+   524→   524→          <Card className="h-full">
+   525→   525→            <CardHeader className="pb-3">
+   526→   526→              <CardTitle className="text-base flex items-center gap-2">
+   527→   527→                <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
+   528→   528→                  <BarChart3 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+   529→   529→                </div>
+   530→   530→                Desglose de Gastos
+   531→   531→              </CardTitle>
+   532→   532→              <CardDescription>
+   533→   533→                {expenseByCategory.length} categor{expenseByCategory.length !== 1 ? 'ías' : 'ía'}
+   534→   534→              </CardDescription>
+   535→   535→            </CardHeader>
+   536→   536→            <CardContent className="pt-0">
+   537→   537→              {expenseByCategory.length === 0 ? (
+   538→   538→                <p className="text-sm text-muted-foreground py-4 text-center">Sin gastos este mes</p>
+   539→   539→              ) : (
+   540→   540→                <div className="space-y-4">
+   541→   541→                  {expenseByCategory.map((cat) => {
+   542→   542→                    const pct = currentMonthData.totalExpenses > 0
+   543→   543→                      ? (cat.total / currentMonthData.totalExpenses) * 100
+   544→   544→                      : 0
+   545→   545→                    return (
+   546→   546→                      <div key={cat.name}>
+   547→   547→                        <div className="flex items-center justify-between mb-1">
+   548→   548→                          <div className="flex items-center gap-2 min-w-0">
+   549→   549→                            <span
+   550→   550→                              className="w-3 h-3 rounded-full shrink-0"
+   551→   551→                              style={{ backgroundColor: cat.color }}
+   552→   552→                            />
+   553→   553→                            <span className="text-sm font-medium text-foreground truncate">{cat.name}</span>
+   554→   554→                            <Badge variant="secondary" className="text-[10px] shrink-0">
+   555→   555→                              {cat.items.length} elemento{cat.items.length !== 1 ? 's' : ''}
+   556→   556→                            </Badge>
+   557→   557→                          </div>
+   558→   558→                          <div className="flex items-center gap-2 shrink-0 ml-2">
+   559→   559→                            <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+   560→   560→                              {formatCurrency(cat.total)}
+   561→   561→                            </span>
+   562→   562→                            <span className="text-xs text-muted-foreground w-12 text-right">
+   563→   563→                              {pct.toFixed(1)}%
+   564→   564→                            </span>
+   565→   565→                          </div>
+   566→   566→                        </div>
+   567→   567→                        {/* Horizontal bar */}
+   568→   568→                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+   569→   569→                          <motion.div
+   570→   570→                            initial={{ width: 0 }}
+   571→   571→                            animate={{ width: `${Math.min(pct, 100)}%` }}
+   572→   572→                            transition={{ duration: 0.6, ease: 'easeOut' }}
+   573→   573→                            className="h-full rounded-full"
+   574→   574→                            style={{ backgroundColor: cat.color }}
+   575→   575→                          />
+   576→   576→                        </div>
+   577→   577→                        {/* Individual items */}
+   578→   578→                        <div className="mt-1.5 ml-5 space-y-0.5">
+   579→   579→                          {cat.items.map((item) => (
+   580→   580→                            <div
+   581→   581→                              key={item.id}
+   582→   582→                              className="flex items-center justify-between text-xs text-muted-foreground"
+   583→   583→                            >
+   584→   584→                              <span className="truncate max-w-[200px]">{item.description}</span>
+   585→   585→                              <span className="shrink-0 ml-2">{formatCurrency(item.amount)}</span>
+   586→   586→                            </div>
+   587→   587→                          ))}
+   588→   588→                        </div>
+   589→   589→                      </div>
+   590→   590→                    )
+   591→   591→                  })}
+   592→   592→                </div>
+   593→   593→              )}
+   594→   594→            </CardContent>
+   595→   595→          </Card>
+   596→   596→        </motion.div>
+   597→   597→      </div>
+   598→   598→
+   599→   599→      {/* Bottom Row: Savings + Debts + Top 5 */}
+   600→   600→      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+   601→   601→        {/* Savings Progress */}
+   602→   602→        <motion.div
+   603→   603→          initial={{ opacity: 0, y: 12 }}
+   604→   604→          animate={{ opacity: 1, y: 0 }}
+   605→   605→          transition={{ delay: 0.25 }}
+   606→   606→        >
+   607→   607→          <Card className="h-full">
+   608→   608→            <CardHeader className="pb-3">
+   609→   609→              <CardTitle className="text-base flex items-center gap-2">
+   610→   610→                <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center">
+   611→   611→                  <PiggyBank className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+   612→   612→                </div>
+   613→   613→                Ahorros de Este Mes
+   614→   614→              </CardTitle>
+   615→   615→            </CardHeader>
+   616→   616→            <CardContent className="pt-0">
+   617→   617→              {currentMonthData.savingsContributions.length === 0 ? (
+   618→   618→                <p className="text-sm text-muted-foreground py-4 text-center">Sin contribuciones de ahorro</p>
+   619→   619→              ) : (
+   620→   620→                <div className="space-y-3">
+   621→   621→                  {(() => {
+   622→   622→                    // Group by goal
+   623→   623→                    const goalMap = new Map<string, { name: string; color: string; icon: string; total: number; count: number }>()
+   624→   624→                    for (const c of currentMonthData.savingsContributions) {
+   625→   625→                      if (!goalMap.has(c.goalName)) {
+   626→   626→                        goalMap.set(c.goalName, {
+   627→   627→                          name: c.goalName,
+   628→   628→                          color: c.goalColor,
+   629→   629→                          icon: c.goalIcon,
+   630→   630→                          total: 0,
+   631→   631→                          count: 0,
+   632→   632→                        })
+   633→   633→                      }
+   634→   634→                      const g = goalMap.get(c.goalName)!
+   635→   635→                      g.total += c.amount
+   636→   636→                      g.count++
+   637→   637→                    }
+   638→   638→                    return Array.from(goalMap.values()).map((g) => (
+   639→   639→                      <div
+   640→   640→                        key={g.name}
+   641→   641→                        className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30"
+   642→   642→                      >
+   643→   643→                        <div
+   644→   644→                          className="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0"
+   645→   645→                          style={{ backgroundColor: `${g.color}20` }}
+   646→   646→                        >
+   647→   647→                          {getGoalEmoji(g.name)}
+   648→   648→                        </div>
+   649→   649→                        <div className="flex-1 min-w-0">
+   650→   650→                          <p className="text-sm font-medium text-foreground truncate">{g.name}</p>
+   651→   651→                          <p className="text-xs text-muted-foreground">
+   652→   652→                            {g.count} contribución{g.count !== 1 ? 'es' : ''}
+   653→   653→                          </p>
+   654→   654→                        </div>
+   655→   655→                        <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+   656→   656→                          +{formatCurrency(g.total)}
+   657→   657→                        </span>
+   658→   658→                      </div>
+   659→   659→                    ))
+   660→   660→                  })()}
+   661→   661→                  <div className="pt-2 border-t mt-2">
+   662→   662→                    <div className="flex justify-between text-sm">
+   663→   663→                      <span className="text-muted-foreground">Total ahorrado</span>
+   664→   664→                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+   665→   665→                        {formatCurrency(currentMonthData.savingsContributions.reduce((s, c) => s + c.amount, 0))}
+   666→   666→                      </span>
+   667→   667→                    </div>
+   668→   668→                  </div>
+   669→   669→                </div>
+   670→   670→              )}
+   671→   671→            </CardContent>
+   672→   672→          </Card>
+   673→   673→        </motion.div>
+   674→   674→
+   675→   675→        {/* Debt Payments */}
+   676→   676→        <motion.div
+   677→   677→          initial={{ opacity: 0, y: 12 }}
+   678→   678→          animate={{ opacity: 1, y: 0 }}
+   679→   679→          transition={{ delay: 0.3 }}
+   680→   680→        >
+   681→   681→          <Card className="h-full">
+   682→   682→            <CardHeader className="pb-3">
+   683→   683→              <CardTitle className="text-base flex items-center gap-2">
+   684→   684→                <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
+   685→   685→                  <CreditCard className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+   686→   686→                </div>
+   687→   687→                Pagos de Deudas
+   688→   688→              </CardTitle>
+   689→   689→            </CardHeader>
+   690→   690→            <CardContent className="pt-0">
+   691→   691→              {currentMonthData.debtPayments.length === 0 ? (
+   692→   692→                <p className="text-sm text-muted-foreground py-4 text-center">Sin pagos de deudas</p>
+   693→   693→              ) : (
+   694→   694→                <div className="space-y-3">
+   695→   695→                  {(() => {
+   696→   696→                    const debtMap = new Map<string, { name: string; total: number; count: number }>()
+   697→   697→                    for (const p of currentMonthData.debtPayments) {
+   698→   698→                      if (!debtMap.has(p.debtName)) {
+   699→   699→                        debtMap.set(p.debtName, { name: p.debtName, total: 0, count: 0 })
+   700→   700→                      }
+   701→   701→                      const d = debtMap.get(p.debtName)!
+   702→   702→                      d.total += p.amount
+   703→   703→                      d.count++
+   704→   704→                    }
+   705→   705→                    return Array.from(debtMap.values()).map((d) => (
+   706→   706→                      <div
+   707→   707→                        key={d.name}
+   708→   708→                        className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30"
+   709→   709→                      >
+   710→   710→                        <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center shrink-0">
+   711→   711→                          <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+   712→   712→                        </div>
+   713→   713→                        <div className="flex-1 min-w-0">
+   714→   714→                          <p className="text-sm font-medium text-foreground truncate">{d.name}</p>
+   715→   715→                          <p className="text-xs text-muted-foreground">
+   716→   716→                            {d.count} pago{d.count !== 1 ? 's' : ''}
+   717→   717→                          </p>
+   718→   718→                        </div>
+   719→   719→                        <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 shrink-0">
+   720→   720→                          {formatCurrency(d.total)}
+   721→   721→                        </span>
+   722→   722→                      </div>
+   723→   723→                    ))
+   724→   724→                  })()}
+   725→   725→                  <div className="pt-2 border-t mt-2">
+   726→   726→                    <div className="flex justify-between text-sm">
+   727→   727→                      <span className="text-muted-foreground">Total pagado</span>
+   728→   728→                      <span className="font-semibold text-amber-600 dark:text-amber-400">
+   729→   729→                        {formatCurrency(currentMonthData.debtPayments.reduce((s, p) => s + p.amount, 0))}
+   730→   730→                      </span>
+   731→   731→                    </div>
+   732→   732→                  </div>
+   733→   733→                </div>
+   734→   734→              )}
+   735→   735→            </CardContent>
+   736→   736→          </Card>
+   737→   737→        </motion.div>
+   738→   738→
+   739→   739→        {/* Top 5 Expenses */}
+   740→   740→        <motion.div
+   741→   741→          initial={{ opacity: 0, y: 12 }}
+   742→   742→          animate={{ opacity: 1, y: 0 }}
+   743→   743→          transition={{ delay: 0.35 }}
+   744→   744→        >
+   745→   745→          <Card className="h-full">
+   746→   746→            <CardHeader className="pb-3">
+   747→   747→              <CardTitle className="text-base flex items-center gap-2">
+   748→   748→                <div className="w-6 h-6 rounded-md bg-rose-100 dark:bg-rose-500/15 flex items-center justify-center">
+   749→   749→                  <CircleAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+   750→   750→                </div>
+   751→   751→                Top 5 Gastos
+   752→   752→              </CardTitle>
+   753→   753→            </CardHeader>
+   754→   754→            <CardContent className="pt-0">
+   755→   755→              {top5Expenses.length === 0 ? (
+   756→   756→                <p className="text-sm text-muted-foreground py-4 text-center">Sin gastos este mes</p>
+   757→   757→              ) : (
+   758→   758→                <div className="space-y-2">
+   759→   759→                  {top5Expenses.map((exp, idx) => (
+   760→   760→                    <div
+   761→   761→                      key={exp.id}
+   762→   762→                      className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30"
+   763→   763→                    >
+   764→   764→                      <div className={cn(
+   765→   765→                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
+   766→   766→                        idx < 3
+   767→   767→                          ? 'bg-rose-100 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400'
+   768→   768→                          : 'bg-muted text-muted-foreground'
+   769→   769→                      )}>
+   770→   770→                        {idx + 1}
+   771→   771→                      </div>
+   772→   772→                      <div className="flex-1 min-w-0">
+   773→   773→                        <p className="text-sm font-medium text-foreground truncate">{exp.description}</p>
+   774→   774→                        <div className="flex items-center gap-1.5 mt-0.5">
+   775→   775→                          {exp.category && (
+   776→   776→                            <>
+   777→   777→                              <span
+   778→   778→                                className="w-2 h-2 rounded-full shrink-0"
+   779→   779→                                style={{ backgroundColor: exp.category.color }}
+   780→   780→                              />
+   781→   781→                              <span className="text-xs text-muted-foreground truncate">{exp.category.name}</span>
+   782→   782→                            </>
+   783→   783→                          )}
+   784→   784→                        </div>
+   785→   785→                      </div>
+   786→   786→                      <span className="text-sm font-semibold text-rose-600 dark:text-rose-400 shrink-0">
+   787→   787→                        -{formatCurrency(exp.amount)}
+   788→   788→                      </span>
+   789→   789→                    </div>
+   790→   790→                  ))}
+   791→   791→                </div>
+   792→   792→              )}
+   793→   793→            </CardContent>
+   794→   794→          </Card>
+   795→   795→        </motion.div>
+   796→   796→      </div>
+   797→   797→    </div>
+   798→   798→  )
+   799→   799→}

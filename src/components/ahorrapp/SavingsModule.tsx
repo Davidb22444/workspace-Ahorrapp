@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, PiggyBank, Trash2, Calendar, DollarSign, History, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -207,9 +208,12 @@ export default function SavingsModule() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="module-header">
-          <h1 className="text-2xl font-bold text-gradient">Ahorros</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Sigue tus metas de ahorro</p>
+        <div className="flex items-center gap-3 module-header">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-gradient">Ahorros</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Sigue tus metas de ahorro</p>
+          </div>
+          <Image src="/images/savings-illustration.png" alt="Ahorros" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" /> Agregar Meta
@@ -258,9 +262,14 @@ export default function SavingsModule() {
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 rounded-full bg-emerald-100/20 dark:bg-emerald-500/3" />
           </div>
           <div className="relative z-10">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-              <PiggyBank className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="mb-4"
+            >
+              <Image src="/images/empty-state.png" alt="Sin metas de ahorro" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+            </motion.div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Sin metas de ahorro aún</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
               Establece tu primera meta de ahorro para comenzar a construir un mejor futuro financiero. ¡Cada centavo cuenta!

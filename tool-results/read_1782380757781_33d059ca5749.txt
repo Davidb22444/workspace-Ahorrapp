@@ -1,0 +1,1559 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  DollarSign,
+     7→  TrendingUp,
+     8→  TrendingDown,
+     9→  CreditCard,
+    10→  ArrowUpRight,
+    11→  ArrowDownRight,
+    12→  RefreshCw,
+    13→  Plus,
+    14→  Calendar,
+    15→  Trophy,
+    16→  Tag,
+    17→  Target,
+    18→  BarChart3,
+    19→  X,
+    20→  Loader2,
+    21→  Wallet,
+    22→  PiggyBank,
+    23→} from 'lucide-react'
+    24→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    25→import { Badge } from '@/components/ui/badge'
+    26→import { Button } from '@/components/ui/button'
+    27→import { Skeleton } from '@/components/ui/skeleton'
+    28→import { Input } from '@/components/ui/input'
+    29→import { Label } from '@/components/ui/label'
+    30→import { Switch } from '@/components/ui/switch'
+    31→import {
+    32→  Dialog,
+    33→  DialogContent,
+    34→  DialogHeader,
+    35→  DialogTitle,
+    36→  DialogDescription,
+    37→  DialogFooter,
+    38→} from '@/components/ui/dialog'
+    39→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    40→import {
+    41→  Select,
+    42→  SelectContent,
+    43→  SelectItem,
+    44→  SelectTrigger,
+    45→  SelectValue,
+    46→} from '@/components/ui/select'
+    47→import { useAppStore } from '@/lib/store'
+    48→import { cn } from '@/lib/utils'
+    49→import {
+    50→  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+    51→  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
+    52→} from 'recharts'
+    53→import { format, startOfMonth, getDay, getDaysInMonth } from 'date-fns'
+    54→
+    55→const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
+    56→
+    57→function formatCurrency(amount: number): string {
+    58→  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+    59→}
+    60→
+    61→interface DashboardData {
+    62→  balance: number
+    63→  totalIncome: number
+    64→  totalExpenses: number
+    65→  totalDebt: number
+    66→  monthlyCashFlow: Array<{ month: string; income: number; expenses: number }>
+    67→  expenseCategories: Array<{ name: string; value: number; color: string }>
+    68→  budgetVsActual: Array<{ name: string; planned: number; actual: number }>
+    69→  recentTransactions: Array<{
+    70→    id: string
+    71→    type: string
+    72→    description: string
+    73→    amount: number
+    74→    date: string
+    75→    category?: string
+    76→    categoryColor?: string
+    77→  }>
+    78→  savingsGoals: Array<{
+    79→    id: string
+    80→    name: string
+    81→    saved: number
+    82→    target: number
+    83→    deadline?: string
+    84→  }>
+    85→}
+    86→
+    87→const mockData: DashboardData = {
+    88→  balance: 12450.75,
+    89→  totalIncome: 5200.0,
+    90→  totalExpenses: 3420.5,
+    91→  totalDebt: 8500.0,
+    92→  monthlyCashFlow: [
+    93→    { month: 'Jan', income: 4800, expenses: 3200 },
+    94→    { month: 'Feb', income: 5100, expenses: 2900 },
+    95→    { month: 'Mar', income: 4900, expenses: 3500 },
+    96→    { month: 'Apr', income: 5300, expenses: 3100 },
+    97→    { month: 'May', income: 5000, expenses: 3400 },
+    98→    { month: 'Jun', income: 5200, expenses: 3420 },
+    99→  ],
+   100→  expenseCategories: [
+   101→    { name: 'Vivienda', value: 1200, color: '#10b981' },
+   102→    { name: 'Alimentación', value: 680, color: '#f59e0b' },
+   103→    { name: 'Transporte', value: 450, color: '#f43f5e' },
+   104→    { name: 'Entretenimiento', value: 320, color: '#6366f1' },
+   105→    { name: 'Servicios', value: 380, color: '#06b6d4' },
+   106→    { name: 'Otro', value: 390.5, color: '#8b5cf6' },
+   107→  ],
+   108→  budgetVsActual: [
+   109→    { name: 'Necesidades', planned: 2600, actual: 2510 },
+   110→    { name: 'Deseos', planned: 1560, actual: 1480 },
+   111→    { name: 'Ahorros', planned: 1040, actual: 770 },
+   112→  ],
+   113→  recentTransactions: [
+   114→    { id: '1', type: 'income', description: 'Salario Mensual', amount: 5200, date: '2025-06-01', category: 'Salario' },
+   115→    { id: '2', type: 'expense', description: 'Pago de Renta', amount: -1200, date: '2025-06-02', category: 'Vivienda', categoryColor: '#10b981' },
+   116→    { id: '3', type: 'expense', description: 'Supermercado', amount: -156.80, date: '2025-06-03', category: 'Alimentación', categoryColor: '#f59e0b' },
+   117→    { id: '4', type: 'expense', description: 'Recibo de Electricidad', amount: -120, date: '2025-06-04', category: 'Servicios', categoryColor: '#06b6d4' },
+   118→    { id: '5', type: 'income', description: 'Proyecto Freelance', amount: 800, date: '2025-06-05', category: 'Freelance' },
+   119→    { id: '6', type: 'expense', description: 'Gasolinera', amount: -65, date: '2025-06-06', category: 'Transporte', categoryColor: '#f43f5e' },
+   120→    { id: '7', type: 'expense', description: 'Suscripción Netflix', amount: -15.99, date: '2025-06-07', category: 'Entretenimiento', categoryColor: '#6366f1' },
+   121→    { id: '8', type: 'expense', description: 'Cena en Restaurante', amount: -85.50, date: '2025-06-08', category: 'Alimentación', categoryColor: '#f59e0b' },
+   122→    { id: '9', type: 'income', description: 'Retorno de Inversión', amount: 150, date: '2025-06-09', category: 'Inversión' },
+   123→    { id: '10', type: 'expense', description: 'Recibo de Teléfono', amount: -55, date: '2025-06-10', category: 'Servicios', categoryColor: '#06b6d4' },
+   124→  ],
+   125→  savingsGoals: [
+   126→    { id: '1', name: 'Fondo de Emergencia', saved: 4500, target: 10000, deadline: '2025-12-31' },
+   127→    { id: '2', name: 'Vacaciones', saved: 1200, target: 3000, deadline: '2025-08-15' },
+   128→    { id: '3', name: 'Laptop Nueva', saved: 800, target: 2000 },
+   129→    { id: '4', name: 'Enganche', saved: 15000, target: 50000, deadline: '2027-06-01' },
+   130→  ],
+   131→}
+   132→
+   133→// ── Enhanced Tooltip ──────────────────────────────────────────────
+   134→function EnhancedChartTooltip({ active, payload, label }: any) {
+   135→  if (active && payload && payload.length) {
+   136→    const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0)
+   137→    return (
+   138→      <div className="bg-card border border-border rounded-xl p-3 shadow-xl">
+   139→        <p className="text-sm font-semibold text-foreground mb-1.5">{label}</p>
+   140→        {payload.map((entry: any, idx: number) => (
+   141→          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
+   142→            <div className="flex items-center gap-1.5">
+   143→              <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+   144→              <span className="text-muted-foreground">{entry.name}</span>
+   145→            </div>
+   146→            <span className="font-semibold tabular-nums">{formatCurrency(entry.value)}</span>
+   147→          </div>
+   148→        ))}
+   149→        {payload.length > 1 && (
+   150→          <div className="border-t border-border/50 mt-1.5 pt-1.5 flex items-center justify-between text-xs">
+   151→            <span className="text-muted-foreground font-medium">Neto</span>
+   152→            <span className={cn('font-bold tabular-nums', total >= 0 ? 'text-emerald-500' : 'text-rose-500')}>
+   153→              {formatCurrency(total)}
+   154→            </span>
+   155→          </div>
+   156→        )}
+   157→      </div>
+   158→    )
+   159→  }
+   160→  return null
+   161→}
+   162→
+   163→// ── Emoji mapper for savings goals ─────────────────────────────────
+   164→function getGoalEmoji(name: string): string {
+   165→  const lower = name.toLowerCase()
+   166→  if (lower.includes('emergency') || lower.includes('emergencia')) return '🛡️'
+   167→  if (lower.includes('vacat') || lower.includes('viaje')) return '✈️'
+   168→  if (lower.includes('laptop') || lower.includes('computer') || lower.includes('pc')) return '💻'
+   169→  if (lower.includes('car') || lower.includes('auto') || lower.includes('coche')) return '🚗'
+   170→  if (lower.includes('house') || lower.includes('home') || lower.includes('down') || lower.includes('casa') || lower.includes('enganche')) return '🏠'
+   171→  if (lower.includes('wedding') || lower.includes('boda')) return '💍'
+   172→  if (lower.includes('education') || lower.includes('study') || lower.includes('college')) return '🎓'
+   173→  if (lower.includes('retire') || lower.includes('jubil')) return '🌴'
+   174→  if (lower.includes('gift') || lower.includes('regalo')) return '🎁'
+   175→  if (lower.includes('invest') || lower.includes('inversion')) return '📈'
+   176→  return '🎯'
+   177→}
+   178→
+   179→// ── Quick Add Transaction Dialog ───────────────────────────────────
+   180→function QuickAddDialog({
+   181→  open,
+   182→  onOpenChange,
+   183→  type,
+   184→  onTypeChange,
+   185→  accountId,
+   186→  onSaved,
+   187→}: {
+   188→  open: boolean
+   189→  onOpenChange: (open: boolean) => void
+   190→  type: 'income' | 'expense'
+   191→  onTypeChange: (type: 'income' | 'expense') => void
+   192→  accountId: string
+   193→  onSaved: () => void
+   194→}) {
+   195→  const [amount, setAmount] = useState('')
+   196→  const [description, setDescription] = useState('')
+   197→  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+   198→  const [source, setSource] = useState('Salario')
+   199→  const [category, setCategory] = useState('')
+   200→  const [isRecurring, setIsRecurring] = useState(false)
+   201→  const [saving, setSaving] = useState(false)
+   202→  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+   203→
+   204→  const incomeSources = ['Salario', 'Freelance', 'Inversión', 'Regalo', 'Otro']
+   205→
+   206→  useEffect(() => {
+   207→    if (type === 'expense' && accountId) {
+   208→      fetch(`/api/categories?accountId=${accountId}`)
+   209→        .then(r => r.json())
+   210→        .then(data => {
+   211→          const cats = data.categories || data || []
+   212→          setCategories(Array.isArray(cats) ? cats.map((c: any) => ({ id: c.id, name: c.name })) : [])
+   213→          if (cats.length > 0 && !category) setCategory(cats[0].name)
+   214→        })
+   215→        .catch(() => {
+   216→          setCategories([
+   217→            { id: '1', name: 'Vivienda' },
+   218→            { id: '2', name: 'Alimentación' },
+   219→            { id: '3', name: 'Transporte' },
+   220→            { id: '4', name: 'Entretenimiento' },
+   221→            { id: '5', name: 'Servicios' },
+   222→            { id: '6', name: 'Salud' },
+   223→            { id: '7', name: 'Educación' },
+   224→            { id: '8', name: 'Otro' },
+   225→          ])
+   226→          if (!category) setCategory('Vivienda')
+   227→        })
+   228→    }
+   229→  }, [type, accountId])
+   230→
+   231→  const handleSave = async () => {
+   232→    const numAmount = parseFloat(amount)
+   233→    if (!numAmount || numAmount <= 0 || !description.trim()) return
+   234→    setSaving(true)
+   235→
+   236→    try {
+   237→      if (type === 'income') {
+   238→        await fetch('/api/income', {
+   239→          method: 'POST',
+   240→          headers: { 'Content-Type': 'application/json' },
+   241→          body: JSON.stringify({
+   242→            accountId,
+   243→            amount: numAmount,
+   244→            source,
+   245→            description: description.trim(),
+   246→            date,
+   247→            isRecurring,
+   248→          }),
+   249→        })
+   250→      } else {
+   251→        await fetch('/api/expenses', {
+   252→          method: 'POST',
+   253→          headers: { 'Content-Type': 'application/json' },
+   254→          body: JSON.stringify({
+   255→            accountId,
+   256→            amount: numAmount,
+   257→            categoryId: categories.find(c => c.name === category)?.id || '1',
+   258→            description: description.trim(),
+   259→            date,
+   260→            isRecurring,
+   261→          }),
+   262→        })
+   263→      }
+   264→      onSaved()
+   265→      onOpenChange(false)
+   266→      setAmount('')
+   267→      setDescription('')
+   268→      setDate(format(new Date(), 'yyyy-MM-dd'))
+   269→      setIsRecurring(false)
+   270→    } catch {
+   271→      // silent fail
+   272→    } finally {
+   273→      setSaving(false)
+   274→    }
+   275→  }
+   276→
+   277→  const handleTabChange = (val: string) => {
+   278→    onTypeChange(val as 'income' | 'expense')
+   279→  }
+   280→
+   281→  return (
+   282→    <Dialog open={open} onOpenChange={onOpenChange}>
+   283→      <DialogContent className="sm:max-w-md">
+   284→        <DialogHeader>
+   285→          <DialogTitle>Agregar Transacción</DialogTitle>
+   286→          <DialogDescription>Agrega rápidamente un nuevo ingreso o gasto.</DialogDescription>
+   287→        </DialogHeader>
+   288→
+   289→        <Tabs value={type} onValueChange={handleTabChange} className="w-full">
+   290→          <TabsList className="w-full">
+   291→            <TabsTrigger value="income" className="flex-1">
+   292→              <ArrowUpRight className="w-4 h-4 mr-1.5 text-emerald-500" />
+   293→              Ingreso
+   294→            </TabsTrigger>
+   295→            <TabsTrigger value="expense" className="flex-1">
+   296→              <ArrowDownRight className="w-4 h-4 mr-1.5 text-rose-500" />
+   297→              Gasto
+   298→            </TabsTrigger>
+   299→          </TabsList>
+   300→
+   301→          <TabsContent value="income" className="space-y-4 mt-4">
+   302→            <div className="space-y-2">
+   303→              <Label htmlFor="income-amount">Monto</Label>
+   304→              <div className="relative">
+   305→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   306→                <Input
+   307→                  id="income-amount"
+   308→                  type="number"
+   309→                  step="0.01"
+   310→                  min="0"
+   311→                  placeholder="0.00"
+   312→                  value={amount}
+   313→                  onChange={(e) => setAmount(e.target.value)}
+   314→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   315→                />
+   316→              </div>
+   317→            </div>
+   318→            <div className="space-y-2">
+   319→              <Label htmlFor="income-desc">Descripción</Label>
+   320→              <Input
+   321→                id="income-desc"
+   322→                placeholder="ej. Salario mensual"
+   323→                value={description}
+   324→                onChange={(e) => setDescription(e.target.value)}
+   325→              />
+   326→            </div>
+   327→            <div className="grid grid-cols-2 gap-3">
+   328→              <div className="space-y-2">
+   329→                <Label>Fuente</Label>
+   330→                <Select value={source} onValueChange={setSource}>
+   331→                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+   332→                  <SelectContent>
+   333→                    {incomeSources.map(s => (
+   334→                      <SelectItem key={s} value={s}>{s}</SelectItem>
+   335→                    ))}
+   336→                  </SelectContent>
+   337→                </Select>
+   338→              </div>
+   339→              <div className="space-y-2">
+   340→                <Label htmlFor="income-date">Fecha</Label>
+   341→                <Input
+   342→                  id="income-date"
+   343→                  type="date"
+   344→                  value={date}
+   345→                  onChange={(e) => setDate(e.target.value)}
+   346→                />
+   347→              </div>
+   348→            </div>
+   349→            <div className="flex items-center justify-between">
+   350→              <Label htmlFor="income-recurring">Recurrente</Label>
+   351→              <Switch id="income-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   352→            </div>
+   353→          </TabsContent>
+   354→
+   355→          <TabsContent value="expense" className="space-y-4 mt-4">
+   356→            <div className="space-y-2">
+   357→              <Label htmlFor="expense-amount">Monto</Label>
+   358→              <div className="relative">
+   359→                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-muted-foreground">$</span>
+   360→                <Input
+   361→                  id="expense-amount"
+   362→                  type="number"
+   363→                  step="0.01"
+   364→                  min="0"
+   365→                  placeholder="0.00"
+   366→                  value={amount}
+   367→                  onChange={(e) => setAmount(e.target.value)}
+   368→                  className="pl-8 text-2xl font-bold h-14 tabular-nums"
+   369→                />
+   370→              </div>
+   371→            </div>
+   372→            <div className="space-y-2">
+   373→              <Label htmlFor="expense-desc">Descripción</Label>
+   374→              <Input
+   375→                id="expense-desc"
+   376→                placeholder="ej. Compras en supermercado"
+   377→                value={description}
+   378→                onChange={(e) => setDescription(e.target.value)}
+   379→              />
+   380→            </div>
+   381→            <div className="grid grid-cols-2 gap-3">
+   382→              <div className="space-y-2">
+   383→                <Label>Categoría</Label>
+   384→                <Select value={category} onValueChange={setCategory}>
+   385→                  <SelectTrigger className="w-full"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+   386→                  <SelectContent>
+   387→                    {categories.map(c => (
+   388→                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+   389→                    ))}
+   390→                  </SelectContent>
+   391→                </Select>
+   392→              </div>
+   393→              <div className="space-y-2">
+   394→                <Label htmlFor="expense-date">Fecha</Label>
+   395→                <Input
+   396→                  id="expense-date"
+   397→                  type="date"
+   398→                  value={date}
+   399→                  onChange={(e) => setDate(e.target.value)}
+   400→                />
+   401→              </div>
+   402→            </div>
+   403→            <div className="flex items-center justify-between">
+   404→              <Label htmlFor="expense-recurring">Recurrente</Label>
+   405→              <Switch id="expense-recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+   406→            </div>
+   407→          </TabsContent>
+   408→        </Tabs>
+   409→
+   410→        <DialogFooter>
+   411→          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+   412→          <Button
+   413→            onClick={handleSave}
+   414→            disabled={!amount || parseFloat(amount) <= 0 || !description.trim() || saving}
+   415→            className={cn(
+   416→              'min-w-[100px]',
+   417→              type === 'income'
+   418→                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+   419→                : 'bg-rose-600 hover:bg-rose-700 text-white'
+   420→            )}
+   421→          >
+   422→            {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+   423→            {type === 'income' ? 'Agregar Ingreso' : 'Agregar Gasto'}
+   424→          </Button>
+   425→        </DialogFooter>
+   426→      </DialogContent>
+   427→    </Dialog>
+   428→  )
+   429→}
+   430→
+   431→// ── Main Dashboard Component ───────────────────────────────────────
+   432→export default function Dashboard() {
+   433→  const [data, setData] = useState<DashboardData | null>(null)
+   434→  const [loading, setLoading] = useState(true)
+   435→  const [dailySpendingData, setDailySpendingData] = useState<Array<{ date: string; amount: number }>>([])
+   436→  const { user, dashboardData, setDashboardData, showQuickAdd, setShowQuickAdd, quickAddType, setQuickAddType, setActiveModule } = useAppStore()
+   437→
+   438→  const mapApiData = (api: any): DashboardData => ({
+   439→    balance: api.balance ?? 0,
+   440→    totalIncome: api.totalIncome ?? 0,
+   441→    totalExpenses: api.totalExpenses ?? 0,
+   442→    totalDebt: api.activeDebtPayments ?? 0,
+   443→    monthlyCashFlow: (api.monthlyData ?? []).map((m: any) => ({
+   444→      month: m.month?.split(' ')[0] || m.month,
+   445→      income: m.income ?? 0,
+   446→      expenses: m.expenses ?? 0,
+   447→    })),
+   448→    expenseCategories: (api.categoryBreakdown ?? []).map((c: any) => ({
+   449→      name: c.name,
+   450→      value: c.total ?? c.value ?? 0,
+   451→      color: c.color || '#94a3b8',
+   452→    })),
+   453→    budgetVsActual: [] as DashboardData['budgetVsActual'],
+   454→    recentTransactions: (api.recentMovements ?? []).map((m: any) => ({
+   455→      id: m.id,
+   456→      type: m.type || 'expense',
+   457→      description: m.description,
+   458→      amount: m.type === 'entrada' ? m.amount : -m.amount,
+   459→      date: m.date,
+   460→      category: m.category?.name,
+   461→      categoryColor: m.category?.color,
+   462→    })),
+   463→    savingsGoals: (api.savingsProgress ?? []).map((g: any) => ({
+   464→      id: g.id,
+   465→      name: g.name,
+   466→      saved: g.savedAmount ?? g.saved ?? 0,
+   467→      target: g.targetAmount ?? g.target ?? 0,
+   468→      deadline: g.deadline,
+   469→    })),
+   470→  })
+   471→
+   472→  const doFetchData = async () => {
+   473→    setLoading(true)
+   474→    try {
+   475→      if (user?.id) {
+   476→        const currentMonth = format(new Date(), 'yyyy-MM')
+   477→        const [dashRes, budgetRes, dailyRes] = await Promise.all([
+   478→          fetch(`/api/dashboard?accountId=${user.id}`),
+   479→          fetch(`/api/budget?accountId=${user.id}`),
+   480→          fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
+   481→        ])
+   482→        if (dailyRes.ok) {
+   483→          const dailyJson = await dailyRes.json()
+   484→          setDailySpendingData(dailyJson.days ?? [])
+   485→        }
+   486→        if (dashRes.ok) {
+   487→          const json = await dashRes.json()
+   488→          const mapped = mapApiData(json)
+   489→
+   490→          if (budgetRes.ok) {
+   491→            try {
+   492→              const budgetJson = await budgetRes.json()
+   493→              const budgets = budgetJson.budgets || []
+   494→              if (budgets.length > 0) {
+   495→                const b = budgets[0]
+   496→                const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   497→                const needsPct = b.needsPercent ?? 50
+   498→                const wantsPct = b.wantsPercent ?? 30
+   499→                const savingsPct = b.savingsPercent ?? 20
+   500→                mapped.budgetVsActual = [
+   501→                  { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   502→                  { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   503→                  { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   504→                ]
+   505→              }
+   506→            } catch { /* keep mock budgetVsActual */ }
+   507→          }
+   508→
+   509→          setDashboardData(mapped)
+   510→          setData(mapped)
+   511→          setLoading(false)
+   512→          return
+   513→        }
+   514→      }
+   515→    } catch { /* fallback */ }
+   516→    setData(dashboardData || mockData)
+   517→    setLoading(false)
+   518→  }
+   519→
+   520→  useEffect(() => {
+   521→    let cancelled = false
+   522→    const load = async () => {
+   523→      try {
+   524→        if (user?.id) {
+   525→          const currentMonth = format(new Date(), 'yyyy-MM')
+   526→          const [dashRes, budgetRes, dailyRes] = await Promise.all([
+   527→            fetch(`/api/dashboard?accountId=${user.id}`),
+   528→            fetch(`/api/budget?accountId=${user.id}`),
+   529→            fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
+   530→          ])
+   531→          if (dailyRes.ok && !cancelled) {
+   532→            const dailyJson = await dailyRes.json()
+   533→            setDailySpendingData(dailyJson.days ?? [])
+   534→          }
+   535→          if (dashRes.ok && !cancelled) {
+   536→            const json = await dashRes.json()
+   537→            const mapped = mapApiData(json)
+   538→
+   539→            if (budgetRes.ok) {
+   540→              try {
+   541→                const budgetJson = await budgetRes.json()
+   542→                const budgets = budgetJson.budgets || []
+   543→                if (budgets.length > 0) {
+   544→                  const b = budgets[0]
+   545→                  const totalIncome = mapped.totalIncome || b.totalAmount || 5200
+   546→                  const needsPct = b.needsPercent ?? 50
+   547→                  const wantsPct = b.wantsPercent ?? 30
+   548→                  const savingsPct = b.savingsPercent ?? 20
+   549→                  mapped.budgetVsActual = [
+   550→                    { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
+   551→                    { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
+   552→                    { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
+   553→                  ]
+   554→                }
+   555→              } catch { /* keep mock budgetVsActual */ }
+   556→            }
+   557→
+   558→            setDashboardData(mapped)
+   559→            setData(mapped)
+   560→            setLoading(false)
+   561→            return
+   562→          }
+   563→        }
+   564→      } catch { /* fallback */ }
+   565→      if (!cancelled) { setData(dashboardData || mockData); setLoading(false) }
+   566→    }
+   567→    load()
+   568→    return () => { cancelled = true }
+   569→  }, [user?.id])
+   570→
+   571→  const d = data || mockData
+   572→
+   573→  // ── Calculate Financial Health Score ──
+   574→  const healthScore = (() => {
+   575→    let score = 0
+   576→    // Savings rate (up to 40 points)
+   577→    const savingsRate = d.totalIncome > 0 ? (d.totalIncome - d.totalExpenses) / d.totalIncome : 0
+   578→    score += Math.min(40, Math.max(0, savingsRate * 100)) * (40 / 50) // 50% savings rate = full 40 pts
+   579→
+   580→    // Debt-to-income ratio (up to 30 points, lower is better)
+   581→    const debtRatio = d.totalIncome > 0 ? d.totalDebt / d.totalIncome : 0
+   582→    score += Math.max(0, 30 - (debtRatio * 15)) // 0 debt = 30 pts, high debt = 0
+   583→
+   584→    // Emergency fund coverage (up to 30 points)
+   585→    const monthsCovered = d.totalExpenses > 0 ? d.balance / d.totalExpenses : 0
+   586→    score += Math.min(30, monthsCovered * 6) // 5 months = full 30 pts
+   587→
+   588→    return Math.round(Math.max(0, Math.min(100, score)))
+   589→  })()
+   590→
+   591→  // ── Calculate Insights ──
+   592→  const insights = (() => {
+   593→    const cashFlow = d.monthlyCashFlow || []
+   594→    // Best saving month
+   595→    let bestMonth = 'N/A'
+   596→    let bestNet = -Infinity
+   597→    cashFlow.forEach(m => {
+   598→      const net = m.income - m.expenses
+   599→      if (net > bestNet) { bestNet = net; bestMonth = m.month }
+   600→    })
+   601→
+   602→    // Biggest expense category
+   603→    const cats = d.expenseCategories || []
+   604→    const biggestCat = cats.length > 0
+   605→      ? cats.reduce((a, b) => a.value > b.value ? a : b)
+   606→      : { name: 'N/A', value: 0 }
+   607→
+   608→    // Savings on track (>50% progress)
+   609→    const onTrackCount = d.savingsGoals.filter(g => {
+   610→      const pct = g.target > 0 ? g.saved / g.target : 0
+   611→      return pct > 0.5
+   612→    }).length
+   613→
+   614→    // Net worth trend (current vs last month)
+   615→    let trend = 0
+   616→    let trendLabel = 'N/A'
+   617→    if (cashFlow.length >= 2) {
+   618→      const current = cashFlow[cashFlow.length - 1]
+   619→      const previous = cashFlow[cashFlow.length - 2]
+   620→      trend = (current.income - current.expenses) - (previous.income - previous.expenses)
+   621→      trendLabel = formatCurrency(Math.abs(trend))
+   622→    }
+   623→
+   624→    return { bestMonth, bestNet, biggestCat, onTrackCount, trend, trendLabel, hasTrend: cashFlow.length >= 2 }
+   625→  })()
+   626→
+   627→  // ── Generate daily spending sparkline data ──
+   628→  const dailySpending = (() => {
+   629→    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+   630→    const today = new Date().getDate()
+   631→    const data: Array<{ day: string; amount: number }> = []
+   632→    for (let i = 1; i <= Math.min(today, daysInMonth); i++) {
+   633→      // Distribute expenses across days with some randomness but deterministic
+   634→      const baseDaily = d.totalExpenses / 30
+   635→      const variation = Math.sin(i * 2.7 + 1.3) * baseDaily * 0.6
+   636→      data.push({ day: `${i}`, amount: Math.max(0, Math.round((baseDaily + variation) * 100) / 100) })
+   637→    }
+   638→    return data
+   639→  })()
+   640→
+   641→  // ── Spending Heatmap Calendar Data ──
+   642→  const heatmapData = (() => {
+   643→    const now = new Date()
+   644→    const year = now.getFullYear()
+   645→    const month = now.getMonth()
+   646→    const daysInMonth = getDaysInMonth(now)
+   647→    const firstDayOfWeek = getDay(startOfMonth(now)) // 0=Sun
+   648→    // Adjust so Monday=0
+   649→    const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+   650→    const today = now.getDate()
+   651→
+   652→    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+   653→
+   654→    const cells: Array<{
+   655→      day: number | null
+   656→      amount: number
+   657→      isToday: boolean
+   658→      isFuture: boolean
+   659→      colorClass: string
+   660→    }> = []
+   661→
+   662→    // Add empty cells for offset
+   663→    for (let i = 0; i < startOffset; i++) {
+   664→      cells.push({ day: null, amount: 0, isToday: false, isFuture: false, colorClass: '' })
+   665→    }
+   666→
+   667→    // Add day cells
+   668→    for (let day = 1; day <= daysInMonth; day++) {
+   669→      const dateStr = format(new Date(year, month, day), 'yyyy-MM-dd')
+   670→      const match = dailySpendingData.find(d => d.date === dateStr)
+   671→      const amount = match ? match.amount : 0
+   672→      const isToday = day === today
+   673→      const isFuture = day > today
+   674→
+   675→      let colorClass = 'bg-muted/40 dark:bg-muted/20' // No spending (gray)
+   676→      if (!isFuture) {
+   677→        if (amount > 500) colorClass = 'bg-rose-400 dark:bg-rose-500/80'
+   678→        else if (amount > 200) colorClass = 'bg-amber-400 dark:bg-amber-500/80'
+   679→        else if (amount > 50) colorClass = 'bg-emerald-500 dark:bg-emerald-500/80'
+   680→        else if (amount >= 1) colorClass = 'bg-emerald-300 dark:bg-emerald-400/60'
+   681→      } else {
+   682→        colorClass = 'bg-muted/20 dark:bg-muted/10'
+   683→      }
+   684→
+   685→      cells.push({ day, amount, isToday, isFuture, colorClass })
+   686→    }
+   687→
+   688→    return { dayNames, cells, monthName: format(now, 'MMMM yyyy') }
+   689→  })()
+   690→
+   691→  // ── Net Worth Trend Data ──
+   692→  const netWorthData = (() => {
+   693→    const cashFlow = d.monthlyCashFlow || []
+   694→    if (cashFlow.length === 0) return []
+   695→    // Cumulative net = running sum of (income - expenses)
+   696→    let cumulative = d.balance - cashFlow.reduce((sum, m) => sum + m.income - m.expenses, 0)
+   697→    return cashFlow.map(m => {
+   698→      cumulative += m.income - m.expenses
+   699→      return {
+   700→        month: m.month?.split(' ')[0] || m.month,
+   701→        netWorth: Number(cumulative.toFixed(2)),
+   702→      }
+   703→    })
+   704→  })()
+   705→
+   706→  // ── Monthly Comparison Data ──
+   707→  const monthlyComparison = (() => {
+   708→    const cashFlow = d.monthlyCashFlow || []
+   709→    if (cashFlow.length < 2) {
+   710→      const curr = cashFlow.length === 1 ? cashFlow[0] : { income: 0, expenses: 0 }
+   711→      return [
+   712→        { label: 'Ingresos Totales', current: curr.income, previous: 0, change: 0, color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   713→        { label: 'Gastos Totales', current: curr.expenses, previous: 0, change: 0, color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   714→        { label: 'Ahorro Neto', current: curr.income - curr.expenses, previous: 0, change: 0, color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   715→      ]
+   716→    }
+   717→    const curr = cashFlow[cashFlow.length - 1]
+   718→    const prev = cashFlow[cashFlow.length - 2]
+   719→
+   720→    const calcChange = (currVal: number, prevVal: number) => {
+   721→      if (prevVal === 0) return currVal > 0 ? 100 : 0
+   722→      return Number(((currVal - prevVal) / Math.abs(prevVal) * 100).toFixed(1))
+   723→    }
+   724→
+   725→    const currNet = curr.income - curr.expenses
+   726→    const prevNet = prev.income - prev.expenses
+   727→
+   728→    return [
+   729→      { label: 'Ingresos Totales', current: curr.income, previous: prev.income, change: calcChange(curr.income, prev.income), color: 'border-l-emerald-500', textColor: 'text-emerald-600 dark:text-emerald-400', icon: TrendingUp },
+   730→      { label: 'Gastos Totales', current: curr.expenses, previous: prev.expenses, change: calcChange(curr.expenses, prev.expenses), color: 'border-l-rose-500', textColor: 'text-rose-600 dark:text-rose-400', icon: CreditCard },
+   731→      { label: 'Ahorro Neto', current: currNet, previous: prevNet, change: calcChange(currNet, prevNet), color: 'border-l-cyan-500', textColor: 'text-cyan-600 dark:text-cyan-400', icon: PiggyBank },
+   732→    ]
+   733→  })()
+   734→
+   735→  // ── Metric cards ──
+   736→  const metrics = [
+   737→    {
+   738→      title: 'Balance Actual',
+   739→      value: formatCurrency(d.balance),
+   740→      change: '+12.5%',
+   741→      trend: 'up' as const,
+   742→      icon: DollarSign,
+   743→      accentColor: '#10b981',
+   744→      gradientFrom: 'from-emerald-500/10',
+   745→      gradientTo: 'to-teal-500/5',
+   746→      iconBg: 'bg-emerald-100 dark:bg-emerald-500/15',
+   747→      iconColor: 'text-emerald-600 dark:text-emerald-400',
+   748→      cardAccentFrom: '#10b981',
+   749→      cardAccentTo: '#06b6d4',
+   750→    },
+   751→    {
+   752→      title: 'Ingresos Totales',
+   753→      value: formatCurrency(d.totalIncome),
+   754→      change: '+4.2%',
+   755→      trend: 'up' as const,
+   756→      icon: TrendingUp,
+   757→      accentColor: '#06b6d4',
+   758→      gradientFrom: 'from-cyan-500/10',
+   759→      gradientTo: 'to-sky-500/5',
+   760→      iconBg: 'bg-cyan-100 dark:bg-cyan-500/15',
+   761→      iconColor: 'text-cyan-600 dark:text-cyan-400',
+   762→      cardAccentFrom: '#10b981',
+   763→      cardAccentTo: '#34d399',
+   764→    },
+   765→    {
+   766→      title: 'Gastos Totales',
+   767→      value: formatCurrency(d.totalExpenses),
+   768→      change: '-2.1%',
+   769→      trend: 'down' as const,
+   770→      icon: TrendingDown,
+   771→      accentColor: '#f43f5e',
+   772→      gradientFrom: 'from-rose-500/10',
+   773→      gradientTo: 'to-pink-500/5',
+   774→      iconBg: 'bg-rose-100 dark:bg-rose-500/15',
+   775→      iconColor: 'text-rose-600 dark:text-rose-400',
+   776→      cardAccentFrom: '#f43f5e',
+   777→      cardAccentTo: '#fb7185',
+   778→    },
+   779→    {
+   780→      title: 'Deudas Activas',
+   781→      value: formatCurrency(d.totalDebt),
+   782→      change: '3 deudas',
+   783→      trend: 'neutral' as const,
+   784→      icon: CreditCard,
+   785→      accentColor: '#f59e0b',
+   786→      gradientFrom: 'from-amber-500/10',
+   787→      gradientTo: 'to-orange-500/5',
+   788→      iconBg: 'bg-amber-100 dark:bg-amber-500/15',
+   789→      iconColor: 'text-amber-600 dark:text-amber-400',
+   790→      cardAccentFrom: '#f59e0b',
+   791→      cardAccentTo: '#fbbf24',
+   792→    },
+   793→  ]
+   794→
+   795→  // ── Savings goal colors ──
+   796→  const goalColors = ['#10b981', '#06b6d4', '#f59e0b', '#8b5cf6', '#ec4899']
+   797→
+   798→  return (
+   799→    <div className="space-y-6 pb-20">
+   800→      {/* Header */}
+   801→      <div className="flex items-center justify-between">
+   802→        <div className="module-header">
+   803→          <h1 className="text-2xl font-bold text-foreground">Panel Principal</h1>
+   804→          <p className="text-muted-foreground text-sm mt-0.5">
+   805→            Resumen de tu salud financiera
+   806→          </p>
+   807→        </div>
+   808→        <Button variant="outline" size="sm" onClick={() => { setLoading(true); setData(null); doFetchData() }} disabled={loading}>
+   809→          <RefreshCw className={cn('w-4 h-4 mr-2', loading && 'animate-spin')} />
+   810→          Actualizar
+   811→        </Button>
+   812→      </div>
+   813→
+   814→      {/* ── A. Financial Health Score ── */}
+   815→      <motion.div
+   816→        initial={{ opacity: 0, y: 16 }}
+   817→        animate={{ opacity: 1, y: 0 }}
+   818→        transition={{ duration: 0.5, ease: 'easeOut' }}
+   819→      >
+   820→        {/* Inline the gauge content since we can't pass data to a sub-component easily */}
+   821→        <Card className="overflow-hidden border-0 shadow-lg">
+   822→          <div className="bg-gradient-to-r from-emerald-500/5 via-teal-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:via-teal-500/10 dark:to-cyan-500/10 p-6">
+   823→            <div className="flex flex-col sm:flex-row items-center gap-6">
+   824→              {/* Gauge Circle */}
+   825→              <div className="relative w-36 h-36 shrink-0">
+   826→                <div
+   827→                  className="w-full h-full rounded-full flex items-center justify-center"
+   828→                  style={{
+   829→                    background: `conic-gradient(${healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981'} ${(healthScore / 100) * 360}deg, var(--muted) ${(healthScore / 100) * 360}deg)`,
+   830→                    transition: 'all 0.8s ease-out',
+   831→                  }}
+   832→                >
+   833→                  <div className="w-28 h-28 rounded-full bg-card flex flex-col items-center justify-center shadow-inner">
+   834→                    <span className="text-3xl font-bold tabular-nums" style={{ color: healthScore <= 40 ? '#ef4444' : healthScore <= 70 ? '#f59e0b' : '#10b981' }}>
+   835→                      {healthScore}
+   836→                    </span>
+   837→                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">de 100</span>
+   838→                  </div>
+   839→                </div>
+   840→              </div>
+   841→
+   842→              {/* Details */}
+   843→              <div className="flex-1 text-center sm:text-left space-y-3">
+   844→                <div>
+   845→                  <h3 className="text-lg font-bold text-foreground">Puntuación de Salud Financiera</h3>
+   846→                  <p className={cn(
+   847→                    'text-sm font-semibold',
+   848→                    healthScore <= 40 ? 'text-red-500' : healthScore <= 70 ? 'text-amber-500' : 'text-emerald-500'
+   849→                  )}>
+   850→                    {healthScore <= 40 ? 'Necesita Mejora' : healthScore <= 70 ? 'Regular' : 'Excelente'}
+   851→                  </p>
+   852→                </div>
+   853→                <div className="grid grid-cols-3 gap-3 text-center">
+   854→                  <div className="space-y-0.5">
+   855→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasa de Ahorro</p>
+   856→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   857→                      {d.totalIncome > 0 ? `${Math.max(0, Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100))}%` : '0%'}
+   858→                    </p>
+   859→                  </div>
+   860→                  <div className="space-y-0.5">
+   861→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ratio de Deuda</p>
+   862→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   863→                      {d.totalIncome > 0 ? `${Math.round(d.totalDebt / d.totalIncome * 100)}%` : '0%'}
+   864→                    </p>
+   865→                  </div>
+   866→                  <div className="space-y-0.5">
+   867→                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Emergencia</p>
+   868→                    <p className="text-sm font-semibold text-foreground tabular-nums">
+   869→                      {d.totalExpenses > 0 ? `${(d.balance / d.totalExpenses).toFixed(1)}mo` : '0mo'}
+   870→                    </p>
+   871→                  </div>
+   872→                </div>
+   873→              </div>
+   874→            </div>
+   875→          </div>
+   876→        </Card>
+   877→      </motion.div>
+   878→
+   879→      {/* ── B. Enhanced Metric Cards with Gradients ── */}
+   880→      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+   881→        {metrics.map((m, idx) => (
+   882→          <motion.div
+   883→            key={m.title}
+   884→            initial={{ opacity: 0, y: 20 }}
+   885→            animate={{ opacity: 1, y: 0 }}
+   886→            transition={{ duration: 0.4, delay: idx * 0.08, ease: 'easeOut' }}
+   887→          >
+   888→            <Card className="card-hover card-accent overflow-hidden" style={{ borderTopColor: m.accentColor, borderTopWidth: '2px', '--card-accent-from': m.cardAccentFrom, '--card-accent-to': m.cardAccentTo } as React.CSSProperties}>
+   889→              <CardContent className="p-4">
+   890→                <div className="flex items-start justify-between">
+   891→                  <div className="space-y-1">
+   892→                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.title}</p>
+   893→                    <p className={cn(
+   894→                      'text-2xl font-bold tabular-nums',
+   895→                      d.balance >= 0 && m.title === 'Balance Actual' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'
+   896→                    )}>
+   897→                      {m.value}
+   898→                    </p>
+   899→                  </div>
+   900→                  <div className={cn(
+   901→                    'p-2.5 rounded-xl bg-gradient-to-br',
+   902→                    m.gradientFrom,
+   903→                    m.gradientTo
+   904→                  )}>
+   905→                    <m.icon className={cn('w-5 h-5', m.iconColor)} />
+   906→                  </div>
+   907→                </div>
+   908→                <div className="flex items-center gap-1 mt-2">
+   909→                  {m.trend === 'up' && <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />}
+   910→                  {m.trend === 'down' && <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />}
+   911→                  <span className={cn(
+   912→                    'text-xs font-medium',
+   913→                    m.trend === 'up' ? 'text-emerald-500' : m.trend === 'down' ? 'text-rose-500' : 'text-muted-foreground'
+   914→                  )}>
+   915→                    {m.change}
+   916→                  </span>
+   917→                  <span className="text-xs text-muted-foreground ml-1">vs mes pasado</span>
+   918→                </div>
+   919→              </CardContent>
+   920→            </Card>
+   921→          </motion.div>
+   922→        ))}
+   923→      </div>
+   924→
+   925→      {/* ── Charts ── */}
+   926→      {loading ? (
+   927→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   928→          {[1, 2, 3].map((i) => (
+   929→            <Card key={i}>
+   930→              <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
+   931→              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+   932→            </Card>
+   933→          ))}
+   934→        </div>
+   935→      ) : (
+   936→        <>
+   937→          {/* ── E. Enhanced Charts Row 1 ── */}
+   938→          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+   939→            {/* Cash Flow Chart */}
+   940→            <motion.div
+   941→              initial={{ opacity: 0, y: 20 }}
+   942→              animate={{ opacity: 1, y: 0 }}
+   943→              transition={{ duration: 0.5, delay: 0.35 }}
+   944→              className="lg:col-span-2"
+   945→            >
+   946→              <Card className="overflow-hidden">
+   947→                <div className="bg-gradient-to-r from-emerald-500/5 to-teal-500/5 dark:from-emerald-500/10 dark:to-teal-500/10 px-6 pt-5 pb-0">
+   948→                  <CardTitle className="text-base font-semibold">Flujo de Efectivo Mensual</CardTitle>
+   949→                  <CardDescription>Ingresos vs Gastos en los últimos 6 meses</CardDescription>
+   950→                </div>
+   951→                <CardContent className="pt-4">
+   952→                  <div className="h-[300px]">
+   953→                    <ResponsiveContainer width="100%" height="100%">
+   954→                      <AreaChart data={d.monthlyCashFlow} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+   955→                        <defs>
+   956→                          <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+   957→                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+   958→                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+   959→                          </linearGradient>
+   960→                          <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+   961→                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
+   962→                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+   963→                          </linearGradient>
+   964→                        </defs>
+   965→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+   966→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+   967→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+   968→                        <RechartsTooltip content={EnhancedChartTooltip} />
+   969→                        <Legend />
+   970→                        <Area type="monotone" dataKey="income" name="Ingresos" stroke="#10b981" fill="url(#incomeGrad)" strokeWidth={2} />
+   971→                        <Area type="monotone" dataKey="expenses" name="Gastos" stroke="#f43f5e" fill="url(#expenseGrad)" strokeWidth={2} />
+   972→                      </AreaChart>
+   973→                    </ResponsiveContainer>
+   974→                  </div>
+   975→                </CardContent>
+   976→              </Card>
+   977→            </motion.div>
+   978→
+   979→            {/* Expense Distribution */}
+   980→            <motion.div
+   981→              initial={{ opacity: 0, y: 20 }}
+   982→              animate={{ opacity: 1, y: 0 }}
+   983→              transition={{ duration: 0.5, delay: 0.4 }}
+   984→            >
+   985→              <Card className="overflow-hidden">
+   986→                <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 dark:from-amber-500/10 dark:to-orange-500/10 px-6 pt-5 pb-0">
+   987→                  <CardTitle className="text-base font-semibold">Desglose de Gastos</CardTitle>
+   988→                  <CardDescription>Este mes por categoría</CardDescription>
+   989→                </div>
+   990→                <CardContent className="pt-4">
+   991→                  <div className="h-[300px]">
+   992→                    <ResponsiveContainer width="100%" height="100%">
+   993→                      <PieChart>
+   994→                        <Pie
+   995→                          data={d.expenseCategories || []}
+   996→                          cx="50%"
+   997→                          cy="42%"
+   998→                          innerRadius={50}
+   999→                          outerRadius={82}
+  1000→                          paddingAngle={3}
+  1001→                          dataKey="value"
+  1002→                        >
+  1003→                          {(d.expenseCategories || []).map((entry, idx) => (
+  1004→                            <Cell key={idx} fill={entry.color || CHART_COLORS[idx % CHART_COLORS.length]} />
+  1005→                          ))}
+  1006→                        </Pie>
+  1007→                        <RechartsTooltip
+  1008→                          formatter={(value: number, name: string, props: any) => {
+  1009→                            const total = (d.expenseCategories || []).reduce((s, c) => s + c.value, 0)
+  1010→                            const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+  1011→                            return [`${formatCurrency(value)} (${pct}%)`, props.payload.name]
+  1012→                          }}
+  1013→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1014→                        />
+  1015→                      </PieChart>
+  1016→                    </ResponsiveContainer>
+  1017→                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+  1018→                      {(d.expenseCategories || []).slice(0, 4).map((cat) => (
+  1019→                        <div key={cat.name} className="flex items-center gap-2 text-xs">
+  1020→                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cat.color }} />
+  1021→                          <span className="text-muted-foreground truncate">{cat.name}</span>
+  1022→                        </div>
+  1023→                      ))}
+  1024→                    </div>
+  1025→                  </div>
+  1026→                </CardContent>
+  1027→              </Card>
+  1028→            </motion.div>
+  1029→          </div>
+  1030→
+  1031→          {/* ── D. Financial Insights Section ── */}
+  1032→          <motion.div
+  1033→            initial={{ opacity: 0, y: 20 }}
+  1034→            animate={{ opacity: 1, y: 0 }}
+  1035→            transition={{ duration: 0.5, delay: 0.45 }}
+  1036→          >
+  1037→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+  1038→              {/* Best Saving Month */}
+  1039→              <Card className="bg-gradient-to-br from-emerald-50/50 to-teal-50/30 dark:from-emerald-500/5 dark:to-teal-500/3 border-emerald-200/50 dark:border-emerald-500/10">
+  1040→                <CardContent className="p-4">
+  1041→                  <div className="flex items-center gap-2 mb-2">
+  1042→                    <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/15">
+  1043→                      <Trophy className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+  1044→                    </div>
+  1045→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mejor Mes de Ahorro</p>
+  1046→                  </div>
+  1047→                  <p className="text-lg font-bold text-foreground">{insights.bestMonth}</p>
+  1048→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+  1049→                    {insights.bestNet > -Infinity ? `+${formatCurrency(insights.bestNet)} neto` : 'Sin datos'}
+  1050→                  </p>
+  1051→                </CardContent>
+  1052→              </Card>
+  1053→
+  1054→              {/* Biggest Expense Category */}
+  1055→              <Card className="bg-gradient-to-br from-rose-50/50 to-pink-50/30 dark:from-rose-500/5 dark:to-pink-500/3 border-rose-200/50 dark:border-rose-500/10">
+  1056→                <CardContent className="p-4">
+  1057→                  <div className="flex items-center gap-2 mb-2">
+  1058→                    <div className="p-1.5 rounded-lg bg-rose-100 dark:bg-rose-500/15">
+  1059→                      <Tag className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+  1060→                    </div>
+  1061→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Mayor Gasto</p>
+  1062→                  </div>
+  1063→                  <p className="text-lg font-bold text-foreground">{insights.biggestCat.name}</p>
+  1064→                  <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+  1065→                    {formatCurrency(insights.biggestCat.value)}
+  1066→                  </p>
+  1067→                </CardContent>
+  1068→              </Card>
+  1069→
+  1070→              {/* Savings On Track */}
+  1071→              <Card className="bg-gradient-to-br from-cyan-50/50 to-sky-50/30 dark:from-cyan-500/5 dark:to-sky-500/3 border-cyan-200/50 dark:border-cyan-500/10">
+  1072→                <CardContent className="p-4">
+  1073→                  <div className="flex items-center gap-2 mb-2">
+  1074→                    <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-500/15">
+  1075→                      <Target className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+  1076→                    </div>
+  1077→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">En Camino</p>
+  1078→                  </div>
+  1079→                  <p className="text-lg font-bold text-foreground">{insights.onTrackCount} <span className="text-sm font-normal text-muted-foreground">de {d.savingsGoals.length}</span></p>
+  1080→                  <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+  1081→                    Metas &gt;50% completadas
+  1082→                  </p>
+  1083→                </CardContent>
+  1084→              </Card>
+  1085→
+  1086→              {/* Net Worth Trend */}
+  1087→              <Card className="bg-gradient-to-br from-violet-50/50 to-purple-50/30 dark:from-violet-500/5 dark:to-purple-500/3 border-violet-200/50 dark:border-violet-500/10">
+  1088→                <CardContent className="p-4">
+  1089→                  <div className="flex items-center gap-2 mb-2">
+  1090→                    <div className="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-500/15">
+  1091→                      <BarChart3 className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+  1092→                    </div>
+  1093→                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Tendencia de Flujo</p>
+  1094→                  </div>
+  1095→                  <p className="text-lg font-bold text-foreground flex items-center gap-1.5">
+  1096→                    {insights.hasTrend && (
+  1097→                      insights.trend >= 0
+  1098→                        ? <ArrowUpRight className="w-5 h-5 text-emerald-500" />
+  1099→                        : <ArrowDownRight className="w-5 h-5 text-rose-500" />
+  1100→                    )}
+  1101→                    {insights.hasTrend ? insights.trendLabel : 'N/A'}
+  1102→                  </p>
+  1103→                  <p className={cn('text-xs font-medium', insights.trend >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
+  1104→                    {insights.hasTrend ? (insights.trend >= 0 ? 'vs mes pasado' : 'vs mes pasado') : 'Sin datos de comparación'}
+  1105→                  </p>
+  1106→                </CardContent>
+  1107→              </Card>
+  1108→            </div>
+  1109→          </motion.div>
+  1110→
+  1111→          {/* ── Monthly Comparison Cards (This Month vs Last Month) ── */}
+  1112→          <motion.div
+  1113→            initial={{ opacity: 0, y: 20 }}
+  1114→            animate={{ opacity: 1, y: 0 }}
+  1115→            transition={{ duration: 0.5, delay: 0.48 }}
+  1116→          >
+  1117→            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+  1118→              {monthlyComparison.map((item) => {
+  1119→                const IconComp = item.icon
+  1120→                const isExpense = item.label === 'Gastos Totales'
+  1121→                const isPositive = isExpense ? item.change <= 0 : item.change >= 0
+  1122→                return (
+  1123→                  <Card key={item.label} className={cn('border-l-4', item.color)}>
+  1124→                    <CardContent className="p-4">
+  1125→                      <div className="flex items-center justify-between mb-2">
+  1126→                        <div className="flex items-center gap-2">
+  1127→                          <IconComp className={cn('w-4 h-4', item.textColor)} />
+  1128→                          <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+  1129→                        </div>
+  1130→                        {item.change !== 0 && (
+  1131→                          <div className={cn(
+  1132→                            'flex items-center gap-0.5 text-xs font-semibold',
+  1133→                            isPositive ? 'text-emerald-500' : 'text-rose-500'
+  1134→                          )}>
+  1135→                            {item.change > 0 ? (
+  1136→                              <ArrowUpRight className="w-3.5 h-3.5" />
+  1137→                            ) : (
+  1138→                              <ArrowDownRight className="w-3.5 h-3.5" />
+  1139→                            )}
+  1140→                            {Math.abs(item.change)}%
+  1141→                          </div>
+  1142→                        )}
+  1143→                      </div>
+  1144→                      <p className="text-xl font-bold tabular-nums text-foreground">
+  1145→                        {formatCurrency(item.current)}
+  1146→                      </p>
+  1147→                      <p className="text-xs text-muted-foreground mt-1">
+  1148→                        Mes pasado: {formatCurrency(item.previous)}
+  1149→                      </p>
+  1150→                    </CardContent>
+  1151→                  </Card>
+  1152→                )
+  1153→              })}
+  1154→            </div>
+  1155→          </motion.div>
+  1156→
+  1157→          {/* ── Spending Heatmap Calendar ── */}
+  1158→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1159→            <motion.div
+  1160→              initial={{ opacity: 0, y: 20 }}
+  1161→              animate={{ opacity: 1, y: 0 }}
+  1162→              transition={{ duration: 0.5, delay: 0.50 }}
+  1163→            >
+  1164→              <Card className="overflow-hidden">
+  1165→                <div className="bg-gradient-to-r from-emerald-500/5 to-cyan-500/5 dark:from-emerald-500/10 dark:to-cyan-500/10 px-6 pt-5 pb-3">
+  1166→                  <div className="flex items-center justify-between">
+  1167→                    <div>
+  1168→                      <CardTitle className="text-base font-semibold">Mapa de Calor de Gastos</CardTitle>
+  1169→                      <CardDescription>Gastos diarios de {heatmapData.monthName}</CardDescription>
+  1170→                    </div>
+  1171→                    <Calendar className="w-4 h-4 text-muted-foreground" />
+  1172→                  </div>
+  1173→                  <div className="flex items-center gap-2 mt-2">
+  1174→                    <span className="text-[10px] text-muted-foreground">Menos</span>
+  1175→                    <div className="w-3.5 h-3.5 rounded-sm bg-muted/40 dark:bg-muted/20" />
+  1176→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-300 dark:bg-emerald-400/60" />
+  1177→                    <div className="w-3.5 h-3.5 rounded-sm bg-emerald-500 dark:bg-emerald-500/80" />
+  1178→                    <div className="w-3.5 h-3.5 rounded-sm bg-amber-400 dark:bg-amber-500/80" />
+  1179→                    <div className="w-3.5 h-3.5 rounded-sm bg-rose-400 dark:bg-rose-500/80" />
+  1180→                    <span className="text-[10px] text-muted-foreground">Más</span>
+  1181→                  </div>
+  1182→                </div>
+  1183→                <CardContent className="pt-3 pb-4">
+  1184→                  <div className="grid grid-cols-7 gap-1">
+  1185→                    {heatmapData.dayNames.map((name) => (
+  1186→                      <div key={name} className="text-[10px] font-medium text-muted-foreground text-center pb-1">
+  1187→                        {name}
+  1188→                      </div>
+  1189→                    ))}
+  1190→                    {heatmapData.cells.map((cell, idx) => (
+  1191→                      <div
+  1192→                        key={idx}
+  1193→                        className={cn(
+  1194→                          'aspect-square rounded-sm flex items-center justify-center text-[10px] font-medium transition-colors relative group',
+  1195→                          cell.colorClass,
+  1196→                          cell.isFuture && 'opacity-40',
+  1197→                          !cell.day && 'invisible'
+  1198→                        )}
+  1199→                        title={cell.day ? `${formatCurrency(cell.amount)}` : undefined}
+  1200→                      >
+  1201→                        {cell.day && (
+  1202→                          <>
+  1203→                            <span className={cn(
+  1204→                              'tabular-nums',
+  1205→                              cell.amount > 50 ? 'text-white dark:text-white' : 'text-muted-foreground dark:text-muted-foreground'
+  1206→                            )}>
+  1207→                              {cell.day}
+  1208→                            </span>
+  1209→                            {cell.isToday && (
+  1210→                              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary ring-2 ring-card" />
+  1211→                            )}
+  1212→                          </>
+  1213→                        )}
+  1214→                      </div>
+  1215→                    ))}
+  1216→                  </div>
+  1217→                </CardContent>
+  1218→              </Card>
+  1219→            </motion.div>
+  1220→
+  1221→            {/* ── Net Worth Trend Chart ── */}
+  1222→            <motion.div
+  1223→              initial={{ opacity: 0, y: 20 }}
+  1224→              animate={{ opacity: 1, y: 0 }}
+  1225→              transition={{ duration: 0.5, delay: 0.52 }}
+  1226→            >
+  1227→              <Card className="overflow-hidden">
+  1228→                <div className="bg-gradient-to-r from-teal-500/5 to-emerald-500/5 dark:from-teal-500/10 dark:to-emerald-500/10 px-6 pt-5 pb-0">
+  1229→                  <div className="flex items-center gap-2">
+  1230→                    <Wallet className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+  1231→                    <div>
+  1232→                      <CardTitle className="text-base font-semibold">Tendencia de Patrimonio</CardTitle>
+  1233→                      <CardDescription>Posición neta acumulada en 6 meses</CardDescription>
+  1234→                    </div>
+  1235→                  </div>
+  1236→                </div>
+  1237→                <CardContent className="pt-4">
+  1238→                  <div className="h-[240px]">
+  1239→                    <ResponsiveContainer width="100%" height="100%">
+  1240→                      <AreaChart data={netWorthData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1241→                        <defs>
+  1242→                          <linearGradient id="netWorthGrad" x1="0" y1="0" x2="0" y2="1">
+  1243→                            <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+  1244→                            <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+  1245→                          </linearGradient>
+  1246→                        </defs>
+  1247→                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1248→                        <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1249→                        <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1250→                        <RechartsTooltip
+  1251→                          formatter={(value: number) => [formatCurrency(value), 'Patrimonio']}
+  1252→                          contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1253→                        />
+  1254→                        <Area
+  1255→                          type="monotone"
+  1256→                          dataKey="netWorth"
+  1257→                          name="Patrimonio"
+  1258→                          stroke="#14b8a6"
+  1259→                          fill="url(#netWorthGrad)"
+  1260→                          strokeWidth={2}
+  1261→                          dot={{ r: 3, strokeWidth: 0, fill: '#14b8a6' }}
+  1262→                          activeDot={{ r: 5, strokeWidth: 0, fill: '#14b8a6' }}
+  1263→                        />
+  1264→                      </AreaChart>
+  1265→                    </ResponsiveContainer>
+  1266→                  </div>
+  1267→                </CardContent>
+  1268→              </Card>
+  1269→            </motion.div>
+  1270→          </div>
+  1271→
+  1272→          {/* ── Budget vs Actual ── */}
+  1273→          <motion.div
+  1274→            initial={{ opacity: 0, y: 20 }}
+  1275→            animate={{ opacity: 1, y: 0 }}
+  1276→            transition={{ duration: 0.5, delay: 0.54 }}
+  1277→          >
+  1278→            <Card className="overflow-hidden">
+  1279→              <div className="bg-gradient-to-r from-cyan-500/5 to-violet-500/5 dark:from-cyan-500/10 dark:to-violet-500/10 px-6 pt-5 pb-0">
+  1280→                <CardTitle className="text-base font-semibold">Presupuesto vs Real (Regla 50/30/20)</CardTitle>
+  1281→                <CardDescription>Comparando tu presupuesto planificado con el gasto real</CardDescription>
+  1282→              </div>
+  1283→              <CardContent className="pt-4">
+  1284→                <div className="h-[240px]">
+  1285→                  <ResponsiveContainer width="100%" height="100%">
+  1286→                    <BarChart data={d.budgetVsActual} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1287→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1288→                      <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
+  1289→                      <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" tickFormatter={(v) => `$${(v / 1000).toFixed(1)}k`} />
+  1290→                      <RechartsTooltip content={EnhancedChartTooltip} />
+  1291→                      <Legend />
+  1292→                      <Bar dataKey="planned" name="Planificado" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
+  1293→                      <Bar dataKey="actual" name="Real" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+  1294→                    </BarChart>
+  1295→                  </ResponsiveContainer>
+  1296→                </div>
+  1297→              </CardContent>
+  1298→            </Card>
+  1299→          </motion.div>
+  1300→
+  1301→          {/* ── E. Spending Trend Sparkline ── */}
+  1302→          <motion.div
+  1303→            initial={{ opacity: 0, y: 20 }}
+  1304→            animate={{ opacity: 1, y: 0 }}
+  1305→            transition={{ duration: 0.5, delay: 0.58 }}
+  1306→          >
+  1307→            <Card className="overflow-hidden">
+  1308→              <div className="bg-gradient-to-r from-amber-500/5 to-rose-500/5 dark:from-amber-500/10 dark:to-rose-500/10 px-6 pt-5 pb-0">
+  1309→                <CardTitle className="text-base font-semibold">Tendencia de Gasto Diario</CardTitle>
+  1310→                <CardDescription>Tu patrón de gasto este mes</CardDescription>
+  1311→              </div>
+  1312→              <CardContent className="pt-4">
+  1313→                <div className="h-[200px]">
+  1314→                  <ResponsiveContainer width="100%" height="100%">
+  1315→                    <AreaChart data={dailySpending} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+  1316→                      <defs>
+  1317→                        <linearGradient id="dailySpendGrad" x1="0" y1="0" x2="0" y2="1">
+  1318→                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+  1319→                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+  1320→                        </linearGradient>
+  1321→                      </defs>
+  1322→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+  1323→                      <XAxis
+  1324→                        dataKey="day"
+  1325→                        tick={{ fontSize: 10 }}
+  1326→                        stroke="var(--muted-foreground)"
+  1327→                        interval="preserveStartEnd"
+  1328→                      />
+  1329→                      <YAxis
+  1330→                        tick={{ fontSize: 10 }}
+  1331→                        stroke="var(--muted-foreground)"
+  1332→                        tickFormatter={(v) => `$${v}`}
+  1333→                      />
+  1334→                      <RechartsTooltip
+  1335→                        formatter={(value: number) => [formatCurrency(value), 'Gastos']}
+  1336→                        contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)' }}
+  1337→                      />
+  1338→                      <Area
+  1339→                        type="monotone"
+  1340→                        dataKey="amount"
+  1341→                        name="Gastos"
+  1342→                        stroke="#f59e0b"
+  1343→                        fill="url(#dailySpendGrad)"
+  1344→                        strokeWidth={2}
+  1345→                        dot={false}
+  1346→                        activeDot={{ r: 4, strokeWidth: 0, fill: '#f59e0b' }}
+  1347→                      />
+  1348→                    </AreaChart>
+  1349→                  </ResponsiveContainer>
+  1350→                </div>
+  1351→              </CardContent>
+  1352→            </Card>
+  1353→          </motion.div>
+  1354→
+  1355→          {/* ── Bottom Row ── */}
+  1356→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1357→            {/* Recent Transactions */}
+  1358→            <motion.div
+  1359→              initial={{ opacity: 0, y: 20 }}
+  1360→              animate={{ opacity: 1, y: 0 }}
+  1361→              transition={{ duration: 0.5, delay: 0.62 }}
+  1362→            >
+  1363→              <Card>
+  1364→                <CardHeader className="pb-2">
+  1365→                  <CardTitle className="text-base font-semibold">Transacciones Recientes</CardTitle>
+  1366→                  <CardDescription>Tus movimientos financieros más recientes</CardDescription>
+  1367→                </CardHeader>
+  1368→                <CardContent>
+  1369→                  <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1">
+  1370→                    {d.recentTransactions.map((tx) => (
+  1371→                      <motion.div
+  1372→                        key={tx.id}
+  1373→                        initial={{ opacity: 0, x: -10 }}
+  1374→                        animate={{ opacity: 1, x: 0 }}
+  1375→                        className="flex items-center justify-between py-2 border-b border-border/50 last:border-0"
+  1376→                      >
+  1377→                        <div className="flex items-center gap-3 min-w-0">
+  1378→                          <div className={cn(
+  1379→                            'w-9 h-9 rounded-lg flex items-center justify-center shrink-0',
+  1380→                            tx.type === 'income'
+  1381→                              ? 'bg-emerald-50 dark:bg-emerald-500/10'
+  1382→                              : 'bg-rose-50 dark:bg-rose-500/10'
+  1383→                          )}>
+  1384→                            {tx.type === 'income'
+  1385→                              ? <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+  1386→                              : <ArrowDownRight className="w-4 h-4 text-rose-500" />
+  1387→                            }
+  1388→                          </div>
+  1389→                          <div className="min-w-0">
+  1390→                            <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
+  1391→                            <div className="flex items-center gap-2">
+  1392→                              <span className="text-xs text-muted-foreground">{format(new Date(tx.date), 'MMM d')}</span>
+  1393→                              {tx.category && (
+  1394→                                <Badge
+  1395→                                  variant="secondary"
+  1396→                                  className="text-[10px] h-4 px-1.5"
+  1397→                                  style={{ backgroundColor: (tx.categoryColor || '#64748b') + '20', color: tx.categoryColor || '#64748b' }}
+  1398→                                >
+  1399→                                  {tx.category}
+  1400→                                </Badge>
+  1401→                              )}
+  1402→                            </div>
+  1403→                          </div>
+  1404→                        </div>
+  1405→                        <span className={cn(
+  1406→                          'text-sm font-semibold tabular-nums shrink-0',
+  1407→                          tx.amount >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+  1408→                        )}>
+  1409→                          {tx.amount >= 0 ? '+' : ''}{formatCurrency(Math.abs(tx.amount))}
+  1410→                        </span>
+  1411→                      </motion.div>
+  1412→                    ))}
+  1413→                  </div>
+  1414→                </CardContent>
+  1415→              </Card>
+  1416→            </motion.div>
+  1417→
+  1418→            {/* ── F. Enhanced Savings Section ── */}
+  1419→            <motion.div
+  1420→              initial={{ opacity: 0, y: 20 }}
+  1421→              animate={{ opacity: 1, y: 0 }}
+  1422→              transition={{ duration: 0.5, delay: 0.67 }}
+  1423→            >
+  1424→              <Card>
+  1425→                <CardHeader className="pb-2">
+  1426→                  <div className="flex items-center justify-between">
+  1427→                    <div>
+  1428→                      <CardTitle className="text-base font-semibold">Metas de Ahorro</CardTitle>
+  1429→                      <CardDescription>Rastrea el progreso de tus ahorros</CardDescription>
+  1430→                    </div>
+  1431→                    <Button
+  1432→                      variant="ghost"
+  1433→                      size="sm"
+  1434→                      className="text-xs text-primary hover:text-primary"
+  1435→                      onClick={() => setActiveModule('savings')}
+  1436→                    >
+  1437→                      Ver Todo
+  1438→                      <ArrowUpRight className="w-3 h-3 ml-1" />
+  1439→                    </Button>
+  1440→                  </div>
+  1441→                </CardHeader>
+  1442→                <CardContent>
+  1443→                  <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+  1444→                    {d.savingsGoals.map((goal, idx) => {
+  1445→                      const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
+  1446→                      const goalColor = goalColors[idx % goalColors.length]
+  1447→                      return (
+  1448→                        <motion.div
+  1449→                          key={goal.id}
+  1450→                          initial={{ opacity: 0, y: 10 }}
+  1451→                          animate={{ opacity: 1, y: 0 }}
+  1452→                          transition={{ delay: 0.05 * idx }}
+  1453→                          className="space-y-2 rounded-lg border-l-[3px] pl-3"
+  1454→                          style={{ borderLeftColor: goalColor }}
+  1455→                        >
+  1456→                          <div className="flex items-center justify-between">
+  1457→                            <div className="flex items-center gap-2">
+  1458→                              <span className="text-base">{getGoalEmoji(goal.name)}</span>
+  1459→                              <span className="text-sm font-medium text-foreground">{goal.name}</span>
+  1460→                            </div>
+  1461→                            <span className="text-xs font-semibold tabular-nums" style={{ color: goalColor }}>
+  1462→                              {pct}%
+  1463→                            </span>
+  1464→                          </div>
+  1465→                          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+  1466→                            <motion.div
+  1467→                              className="h-full rounded-full"
+  1468→                              style={{ background: goalColor }}
+  1469→                              initial={{ width: 0 }}
+  1470→                              animate={{ width: `${pct}%` }}
+  1471→                              transition={{ duration: 0.8, delay: 0.2 + idx * 0.1, ease: 'easeOut' }}
+  1472→                            />
+  1473→                          </div>
+  1474→                          <div className="flex justify-between text-xs text-muted-foreground">
+  1475→                            <span>{formatCurrency(goal.saved)} ahorrado</span>
+  1476→                            <span>Meta: {formatCurrency(goal.target)}</span>
+  1477→                          </div>
+  1478→                          {goal.deadline && (
+  1479→                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+  1480→                              <Calendar className="w-3 h-3" />
+  1481→                              {format(new Date(goal.deadline), 'MMM d, yyyy')}
+  1482→                            </p>
+  1483→                          )}
+  1484→                        </motion.div>
+  1485→                      )
+  1486→                    })}
+  1487→                  </div>
+  1488→                </CardContent>
+  1489→              </Card>
+  1490→            </motion.div>
+  1491→          </div>
+  1492→        </>
+  1493→      )}
+  1494→
+  1495→      {/* ── C. Quick Transaction FAB ── */}
+  1496→      <AnimatePresence>
+  1497→        {showQuickAdd && (
+  1498→          <motion.div
+  1499→            className="fixed bottom-6 right-6 z-50 flex items-end gap-3"
+  1500→            initial={{ opacity: 0, scale: 0.8 }}
+  1501→            animate={{ opacity: 1, scale: 1 }}
+  1502→            exit={{ opacity: 0, scale: 0.8 }}
+  1503→            transition={{ duration: 0.2 }}
+  1504→          >
+  1505→            <motion.button
+  1506→              whileHover={{ scale: 1.05 }}
+  1507→              whileTap={{ scale: 0.95 }}
+  1508→              onClick={() => { setQuickAddType('income'); setShowQuickAdd(true) }}
+  1509→              className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center justify-center"
+  1510→            >
+  1511→              <ArrowUpRight className="w-5 h-5" />
+  1512→            </motion.button>
+  1513→            <motion.button
+  1514→              whileHover={{ scale: 1.05 }}
+  1515→              whileTap={{ scale: 0.95 }}
+  1516→              onClick={() => { setQuickAddType('expense'); setShowQuickAdd(true) }}
+  1517→              className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg flex items-center justify-center"
+  1518→            >
+  1519→              <ArrowDownRight className="w-5 h-5" />
+  1520→            </motion.button>
+  1521→            <motion.button
+  1522→              whileHover={{ scale: 1.05 }}
+  1523→              whileTap={{ scale: 0.95 }}
+  1524→              onClick={() => setShowQuickAdd(false)}
+  1525→              className="w-10 h-10 rounded-full bg-muted text-muted-foreground shadow-md flex items-center justify-center"
+  1526→            >
+  1527→              <X className="w-4 h-4" />
+  1528→            </motion.button>
+  1529→          </motion.div>
+  1530→        )}
+  1531→      </AnimatePresence>
+  1532→
+  1533→      {/* Main FAB */}
+  1534→      {!showQuickAdd && (
+  1535→        <motion.button
+  1536→          initial={{ opacity: 0, scale: 0 }}
+  1537→          animate={{ opacity: 1, scale: 1 }}
+  1538→          whileHover={{ scale: 1.08 }}
+  1539→          whileTap={{ scale: 0.92 }}
+  1540→          onClick={() => setShowQuickAdd(true)}
+  1541→          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl flex items-center justify-center"
+  1542→          title="Agregar Transacción"
+  1543→        >
+  1544→          <Plus className="w-6 h-6" />
+  1545→        </motion.button>
+  1546→      )}
+  1547→
+  1548→      {/* Quick Add Dialog */}
+  1549→      <QuickAddDialog
+  1550→        open={showQuickAdd}
+  1551→        onOpenChange={setShowQuickAdd}
+  1552→        type={quickAddType}
+  1553→        onTypeChange={setQuickAddType}
+  1554→        accountId={user?.id || ''}
+  1555→        onSaved={doFetchData}
+  1556→      />
+  1557→    </div>
+  1558→  )
+  1559→}

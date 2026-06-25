@@ -198,7 +198,7 @@ export default function SettingsPanel() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold text-foreground">{user?.name || 'User'}</h3>
+              <h3 className="font-semibold text-foreground">{user?.name || 'Usuario'}</h3>
               <p className="text-sm text-muted-foreground">{user?.email || ''}</p>
               <Badge variant="secondary" className="mt-1">{user?.role || 'user'}</Badge>
             </div>

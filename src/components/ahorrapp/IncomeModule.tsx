@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Plus, TrendingUp, Trash2, Edit2, Filter, ArrowUpRight, Search, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,7 @@ import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 const SOURCES = ['salary', 'bonus', 'rent', 'freelance', 'investment', 'other'] as const
 const FREQUENCIES = ['one-time', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const
@@ -54,14 +56,14 @@ interface Income {
 }
 
 const mockIncomes: Income[] = [
-  { id: '1', source: 'salary', amount: 5200, description: 'Monthly Salary - Tech Corp', date: '2025-06-01', frequency: 'monthly', category: 'Employment' },
-  { id: '2', source: 'freelance', amount: 800, description: 'Website redesign project', date: '2025-06-05', frequency: 'one-time', category: 'Freelance' },
-  { id: '3', source: 'investment', amount: 150, description: 'Dividend payments - ETF', date: '2025-06-09', frequency: 'quarterly', category: 'Investment' },
-  { id: '4', source: 'rent', amount: 1200, description: 'Apartment rental income', date: '2025-06-03', frequency: 'monthly', category: 'Passive' },
-  { id: '5', source: 'bonus', amount: 2000, description: 'Quarterly performance bonus', date: '2025-05-30', frequency: 'one-time', category: 'Employment' },
-  { id: '6', source: 'salary', amount: 5200, description: 'Monthly Salary - Tech Corp', date: '2025-05-01', frequency: 'monthly', category: 'Employment' },
-  { id: '7', source: 'freelance', amount: 350, description: 'Logo design for startup', date: '2025-05-15', frequency: 'one-time', category: 'Freelance' },
-  { id: '8', source: 'other', amount: 100, description: 'Cashback rewards', date: '2025-05-20', frequency: 'one-time', category: 'Other' },
+  { id: '1', source: 'salary', amount: 5200, description: 'Salario Mensual - Corp Tecnológico', date: '2025-06-01', frequency: 'monthly', category: 'Empleo' },
+  { id: '2', source: 'freelance', amount: 800, description: 'Proyecto de rediseño web', date: '2025-06-05', frequency: 'one-time', category: 'Freelance' },
+  { id: '3', source: 'investment', amount: 150, description: 'Pago de dividendos - ETF', date: '2025-06-09', frequency: 'quarterly', category: 'Inversión' },
+  { id: '4', source: 'rent', amount: 1200, description: 'Ingreso por renta de apartamento', date: '2025-06-03', frequency: 'monthly', category: 'Pasivo' },
+  { id: '5', source: 'bonus', amount: 2000, description: 'Bono trimestral de rendimiento', date: '2025-05-30', frequency: 'one-time', category: 'Empleo' },
+  { id: '6', source: 'salary', amount: 5200, description: 'Salario Mensual - Corp Tecnológico', date: '2025-05-01', frequency: 'monthly', category: 'Empleo' },
+  { id: '7', source: 'freelance', amount: 350, description: 'Diseño de logo para startup', date: '2025-05-15', frequency: 'one-time', category: 'Freelance' },
+  { id: '8', source: 'other', amount: 100, description: 'Reembolso de efectivo', date: '2025-05-20', frequency: 'one-time', category: 'Otro' },
 ]
 
 function formatCurrency(amount: number): string {
@@ -245,9 +247,14 @@ export default function IncomeModule() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-emerald-100/20 dark:bg-emerald-500/3" />
               </div>
               <div className="relative z-10">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="mb-4"
+                >
+                  <Image src="/images/empty-state.png" alt="Sin ingresos" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+                </motion.div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Sin ingresos aún</h3>
                 <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
                   Comienza a rastrear tus fuentes de ingreso para tener una visión clara de tus ganancias.

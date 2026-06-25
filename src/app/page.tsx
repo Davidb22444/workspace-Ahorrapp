@@ -20,6 +20,7 @@ import DependentsModule from '@/components/ahorrapp/DependentsModule'
 import SettingsPanel from '@/components/ahorrapp/SettingsPanel'
 import UnexpectedModule from '@/components/ahorrapp/UnexpectedModule'
 import TransactionCenter from '@/components/ahorrapp/TransactionCenter'
+import TipsModule from '@/components/ahorrapp/TipsModule'
 import MonthlyReport from '@/components/ahorrapp/MonthlyReport'
 import AchievementsModule from '@/components/ahorrapp/AchievementsModule'
 import AnnualSummary from '@/components/ahorrapp/AnnualSummary'
@@ -37,6 +38,7 @@ const moduleComponents: Record<Module, React.ComponentType> = {
   notifications: NotificationsPanel,
   dependents: DependentsModule,
   transactions: TransactionCenter,
+  tips: TipsModule,
   report: MonthlyReport,
   recurring: RecurringBills,
   achievements: AchievementsModule,
@@ -56,6 +58,7 @@ const moduleTitles: Record<Module, string> = {
   notifications: 'Notificaciones',
   dependents: 'Dependientes',
   transactions: 'Centro de Transacciones',
+  tips: 'Consejos Financieros',
   report: 'Reporte Mensual',
   recurring: 'Pagos Recurrentes',
   achievements: 'Logros',
