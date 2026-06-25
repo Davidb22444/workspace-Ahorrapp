@@ -1,0 +1,430 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Plus, CreditCard, Trash2, DollarSign, Calendar, Percent, ChevronDown, ChevronUp, History, AlertCircle } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
+import { motion, AnimatePresence } from 'framer-motion'
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+}
+
+interface Payment {
+  id: string
+  amount: number
+  date: string
+  note?: string
+}
+
+interface Debt {
+  id: string
+  name: string
+  total: number
+  paid: number
+  interestRate: number
+  type: string
+  installments: number
+  dueDate?: string
+  nextPayment?: string
+  status: 'pending' | 'paid' | 'overdue'
+  payments?: Payment[]
+}
+
+const mockDebts: Debt[] = [
+  {
+    id: '1', name: 'Car Loan', total: 25000, paid: 8500, interestRate: 4.5, type: 'installment', installments: 60, dueDate: '2030-06-01', nextPayment: '2025-07-01', status: 'pending',
+    payments: [
+      { id: 'p1', amount: 475, date: '2025-06-01', note: 'Monthly payment' },
+      { id: 'p2', amount: 475, date: '2025-05-01', note: 'Monthly payment' },
+    ],
+  },
+  {
+    id: '2', name: 'Student Loan', total: 35000, paid: 12000, interestRate: 3.2, type: 'installment', installments: 120, dueDate: '2035-06-01', nextPayment: '2025-07-15', status: 'pending',
+    payments: [
+      { id: 'p3', amount: 350, date: '2025-06-15', note: 'Monthly payment' },
+    ],
+  },
+  {
+    id: '3', name: 'Credit Card', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'pending',
+    payments: [
+      { id: 'p4', amount: 500, date: '2025-06-05', note: 'Monthly payment' },
+      { id: 'p5', amount: 500, date: '2025-05-05', note: 'Monthly payment' },
+      { id: 'p6', amount: 500, date: '2025-04-05', note: 'Monthly payment' },
+    ],
+  },
+  {
+    id: '4', name: 'Personal Loan', total: 5000, paid: 5000, interestRate: 8.0, type: 'installment', installments: 12, dueDate: '2025-05-01', status: 'paid',
+    payments: [
+      { id: 'p7', amount: 416.67, date: '2025-05-01', note: 'Final payment' },
+    ],
+  },
+]
+
+const DEBT_TYPES = ['installment', 'revolving', 'mortgage', 'student', 'other']
+
+export default function DebtModule() {
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [loading, setLoading] = useState(true)
+  const { user } = useAppStore()
+  const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const [debtForm, setDebtForm] = useState({
+    name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '',
+  })
+
+  const [paymentForm, setPaymentForm] = useState({ amount: '', note: '' })
+
+  useEffect(() => {
+    let cancelled = false
+    const doFetch = async () => {
+      try {
+        const res = await fetch(`/api/debts?accountId=${user?.id}`)
+        if (res.ok && !cancelled) {
+          const data = await res.json()
+          setDebts(data.debts || data || [])
+          setLoading(false)
+          return
+        }
+      } catch { /* fallback */ }
+      if (!cancelled) { setDebts(mockDebts); setLoading(false) }
+    }
+    doFetch()
+    return () => { cancelled = true }
+  }, [])
+
+  const handleAddDebt = async () => {
+    if (!debtForm.name || !debtForm.total) { toast.error('Please fill in name and total amount'); return }
+    const payload = {
+      ...debtForm,
+      total: parseFloat(debtForm.total),
+      interestRate: parseFloat(debtForm.interestRate) || 0,
+      installments: parseInt(debtForm.installments) || 0,
+      paid: 0,
+      status: 'pending' as const,
+    }
+    try {
+      const res = await fetch('/api/debts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, accountId: user?.id }) })
+      if (res.ok) {
+        setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
+        toast.success('Debt added')
+        setAddDialogOpen(false)
+        setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
+        return
+      }
+    } catch { /* fallback */ }
+    setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
+    toast.success('Debt added')
+    setAddDialogOpen(false)
+    setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
+  }
+
+  const handleRecordPayment = async () => {
+    if (!paymentForm.amount || !selectedDebt) { toast.error('Please enter an amount'); return }
+    const amount = parseFloat(paymentForm.amount)
+    const payment: Payment = { id: Date.now().toString(), amount, date: format(new Date(), 'yyyy-MM-dd'), note: paymentForm.note || undefined }
+
+    try {
+      const res = await fetch(`/api/debts/${selectedDebt.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payment, accountId: user?.id }),
+      })
+      if (res.ok) {
+        const newPaid = selectedDebt.paid + amount
+        setDebts((prev) => prev.map((d) =>
+          d.id === selectedDebt.id
+            ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
+            : d
+        ))
+        toast.success(`Payment of ${formatCurrency(amount)} recorded`)
+        setPaymentDialogOpen(false)
+        setPaymentForm({ amount: '', note: '' })
+        return
+      }
+    } catch { /* fallback */ }
+    const newPaid = selectedDebt.paid + amount
+    setDebts((prev) => prev.map((d) =>
+      d.id === selectedDebt.id
+        ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
+        : d
+    ))
+    toast.success(`Payment of ${formatCurrency(amount)} recorded`)
+    setPaymentDialogOpen(false)
+    setPaymentForm({ amount: '', note: '' })
+  }
+
+  const handleDelete = async (id: string) => {
+    try { await fetch(`/api/debts/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
+    setDebts((prev) => prev.filter((d) => d.id !== id))
+    toast.success('Debt deleted')
+  }
+
+  const totalDebt = debts.reduce((sum, d) => sum + (d.total - d.paid), 0)
+  const totalPaid = debts.reduce((sum, d) => sum + d.paid, 0)
+  const activeDebts = debts.filter((d) => d.status !== 'paid')
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+      case 'overdue': return 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+      default: return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Deudas</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">Track and manage your debts</p>
+        </div>
+        <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Plus className="w-4 h-4 mr-2" /> Add Debt
+        </Button>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10">
+              <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Remaining</p>
+              <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{formatCurrency(totalDebt)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+              <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Paid</p>
+              <p className="text-2xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatCurrency(totalPaid)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10">
+              <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Debts</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground">{activeDebts.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Debt Cards */}
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => <Card key={i}><CardContent className="p-6"><Skeleton className="h-32 w-full" /></CardContent></Card>)}
+        </div>
+      ) : debts.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="text-lg font-medium">No debts tracked</p>
+          <p className="text-sm mt-1">Add your first debt to start tracking</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {debts.map((debt, idx) => {
+            const pct = Math.min(100, Math.round((debt.paid / debt.total) * 100))
+            const isExpanded = expandedId === debt.id
+
+            return (
+              <motion.div key={debt.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
+                <Card className="card-hover">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10">
+                          <CreditCard className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-foreground">{debt.name}</h3>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Badge variant="outline" className={statusColor(debt.status)}>{debt.status}</Badge>
+                            <span className="text-xs text-muted-foreground capitalize">{debt.type}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Percent className="w-3 h-3" /> {debt.interestRate}%
+                        </span>
+                        {debt.nextPayment && debt.status !== 'paid' && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> Next: {format(new Date(debt.nextPayment), 'MMM d')}
+                          </span>
+                        )}
+                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setExpandedId(isExpanded ? null : debt.id)}>
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Paid: {formatCurrency(debt.paid)} of {formatCurrency(debt.total)}</span>
+                        <span className="font-semibold tabular-nums">{pct}%</span>
+                      </div>
+                      <Progress value={pct} className="h-2.5" />
+                    </div>
+
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-4 pt-4 border-t border-border"
+                        >
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground h-8"
+                              onClick={() => { setSelectedDebt(debt); setPaymentDialogOpen(true) }}
+                              disabled={debt.status === 'paid'}
+                            >
+                              <DollarSign className="w-3.5 h-3.5 mr-1" /> Record Payment
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-destructive hover:text-destructive"
+                              onClick={() => handleDelete(debt.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+
+                          {debt.payments && debt.payments.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                                <History className="w-3 h-3" /> Payment History
+                              </p>
+                              <div className="max-h-40 overflow-y-auto space-y-1.5">
+                                {debt.payments.map((p) => (
+                                  <div key={p.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border/50 last:border-0">
+                                    <div className="min-w-0">
+                                      <span className="text-emerald-600 dark:text-emerald-400 font-medium tabular-nums">{formatCurrency(p.amount)}</span>
+                                      {p.note && <span className="text-muted-foreground ml-1.5">- {p.note}</span>}
+                                    </div>
+                                    <span className="text-muted-foreground shrink-0">{format(new Date(p.date), 'MMM d, yyyy')}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Add Debt Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={(open) => { if (!open) setAddDialogOpen(false) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Debt</DialogTitle>
+            <DialogDescription>Record a new debt to track.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Debt Name</Label>
+              <Input placeholder="e.g., Car Loan" value={debtForm.name} onChange={(e) => setDebtForm({ ...debtForm, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Total Amount ($)</Label>
+                <Input type="number" step="0.01" min="0" placeholder="0.00" value={debtForm.total} onChange={(e) => setDebtForm({ ...debtForm, total: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Interest Rate (%)</Label>
+                <Input type="number" step="0.1" min="0" placeholder="0.0" value={debtForm.interestRate} onChange={(e) => setDebtForm({ ...debtForm, interestRate: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={debtForm.type} onValueChange={(v) => setDebtForm({ ...debtForm, type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DEBT_TYPES.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Installments (0 if revolving)</Label>
+                <Input type="number" min="0" placeholder="0" value={debtForm.installments} onChange={(e) => setDebtForm({ ...debtForm, installments: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Due Date (optional)</Label>
+              <Input type="date" value={debtForm.dueDate} onChange={(e) => setDebtForm({ ...debtForm, dueDate: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddDebt} className="bg-primary hover:bg-primary/90 text-primary-foreground">Add Debt</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={(open) => { if (!open) { setPaymentDialogOpen(false); setPaymentForm({ amount: '', note: '' }) } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Record Payment - {selectedDebt?.name}</DialogTitle>
+            <DialogDescription>Log a payment toward this debt.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="bg-muted rounded-lg p-3 text-center">
+              <p className="text-xs text-muted-foreground">Remaining</p>
+              <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                {formatCurrency((selectedDebt?.total || 0) - (selectedDebt?.paid || 0))}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Amount ($)</Label>
+              <Input type="number" step="0.01" min="0" placeholder="0.00" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Note (optional)</Label>
+              <Input placeholder="e.g., Monthly payment" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPaymentDialogOpen(false); setPaymentForm({ amount: '', note: '' }) }}>Cancel</Button>
+            <Button onClick={handleRecordPayment} className="bg-primary hover:bg-primary/90 text-primary-foreground">Record Payment</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

@@ -1,0 +1,296 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String?
+  role      String   @default("user")
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  incomes               Income[]
+  expenses              Expense[]
+  unexpecteds           Unexpected[]
+  debts                 Debt[]
+  debtPayments          DebtPayment[]
+  savingsGoals          SavingsGoal[]
+  savingsContributions  SavingsContribution[]
+  budgets               Budget[]
+  budgetPeriods         BudgetPeriod[]
+  dependents            Dependent[]
+  categories            Category[]
+  notifications         Notification[]
+  movements             Movement[]
+
+  @@index([email])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String   @default("Circle")
+  color     String   @default("#6366f1")
+  type      String   @default("expense")
+  isDefault Boolean  @default(false)
+  accountId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+  incomes     Income[]
+  movements   Movement[]
+  unexpecteds Unexpected[]
+
+  @@index([accountId])
+}
+
+model Dependent {
+  id             String    @id @default(cuid())
+  name           String
+  relationship   String    @default("other")
+  economicWeight Float     @default(1.0)
+  birthDate      DateTime?
+  notes          String?
+  accountId      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+  unexpecteds Unexpected[]
+
+  @@index([accountId])
+}
+
+model Movement {
+  id          String   @id @default(cuid())
+  type        String
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  categoryId  String?
+  accountId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  source      String
+  amount      Float
+  description String?
+  frequency   String   @default("monthly")
+  date        DateTime @default(now())
+  categoryId  String?
+  accountId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model Expense {
+  id           String   @id @default(cuid())
+  amount       Float
+  description  String
+  date         DateTime @default(now())
+  categoryId   String?
+  dependentId  String?
+  isRecurring  Boolean  @default(false)
+  frequency    String?
+  accountId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category  Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  dependent Dependent? @relation(fields: [dependentId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([date])
+}
+
+model Unexpected {
+  id          String   @id @default(cuid())
+  amount      Float
+  description String
+  date        DateTime @default(now())
+  categoryId  String?
+  dependentId String?
+  resolved    Boolean  @default(false)
+  accountId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category  Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  dependent Dependent? @relation(fields: [dependentId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+}
+
+model Debt {
+  id           String   @id @default(cuid())
+  name         String
+  totalAmount  Float
+  paidAmount   Float    @default(0)
+  interestRate Float?
+  startDate    DateTime @default(now())
+  dueDate      DateTime?
+  status       String   @default("pending")
+  type         String   @default("loan")
+  installments Int?
+  accountId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  account  Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  payments DebtPayment[]
+
+  @@index([accountId])
+}
+
+model DebtPayment {
+  id        String   @id @default(cuid())
+  amount    Float
+  date      DateTime @default(now())
+  note      String?
+  debtId    String
+  accountId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  debt    Debt    @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([debtId])
+  @@index([accountId])
+}
+
+model SavingsGoal {
+  id           String    @id @default(cuid())
+  name         String
+  targetAmount Float
+  savedAmount  Float     @default(0)
+  icon         String    @default("PiggyBank")
+  color        String    @default("#10b981")
+  deadline     DateTime?
+  status       String    @default("active")
+  accountId    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  account       Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contributions SavingsContribution[]
+
+  @@index([accountId])
+}
+
+model SavingsContribution {
+  id        String   @id @default(cuid())
+  amount    Float
+  date      DateTime @default(now())
+  note      String?
+  goalId    String
+  accountId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  goal    SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  account Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@index([accountId])
+}
+
+model Budget {
+  id             String   @id @default(cuid())
+  name           String
+  totalAmount    Float
+  needsPercent   Float    @default(50)
+  wantsPercent   Float    @default(30)
+  savingsPercent Float    @default(20)
+  cycle          String   @default("monthly")
+  isActive       Boolean  @default(true)
+  accountId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  account  Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  periods  BudgetPeriod[]
+
+  @@index([accountId])
+}
+
+model BudgetPeriod {
+  id             String   @id @default(cuid())
+  startDate      DateTime
+  endDate        DateTime
+  plannedIncome  Float
+  plannedNeeds   Float
+  plannedWants   Float
+  plannedSavings Float
+  actualIncome   Float    @default(0)
+  actualNeeds    Float    @default(0)
+  actualWants    Float    @default(0)
+  actualSavings  Float    @default(0)
+  budgetId       String
+  accountId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  budget  Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([budgetId])
+  @@index([accountId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("info")
+  isRead    Boolean  @default(false)
+  link      String?
+  accountId String
+  createdAt DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  accountId String
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+  @@index([createdAt])
+}
