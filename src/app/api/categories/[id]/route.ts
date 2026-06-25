@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 export async function DELETE(
   _request: NextRequest,
@@ -7,20 +7,30 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const category = await db.category.findUnique({ where: { id } })
+    const { data: category, error: fetchError } = await supabase
+      .from('categories')
+      .select('is_default')
+      .eq('id', id)
+      .single()
 
-    if (!category) {
+    if (fetchError || !category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    if (category.isDefault) {
+    if (category.is_default) {
       return NextResponse.json(
         { error: 'Cannot delete default categories' },
         { status: 403 }
       )
     }
 
-    await db.category.delete({ where: { id } })
+    const { error } = await supabase.from('categories').delete().eq('id', id)
+
+    if (error) {
+      console.error('Delete category error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete category error:', error)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { rowsToCamel, keysToCamel, sumField } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 const MONTH_LABELS = [
@@ -35,70 +36,98 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const yearStart = new Date(year, 0, 1)
-    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999)
+    const yearStart = new Date(year, 0, 1).toISOString()
+    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999).toISOString()
 
-    // Fetch all records for the year
+    // Fetch all records for the year in parallel
     const [
-      incomes,
-      expenses,
-      unexpecteds,
-      savingsContributions,
-      debtPayments,
-      savingsGoals,
+      incomeRes,
+      expenseRes,
+      unexpectedRes,
+      savingsContributionsRes,
+      debtPaymentsRes,
+      savingsGoalsRes,
     ] = await Promise.all([
-      db.income.findMany({
-        where: { accountId, date: { gte: yearStart, lte: yearEnd } },
-        include: { category: { select: { name: true } } },
-      }),
-      db.expense.findMany({
-        where: { accountId, date: { gte: yearStart, lte: yearEnd } },
-        include: { category: { select: { name: true, color: true } } },
-      }),
-      db.unexpected.findMany({
-        where: { accountId, date: { gte: yearStart, lte: yearEnd } },
-      }),
-      db.savingsContribution.findMany({
-        where: { accountId, date: { gte: yearStart, lte: yearEnd } },
-      }),
-      db.debtPayment.findMany({
-        where: { accountId, date: { gte: yearStart, lte: yearEnd } },
-      }),
-      db.savingsGoal.findMany({
-        where: { accountId },
-        select: {
-          name: true,
-          savedAmount: true,
-          targetAmount: true,
-          color: true,
-        },
-      }),
+      supabase
+        .from('incomes')
+        .select('amount, date, source, category_id')
+        .eq('account_id', accountId)
+        .gte('date', yearStart)
+        .lte('date', yearEnd),
+      supabase
+        .from('expenses')
+        .select('amount, date, category_id')
+        .eq('account_id', accountId)
+        .gte('date', yearStart)
+        .lte('date', yearEnd),
+      supabase
+        .from('unexpecteds')
+        .select('amount, date')
+        .eq('account_id', accountId)
+        .gte('date', yearStart)
+        .lte('date', yearEnd),
+      supabase
+        .from('savings_contributions')
+        .select('amount, date')
+        .eq('account_id', accountId)
+        .gte('date', yearStart)
+        .lte('date', yearEnd),
+      supabase
+        .from('debt_payments')
+        .select('amount, date')
+        .eq('account_id', accountId)
+        .gte('date', yearStart)
+        .lte('date', yearEnd),
+      supabase
+        .from('savings_goals')
+        .select('name, saved_amount, target_amount, color')
+        .eq('account_id', accountId),
     ])
+
+    const incomes = rowsToCamel(incomeRes.data || [])
+    const expenses = rowsToCamel(expenseRes.data || [])
+    const unexpecteds = rowsToCamel(unexpectedRes.data || [])
+    const savingsContributions = rowsToCamel(savingsContributionsRes.data || [])
+    const debtPayments = rowsToCamel(debtPaymentsRes.data || [])
+    const savingsGoals = rowsToCamel(savingsGoalsRes.data || [])
+
+    // Fetch category info for expenses
+    const expCatIds = [...new Set(expenses.map((e: any) => e.categoryId).filter(Boolean))] as string[]
+    const incCatIds = [...new Set(incomes.map((i: any) => i.categoryId).filter(Boolean))] as string[]
+    const allCatIds = [...new Set([...expCatIds, ...incCatIds])] as string[]
+
+    let catMap = new Map<string, any>()
+    if (allCatIds.length > 0) {
+      const { data: cats } = await supabase.from('categories').select('id, name, color').in('id', allCatIds)
+      if (cats) catMap = new Map(cats.map((c: any) => [c.id, c]))
+    }
 
     // Monthly breakdown
     const monthlyBreakdown = MONTH_LABELS.map((month, idx) => {
       const monthStart = startOfMonth(new Date(year, idx))
       const monthEnd = endOfMonth(new Date(year, idx))
+      const msISO = monthStart.toISOString()
+      const meISO = monthEnd.toISOString()
 
       const monthIncome = incomes
-        .filter((i) => i.date >= monthStart && i.date <= monthEnd)
-        .reduce((s, i) => s + i.amount, 0)
+        .filter((i: any) => i.date >= msISO && i.date <= meISO)
+        .reduce((s: number, i: any) => s + (i.amount || 0), 0)
 
       const monthExpenses = expenses
-        .filter((e) => e.date >= monthStart && e.date <= monthEnd)
-        .reduce((s, e) => s + e.amount, 0)
+        .filter((e: any) => e.date >= msISO && e.date <= meISO)
+        .reduce((s: number, e: any) => s + (e.amount || 0), 0)
 
       const monthUnexpected = unexpecteds
-        .filter((u) => u.date >= monthStart && u.date <= monthEnd)
-        .reduce((s, u) => s + u.amount, 0)
+        .filter((u: any) => u.date >= msISO && u.date <= meISO)
+        .reduce((s: number, u: any) => s + (u.amount || 0), 0)
 
       const monthSavings = savingsContributions
-        .filter((c) => c.date >= monthStart && c.date <= monthEnd)
-        .reduce((s, c) => s + c.amount, 0)
+        .filter((c: any) => c.date >= msISO && c.date <= meISO)
+        .reduce((s: number, c: any) => s + (c.amount || 0), 0)
 
       const monthDebt = debtPayments
-        .filter((d) => d.date >= monthStart && d.date <= monthEnd)
-        .reduce((s, d) => s + d.amount, 0)
+        .filter((d: any) => d.date >= msISO && d.date <= meISO)
+        .reduce((s: number, d: any) => s + (d.amount || 0), 0)
 
       const net = monthIncome - monthExpenses - monthUnexpected
 
@@ -114,21 +143,22 @@ export async function GET(request: NextRequest) {
     })
 
     // Totals
-    const totalIncome = incomes.reduce((s, i) => s + i.amount, 0)
-    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0)
-    const totalUnexpected = unexpecteds.reduce((s, u) => s + u.amount, 0)
-    const totalSaved = savingsContributions.reduce((s, c) => s + c.amount, 0)
-    const totalDebtPaid = debtPayments.reduce((s, d) => s + d.amount, 0)
+    const totalIncome = incomes.reduce((s: number, i: any) => s + (i.amount || 0), 0)
+    const totalExpenses = expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+    const totalUnexpected = unexpecteds.reduce((s: number, u: any) => s + (u.amount || 0), 0)
+    const totalSaved = savingsContributions.reduce((s: number, c: any) => s + (c.amount || 0), 0)
+    const totalDebtPaid = debtPayments.reduce((s: number, d: any) => s + (d.amount || 0), 0)
     const netSavings = totalIncome - totalExpenses - totalUnexpected
     const savingsRate = totalIncome > 0 ? netSavings / totalIncome : 0
 
     // Top expense categories
     const categoryMap = new Map<string, { amount: number; color: string }>()
     for (const exp of expenses) {
-      const name = exp.category?.name || 'Uncategorized'
-      const color = exp.category?.color || '#94a3b8'
+      const cat = exp.categoryId ? catMap.get(exp.categoryId) : null
+      const name = cat?.name || 'Uncategorized'
+      const color = cat?.color || '#94a3b8'
       const existing = categoryMap.get(name) || { amount: 0, color }
-      existing.amount += exp.amount
+      existing.amount += exp.amount || 0
       categoryMap.set(name, existing)
     }
 
@@ -145,7 +175,7 @@ export async function GET(request: NextRequest) {
     const sourceMap = new Map<string, number>()
     for (const inc of incomes) {
       const existing = sourceMap.get(inc.source) || 0
-      sourceMap.set(inc.source, existing + inc.amount)
+      sourceMap.set(inc.source, existing + (inc.amount || 0))
     }
 
     const incomeSources = Array.from(sourceMap.entries())
@@ -158,10 +188,10 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.amount - a.amount)
 
     // Savings goals progress
-    const savingsGoalsProgress = savingsGoals.map((goal) => ({
+    const savingsGoalsProgress = savingsGoals.map((goal: any) => ({
       name: goal.name,
-      saved: Number(goal.savedAmount.toFixed(2)),
-      target: Number(goal.targetAmount.toFixed(2)),
+      saved: Number((goal.savedAmount || 0).toFixed(2)),
+      target: Number((goal.targetAmount || 0).toFixed(2)),
       color: goal.color || '#10b981',
     }))
 

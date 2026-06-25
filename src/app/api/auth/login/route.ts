@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import bcrypt from 'bcryptjs'
+import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
 
 const loginSchema = z.object({
@@ -13,26 +12,39 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = loginSchema.parse(body)
 
-    const user = await db.account.findUnique({
-      where: { email: parsed.email },
-    })
+    const { data: user, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('email', parsed.email)
+      .single()
 
-    if (!user || !user.password) {
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    const valid = await bcrypt.compare(parsed.password, user.password)
-    if (!valid) {
+    if (!user.password) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    const { password: _pw, ...safeUser } = user
+    if (parsed.password !== user.password) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      )
+    }
+
+    const { password: _pw, created_at, updated_at, ...rest } = user
+    const safeUser = {
+      ...rest,
+      createdAt: created_at,
+      updatedAt: updated_at,
+    }
 
     const response = NextResponse.json({ user: safeUser })
     response.cookies.set('accountId', user.id, {

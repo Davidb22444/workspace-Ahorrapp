@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
 
 const paySchema = z.object({
@@ -7,6 +7,15 @@ const paySchema = z.object({
   note: z.string().optional(),
   date: z.string().optional(),
 })
+
+function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+    result[camelKey] = value
+  }
+  return result
+}
 
 export async function POST(
   request: NextRequest,
@@ -17,12 +26,20 @@ export async function POST(
     const body = await request.json()
     const parsed = paySchema.parse(body)
 
-    const debt = await db.debt.findUnique({ where: { id } })
-    if (!debt) {
+    // Fetch current debt
+    const { data: debt, error: debtError } = await supabase
+      .from('debts')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (debtError || !debt) {
       return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
     }
 
-    if (parsed.amount > (debt.totalAmount - debt.paidAmount)) {
+    const remaining = Number(debt.total_amount) - Number(debt.paid_amount)
+
+    if (parsed.amount > remaining) {
       return NextResponse.json(
         { error: 'Payment amount exceeds remaining balance' },
         { status: 400 }
@@ -30,37 +47,61 @@ export async function POST(
     }
 
     // Create payment
-    const payment = await db.debtPayment.create({
-      data: {
+    const { data: payment, error: payError } = await supabase
+      .from('debt_payments')
+      .insert({
         amount: parsed.amount,
-        date: parsed.date ? new Date(parsed.date) : new Date(),
-        note: parsed.note,
-        debtId: id,
-        accountId: debt.accountId,
-      },
-    })
+        date: parsed.date || new Date().toISOString().split('T')[0],
+        note: parsed.note || null,
+        debt_id: id,
+        account_id: debt.account_id,
+      })
+      .select()
+      .single()
+
+    if (payError) {
+      console.error('Create payment error:', payError)
+      return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 })
+    }
 
     // Update debt's paid amount
-    const newPaidAmount = debt.paidAmount + parsed.amount
+    const newPaidAmount = Number(debt.paid_amount) + parsed.amount
     let newStatus = debt.status
-    if (newPaidAmount >= debt.totalAmount) {
+    if (newPaidAmount >= Number(debt.total_amount)) {
       newStatus = 'paid'
     } else if (newPaidAmount > 0) {
       newStatus = 'partial'
     }
 
-    const updatedDebt = await db.debt.update({
-      where: { id },
-      data: { paidAmount: newPaidAmount, status: newStatus },
-    })
+    const { data: updatedDebt, error: updateError } = await supabase
+      .from('debts')
+      .update({
+        paid_amount: newPaidAmount,
+        status: newStatus,
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Update debt error:', updateError)
+      return NextResponse.json({ error: 'Failed to update debt' }, { status: 500 })
+    }
+
+    const camelDebt = snakeToCamel(updatedDebt as unknown as Record<string, unknown>) as {
+      totalAmount: number
+      paidAmount: number
+    } & Record<string, unknown>
+    const totalAmount = Number(camelDebt.totalAmount)
+    const paidAmount = Number(camelDebt.paidAmount)
 
     return NextResponse.json({
-      payment,
+      payment: snakeToCamel(payment as unknown as Record<string, unknown>),
       debt: {
-        ...updatedDebt,
-        remaining: Number(Math.max(0, updatedDebt.totalAmount - updatedDebt.paidAmount).toFixed(2)),
-        progress: updatedDebt.totalAmount > 0
-          ? Number(((updatedDebt.paidAmount / updatedDebt.totalAmount) * 100).toFixed(1))
+        ...camelDebt,
+        remaining: Number(Math.max(0, totalAmount - paidAmount).toFixed(2)),
+        progress: totalAmount > 0
+          ? Number(((paidAmount / totalAmount) * 100).toFixed(1))
           : 0,
       },
     })

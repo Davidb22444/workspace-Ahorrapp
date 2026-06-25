@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
@@ -151,6 +151,8 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      const incomeRows: Record<string, unknown>[] = []
+
       for (let i = 0; i < dataRows.length; i++) {
         const row = dataRows[i]
         try {
@@ -167,20 +169,27 @@ export async function POST(request: NextRequest) {
           const dateStr = dateIdx !== -1 ? row[dateIdx] : undefined
           const frequency = freqIdx !== -1 ? row[freqIdx] : 'monthly'
 
-          await db.income.create({
-            data: {
-              source,
-              amount,
-              description,
-              date: dateStr ? new Date(dateStr) : new Date(),
-              frequency,
-              accountId,
-            },
+          incomeRows.push({
+            source,
+            amount,
+            description: description || null,
+            date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
+            frequency,
+            account_id: accountId,
           })
 
           imported++
         } catch (err) {
           errors.push(`Row ${i + 2}: Failed to import - ${(err as Error).message}`)
+        }
+      }
+
+      // Batch insert
+      if (incomeRows.length > 0) {
+        const { error } = await supabase.from('incomes').insert(incomeRows)
+        if (error) {
+          errors.push(`Batch insert error: ${error.message}`)
+          imported -= incomeRows.length
         }
       }
     } else if (effectiveType === 'expense') {
@@ -196,6 +205,21 @@ export async function POST(request: NextRequest) {
           errors: ['Expense CSV must have "description" and "amount" columns'],
         })
       }
+
+      // Pre-fetch all categories for this account
+      const { data: allCats } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('account_id', accountId)
+
+      const catNameMap = new Map<string, string>()
+      if (allCats) {
+        for (const c of allCats) {
+          catNameMap.set(c.name.toLowerCase(), c.id)
+        }
+      }
+
+      const expenseRows: Record<string, unknown>[] = []
 
       for (let i = 0; i < dataRows.length; i++) {
         const row = dataRows[i]
@@ -214,31 +238,22 @@ export async function POST(request: NextRequest) {
           const recurringStr = recIdx !== -1 ? row[recIdx] : undefined
 
           // Try to find category by name
-          let categoryId: string | undefined
+          let categoryId: string | null = null
           if (categoryStr) {
-            const cat = await db.category.findFirst({
-              where: {
-                accountId,
-                name: { equals: categoryStr, mode: 'insensitive' },
-              },
-              select: { id: true },
-            })
-            if (cat) categoryId = cat.id
+            categoryId = catNameMap.get(categoryStr.toLowerCase()) || null
           }
 
           const isRecurring = recurringStr
             ? ['true', 'yes', '1', 'y'].includes(recurringStr.toLowerCase())
             : false
 
-          await db.expense.create({
-            data: {
-              description,
-              amount,
-              date: dateStr ? new Date(dateStr) : new Date(),
-              categoryId,
-              isRecurring,
-              accountId,
-            },
+          expenseRows.push({
+            description,
+            amount,
+            date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
+            category_id: categoryId,
+            is_recurring: isRecurring,
+            account_id: accountId,
           })
 
           imported++
@@ -246,9 +261,18 @@ export async function POST(request: NextRequest) {
           errors.push(`Row ${i + 2}: Failed to import - ${(err as Error).message}`)
         }
       }
+
+      // Batch insert
+      if (expenseRows.length > 0) {
+        const { error } = await supabase.from('expenses').insert(expenseRows)
+        if (error) {
+          errors.push(`Batch insert error: ${error.message}`)
+          imported -= expenseRows.length
+        }
+      }
     }
 
-    return NextResponse.json({ imported, errors })
+    return NextResponse.json({ imported: Math.max(0, imported), errors })
   } catch (error) {
     console.error('Import error:', error)
     return NextResponse.json(

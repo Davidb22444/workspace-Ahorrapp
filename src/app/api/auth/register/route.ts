@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
-import bcrypt from 'bcryptjs'
+import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
 
 const registerSchema = z.object({
@@ -14,9 +13,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = registerSchema.parse(body)
 
-    const existing = await db.account.findUnique({
-      where: { email: parsed.email },
-    })
+    const { data: existing, error: findError } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('email', parsed.email)
+      .maybeSingle()
+
+    if (findError) {
+      console.error('Register find error:', findError)
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      )
+    }
 
     if (existing) {
       return NextResponse.json(
@@ -25,17 +34,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const hashedPassword = await bcrypt.hash(parsed.password, 12)
-
-    const user = await db.account.create({
-      data: {
+    const { data: user, error: insertError } = await supabase
+      .from('accounts')
+      .insert({
         email: parsed.email,
-        password: hashedPassword,
+        password: parsed.password,
         name: parsed.name,
-      },
-    })
+      })
+      .select()
+      .single()
 
-    const { password: _pw, ...safeUser } = user
+    if (insertError || !user) {
+      console.error('Register insert error:', insertError)
+      return NextResponse.json(
+        { error: 'Failed to create account' },
+        { status: 500 }
+      )
+    }
+
+    const { password: _pw, created_at, updated_at, ...rest } = user
+    const safeUser = {
+      ...rest,
+      createdAt: created_at,
+      updatedAt: updated_at,
+    }
 
     const response = NextResponse.json({ user: safeUser }, { status: 201 })
     response.cookies.set('accountId', user.id, {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 
 const unexpectedCreateSchema = z.object({
@@ -23,22 +24,53 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
     }
 
-    const where: Record<string, unknown> = { accountId }
-    if (resolved !== null) where.resolved = resolved === 'true'
-    if (categoryId) where.categoryId = categoryId
+    let query = supabase
+      .from('unexpecteds')
+      .select('*')
+      .eq('account_id', accountId)
+      .order('date', { ascending: false })
 
-    const unexpecteds = await db.unexpected.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
-        dependent: { select: { id: true, name: true, relationship: true } },
-      },
-    })
+    if (resolved !== null) {
+      query = query.eq('resolved', resolved === 'true')
+    }
+    if (categoryId) {
+      query = query.eq('category_id', categoryId)
+    }
 
-    const total = unexpecteds.reduce((sum, u) => sum + u.amount, 0)
+    const { data: rawUnexpecteds, error } = await query
 
-    return NextResponse.json({ unexpecteds, total: Number(total.toFixed(2)) })
+    if (error) {
+      console.error('List unexpected error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    const unexpecteds = rowsToCamel(rawUnexpecteds || [])
+
+    // Fetch related categories and dependents for enrichment
+    const categoryIds = [...new Set(unexpecteds.map((u: any) => u.categoryId).filter(Boolean))] as string[]
+    const dependentIds = [...new Set(unexpecteds.map((u: any) => u.dependentId).filter(Boolean))] as string[]
+
+    const [catRes, depRes] = await Promise.all([
+      categoryIds.length > 0
+        ? supabase.from('categories').select('id, name, icon, color').in('id', categoryIds)
+        : { data: [] },
+      dependentIds.length > 0
+        ? supabase.from('dependents').select('id, name, relationship').in('id', dependentIds)
+        : { data: [] },
+    ])
+
+    const catMap = new Map((catRes.data || []).map((c: any) => [c.id, c]))
+    const depMap = new Map((depRes.data || []).map((d: any) => [d.id, d]))
+
+    const enriched = unexpecteds.map((u: any) => ({
+      ...u,
+      category: u.categoryId ? keysToCamel(catMap.get(u.categoryId) || {}) : null,
+      dependent: u.dependentId ? keysToCamel(depMap.get(u.dependentId) || {}) : null,
+    }))
+
+    const total = enriched.reduce((sum: number, u: any) => sum + (u.amount || 0), 0)
+
+    return NextResponse.json({ unexpecteds: enriched, total: Number(total.toFixed(2)) })
   } catch (error) {
     console.error('List unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -50,33 +82,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = unexpectedCreateSchema.parse(body)
 
-    const unexpected = await db.unexpected.create({
-      data: {
-        amount: parsed.amount,
-        description: parsed.description,
-        date: parsed.date ? new Date(parsed.date) : new Date(),
-        categoryId: parsed.categoryId,
-        dependentId: parsed.dependentId,
-        resolved: parsed.resolved,
-        accountId: parsed.accountId,
-      },
-      include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
-        dependent: { select: { id: true, name: true, relationship: true } },
-      },
-    })
+    const insertData: Record<string, unknown> = {
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date || new Date().toISOString(),
+      resolved: parsed.resolved,
+      account_id: parsed.accountId,
+    }
+    if (parsed.categoryId) insertData.category_id = parsed.categoryId
+    if (parsed.dependentId) insertData.dependent_id = parsed.dependentId
+
+    const { data, error } = await supabase
+      .from('unexpecteds')
+      .insert(insertData)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create unexpected error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
 
     // Create movement record
-    await db.movement.create({
-      data: {
-        type: 'unexpected',
-        amount: unexpected.amount,
-        description: `Imprevisto: ${unexpected.description}`,
-        date: unexpected.date,
-        categoryId: unexpected.categoryId,
-        accountId: unexpected.accountId,
-      },
+    await supabase.from('movements').insert({
+      type: 'unexpected',
+      amount: data.amount,
+      description: `Imprevisto: ${data.description}`,
+      date: data.date,
+      category_id: data.category_id,
+      account_id: data.account_id,
     })
+
+    const unexpected = keysToCamel(data)
 
     return NextResponse.json({ unexpected }, { status: 201 })
   } catch (error) {

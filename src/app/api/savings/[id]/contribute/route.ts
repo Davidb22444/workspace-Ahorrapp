@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
 
 const contributeSchema = z.object({
@@ -7,6 +7,15 @@ const contributeSchema = z.object({
   note: z.string().optional(),
   date: z.string().optional(),
 })
+
+function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    const camelKey = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())
+    result[camelKey] = value
+  }
+  return result
+}
 
 export async function POST(
   request: NextRequest,
@@ -17,44 +26,74 @@ export async function POST(
     const body = await request.json()
     const parsed = contributeSchema.parse(body)
 
-    const goal = await db.savingsGoal.findUnique({ where: { id } })
-    if (!goal) {
+    // Fetch current goal
+    const { data: goal, error: goalError } = await supabase
+      .from('savings_goals')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (goalError || !goal) {
       return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
     }
 
-    // Create contribution
-    const contribution = await db.savingsContribution.create({
-      data: {
+    // Insert contribution
+    const { data: contribution, error: contribError } = await supabase
+      .from('savings_contributions')
+      .insert({
         amount: parsed.amount,
-        date: parsed.date ? new Date(parsed.date) : new Date(),
-        note: parsed.note,
-        goalId: id,
-        accountId: goal.accountId,
-      },
-    })
+        date: parsed.date || new Date().toISOString().split('T')[0],
+        note: parsed.note || null,
+        goal_id: id,
+        account_id: goal.account_id,
+      })
+      .select()
+      .single()
+
+    if (contribError) {
+      console.error('Create contribution error:', contribError)
+      return NextResponse.json({ error: 'Failed to create contribution' }, { status: 500 })
+    }
 
     // Update goal's saved amount
-    const newSavedAmount = goal.savedAmount + parsed.amount
+    const newSavedAmount = Number(goal.saved_amount) + parsed.amount
     let newStatus = goal.status
-    if (newSavedAmount >= goal.targetAmount) {
+    if (newSavedAmount >= Number(goal.target_amount)) {
       newStatus = 'completed'
-    } else if (newStatus === 'completed' && newSavedAmount < goal.targetAmount) {
+    } else if (newStatus === 'completed' && newSavedAmount < Number(goal.target_amount)) {
       newStatus = 'active'
     }
 
-    const updatedGoal = await db.savingsGoal.update({
-      where: { id },
-      data: { savedAmount: newSavedAmount, status: newStatus },
-    })
+    const { data: updatedGoal, error: updateError } = await supabase
+      .from('savings_goals')
+      .update({
+        saved_amount: newSavedAmount,
+        status: newStatus,
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Update savings goal error:', updateError)
+      return NextResponse.json({ error: 'Failed to update savings goal' }, { status: 500 })
+    }
+
+    const camelGoal = snakeToCamel(updatedGoal as unknown as Record<string, unknown>) as {
+      targetAmount: number
+      savedAmount: number
+    } & Record<string, unknown>
+    const targetAmount = Number(camelGoal.targetAmount)
+    const savedAmount = Number(camelGoal.savedAmount)
 
     return NextResponse.json({
-      contribution,
+      contribution: snakeToCamel(contribution as unknown as Record<string, unknown>),
       savingsGoal: {
-        ...updatedGoal,
-        progress: updatedGoal.targetAmount > 0
-          ? Number(((updatedGoal.savedAmount / updatedGoal.targetAmount) * 100).toFixed(1))
+        ...camelGoal,
+        progress: targetAmount > 0
+          ? Number(((savedAmount / targetAmount) * 100).toFixed(1))
           : 0,
-        remaining: Number(Math.max(0, updatedGoal.targetAmount - updatedGoal.savedAmount).toFixed(2)),
+        remaining: Number(Math.max(0, targetAmount - savedAmount).toFixed(2)),
       },
     })
   } catch (error) {

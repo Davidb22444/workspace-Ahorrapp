@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { sumField } from '@/lib/supabase-utils'
 import ZAI from 'z-ai-web-dev-sdk'
 import { z } from 'zod'
 
@@ -29,30 +30,20 @@ export async function POST(request: NextRequest) {
 
     if (parsed.accountId) {
       // Gather financial summary for context
-      const [incomeResult, expenseResult, debtResult, savingsResult] = await Promise.all([
-        db.income.aggregate({
-          _sum: { amount: true },
-          where: { accountId: parsed.accountId },
-        }),
-        db.expense.aggregate({
-          _sum: { amount: true },
-          where: { accountId: parsed.accountId },
-        }),
-        db.debt.aggregate({
-          _sum: { totalAmount: true, paidAmount: true },
-          where: { accountId: parsed.accountId, status: { in: ['pending', 'partial'] } },
-        }),
-        db.savingsGoal.aggregate({
-          _sum: { targetAmount: true, savedAmount: true },
-          where: { accountId: parsed.accountId, status: 'active' },
-        }),
+      const [incomeRes, expenseRes, debtRes, savingsRes] = await Promise.all([
+        supabase.from('incomes').select('amount').eq('account_id', parsed.accountId),
+        supabase.from('expenses').select('amount').eq('account_id', parsed.accountId),
+        supabase.from('debts').select('total_amount, paid_amount').eq('account_id', parsed.accountId).in('status', ['pending', 'partial', 'active']),
+        supabase.from('savings_goals').select('target_amount, saved_amount').eq('account_id', parsed.accountId).eq('status', 'active'),
       ])
 
-      const totalIncome = incomeResult._sum.amount ?? 0
-      const totalExpenses = expenseResult._sum.amount ?? 0
-      const totalDebt = (debtResult._sum.totalAmount ?? 0) - (debtResult._sum.paidAmount ?? 0)
-      const savingsTarget = savingsResult._sum.targetAmount ?? 0
-      const savingsSaved = savingsResult._sum.savedAmount ?? 0
+      const totalIncome = sumField(incomeRes.data || [], 'amount')
+      const totalExpenses = sumField(expenseRes.data || [], 'amount')
+      const totalDebtTotal = sumField(debtRes.data || [], 'total_amount')
+      const totalDebtPaid = sumField(debtRes.data || [], 'paid_amount')
+      const totalDebt = totalDebtTotal - totalDebtPaid
+      const savingsTarget = sumField(savingsRes.data || [], 'target_amount')
+      const savingsSaved = sumField(savingsRes.data || [], 'saved_amount')
 
       financialContext = `
 Resumen financiero del usuario:
@@ -60,7 +51,7 @@ Resumen financiero del usuario:
 - Gastos totales: $${totalExpenses.toFixed(2)}
 - Balance: $${(totalIncome - totalExpenses).toFixed(2)}
 - Deudas pendientes: $${totalDebt.toFixed(2)}
-- Metas de ahorro activas: ${savingsResult._sum.targetAmount ? `Objetivo: $${savingsTarget.toFixed(2)}, Ahorrado: $${savingsSaved.toFixed(2)}` : 'Ninguna'}
+- Metas de ahorro activas: ${savingsTarget > 0 ? `Objetivo: $${savingsTarget.toFixed(2)}, Ahorrado: $${savingsSaved.toFixed(2)}` : 'Ninguna'}
 `.trim()
     }
 

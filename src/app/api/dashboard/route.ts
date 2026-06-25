@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { keysToCamel, rowsToCamel, sumField } from '@/lib/supabase-utils'
 import { subMonths, startOfMonth, endOfMonth, format } from 'date-fns'
 
 export async function GET(request: NextRequest) {
@@ -16,54 +17,51 @@ export async function GET(request: NextRequest) {
 
     const now = new Date()
 
-    // Total income
-    const incomeResult = await db.income.aggregate({
-      _sum: { amount: true },
-      where: { accountId },
-    })
-    const totalIncome = incomeResult._sum.amount ?? 0
+    // Fetch all necessary data in parallel
+    const [
+      incomeRes,
+      expenseRes,
+      unexpectedRes,
+      savingsRes,
+      debtsRes,
+      movementsRes,
+    ] = await Promise.all([
+      // Total income (all time)
+      supabase.from('incomes').select('amount').eq('account_id', accountId),
+      // Total expenses (all time)
+      supabase.from('expenses').select('amount').eq('account_id', accountId),
+      // Unresolved unexpecteds (all time)
+      supabase.from('unexpecteds').select('amount').eq('account_id', accountId).eq('resolved', false),
+      // Savings goals
+      supabase.from('savings_goals').select('id, name, target_amount, saved_amount, icon, color, deadline, status').eq('account_id', accountId),
+      // Active debts
+      supabase.from('debts').select('id, status, paid_amount').eq('account_id', accountId).in('status', ['pending', 'partial', 'active']),
+      // Recent movements (last 10)
+      supabase.from('movements').select('*').eq('account_id', accountId).order('date', { ascending: false }).limit(10),
+    ])
 
-    // Total expenses
-    const expenseResult = await db.expense.aggregate({
-      _sum: { amount: true },
-      where: { accountId },
-    })
-    const totalExpenses = expenseResult._sum.amount ?? 0
+    const totalIncome = sumField(incomeRes.data || [], 'amount')
+    const totalExpenses = sumField(expenseRes.data || [], 'amount')
+    const totalUnexpected = sumField(unexpectedRes.data || [], 'amount')
+    const totalSaved = sumField(savingsRes.data || [], 'saved_amount')
+    const totalDebtPayments = sumField(debtsRes.data || [], 'paid_amount')
+    const activeDebtCount = (debtsRes.data || []).length
 
-    // Total unexpected
-    const unexpectedResult = await db.unexpected.aggregate({
-      _sum: { amount: true },
-      where: { accountId, resolved: false },
-    })
+    const balance = totalIncome - totalExpenses - totalUnexpected
 
-    // Total saved
-    const savingsResult = await db.savingsGoal.aggregate({
-      _sum: { savedAmount: true },
-      where: { accountId },
-    })
-    const totalSaved = savingsResult._sum.savedAmount ?? 0
+    // Enrich movements with category data
+    const movementsRaw = movementsRes.data || []
+    const catIds = [...new Set(movementsRaw.map((m: any) => m.category_id).filter(Boolean))] as string[]
+    let catMap = new Map<string, any>()
+    if (catIds.length > 0) {
+      const { data: cats } = await supabase.from('categories').select('id, name, icon, color').in('id', catIds)
+      if (cats) catMap = new Map(cats.map((c: any) => [c.id, c]))
+    }
 
-    // Active debts
-    const activeDebts = await db.debt.aggregate({
-      _sum: { paidAmount: true },
-      where: { accountId, status: { in: ['pending', 'partial'] } },
-    })
-    const totalDebtPayments = activeDebts._sum.paidAmount ?? 0
-
-    const activeDebtCount = await db.debt.count({
-      where: { accountId, status: { in: ['pending', 'partial'] } },
-    })
-
-    // Balance = income - expenses - unexpected(unresolved)
-    const balance = totalIncome - totalExpenses - (unexpectedResult._sum.amount ?? 0)
-
-    // Recent movements (last 10)
-    const recentMovements = await db.movement.findMany({
-      where: { accountId },
-      orderBy: { date: 'desc' },
-      take: 10,
-      include: { category: { select: { name: true, icon: true, color: true } } },
-    })
+    const recentMovements = rowsToCamel(movementsRaw).map((m: any) => ({
+      ...m,
+      category: m.categoryId ? keysToCamel(catMap.get(m.categoryId) || {}) : null,
+    }))
 
     // Monthly data: last 6 months
     const monthlyData: { month: string; income: number; expenses: number }[] = []
@@ -73,70 +71,60 @@ export async function GET(request: NextRequest) {
       const end = endOfMonth(monthDate)
       const monthLabel = format(monthDate, 'MMM yyyy')
 
-      const monthIncome = await db.income.aggregate({
-        _sum: { amount: true },
-        where: {
-          accountId,
-          date: { gte: start, lte: end },
-        },
-      })
-
-      const monthExpense = await db.expense.aggregate({
-        _sum: { amount: true },
-        where: {
-          accountId,
-          date: { gte: start, lte: end },
-        },
-      })
+      const [mIncome, mExpense] = await Promise.all([
+        supabase
+          .from('incomes')
+          .select('amount')
+          .eq('account_id', accountId)
+          .gte('date', start.toISOString())
+          .lte('date', end.toISOString()),
+        supabase
+          .from('expenses')
+          .select('amount')
+          .eq('account_id', accountId)
+          .gte('date', start.toISOString())
+          .lte('date', end.toISOString()),
+      ])
 
       monthlyData.push({
         month: monthLabel,
-        income: Number((monthIncome._sum.amount ?? 0).toFixed(2)),
-        expenses: Number((monthExpense._sum.amount ?? 0).toFixed(2)),
+        income: Number(sumField(mIncome.data || [], 'amount').toFixed(2)),
+        expenses: Number(sumField(mExpense.data || [], 'amount').toFixed(2)),
       })
     }
 
     // Category breakdown: expenses grouped by category
-    const categoryExpenses = await db.expense.groupBy({
-      by: ['categoryId'],
-      where: { accountId },
-      _sum: { amount: true },
-    })
+    const allExpenses = await supabase
+      .from('expenses')
+      .select('amount, category_id')
+      .eq('account_id', accountId)
 
-    const categoryBreakdown = await Promise.all(
-      categoryExpenses.map(async (ce) => {
-        const cat = ce.categoryId
-          ? await db.category.findUnique({
-              where: { id: ce.categoryId! },
-              select: { name: true, icon: true, color: true },
-            })
-          : null
-        return {
-          categoryId: ce.categoryId ?? 'uncategorized',
-          name: cat?.name ?? 'Sin categoría',
-          icon: cat?.icon ?? 'Circle',
-          color: cat?.color ?? '#94a3b8',
-          total: Number((ce._sum.amount ?? 0).toFixed(2)),
-        }
-      })
-    )
+    const catAmountMap = new Map<string, number>()
+    for (const e of allExpenses.data || []) {
+      const catId = e.category_id || 'uncategorized'
+      catAmountMap.set(catId, (catAmountMap.get(catId) || 0) + (e.amount || 0))
+    }
+
+    const uniqueCatIds = [...new Set(allExpenses.data?.map((e: any) => e.category_id).filter(Boolean) || [])] as string[]
+    let allCats = new Map<string, any>()
+    if (uniqueCatIds.length > 0) {
+      const { data: cats } = await supabase.from('categories').select('id, name, icon, color').in('id', uniqueCatIds)
+      if (cats) allCats = new Map(cats.map((c: any) => [c.id, c]))
+    }
+
+    const categoryBreakdown = Array.from(catAmountMap.entries()).map(([catId, total]) => {
+      const cat = catId !== 'uncategorized' ? allCats.get(catId) : null
+      return {
+        categoryId: catId,
+        name: cat?.name || 'Sin categoría',
+        icon: cat?.icon || 'Circle',
+        color: cat?.color || '#94a3b8',
+        total: Number(total.toFixed(2)),
+      }
+    })
 
     // Savings progress
-    const savingsGoals = await db.savingsGoal.findMany({
-      where: { accountId },
-      select: {
-        id: true,
-        name: true,
-        targetAmount: true,
-        savedAmount: true,
-        icon: true,
-        color: true,
-        deadline: true,
-        status: true,
-      },
-    })
-
-    const savingsProgress = savingsGoals.map((goal) => ({
+    const savingsGoals = rowsToCamel(savingsRes.data || []).map((goal: any) => ({
       ...goal,
       progress: goal.targetAmount > 0
         ? Number(((goal.savedAmount / goal.targetAmount) * 100).toFixed(1))
@@ -154,7 +142,7 @@ export async function GET(request: NextRequest) {
       recentMovements,
       monthlyData,
       categoryBreakdown,
-      savingsProgress,
+      savingsProgress: savingsGoals,
     })
   } catch (error) {
     console.error('Dashboard error:', error)

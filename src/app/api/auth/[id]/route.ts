@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 
 export async function GET(
   _request: NextRequest,
@@ -8,24 +8,24 @@ export async function GET(
   try {
     const { id } = await params
 
-    const user = await db.account.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        avatar: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    })
+    const { data: user, error } = await supabase
+      .from('accounts')
+      .select('id, email, name, role, avatar, created_at, updated_at')
+      .eq('id', id)
+      .single()
 
-    if (!user) {
+    if (error || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ user })
+    const { created_at, updated_at, ...rest } = user
+    const mappedUser = {
+      ...rest,
+      createdAt: created_at,
+      updatedAt: updated_at,
+    }
+
+    return NextResponse.json({ user: mappedUser })
   } catch (error) {
     console.error('Get user error:', error)
     return NextResponse.json(

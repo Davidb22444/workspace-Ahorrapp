@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 
 const dependentCreateSchema = z.object({
@@ -20,10 +21,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
     }
 
-    const dependents = await db.dependent.findMany({
-      where: { accountId },
-      orderBy: { name: 'asc' },
-    })
+    const { data, error } = await supabase
+      .from('dependents')
+      .select('*')
+      .eq('account_id', accountId)
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('List dependents error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    const dependents = rowsToCamel(data || [])
 
     return NextResponse.json({ dependents })
   } catch (error) {
@@ -37,16 +46,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = dependentCreateSchema.parse(body)
 
-    const dependent = await db.dependent.create({
-      data: {
-        name: parsed.name,
-        relationship: parsed.relationship,
-        economicWeight: parsed.economicWeight,
-        birthDate: parsed.birthDate ? new Date(parsed.birthDate) : null,
-        notes: parsed.notes,
-        accountId: parsed.accountId,
-      },
-    })
+    const insertData: Record<string, unknown> = {
+      name: parsed.name,
+      relationship: parsed.relationship,
+      economic_weight: parsed.economicWeight,
+      birth_date: parsed.birthDate || null,
+      notes: parsed.notes || null,
+      account_id: parsed.accountId,
+    }
+
+    const { data, error } = await supabase
+      .from('dependents')
+      .insert(insertData)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Create dependent error:', error)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    const dependent = keysToCamel(data)
 
     return NextResponse.json({ dependent }, { status: 201 })
   } catch (error) {

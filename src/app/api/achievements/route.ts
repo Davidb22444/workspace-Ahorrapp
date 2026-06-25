@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { rowsToCamel, sumField } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
 interface Achievement {
@@ -31,118 +32,91 @@ export async function GET(request: NextRequest) {
 
     // Run all independent queries in parallel
     const [
-      incomeCount,
-      firstIncome,
-      expenseCount,
-      firstExpense,
-      savingsAggregate,
-      activeDebts,
-      totalTransactions,
-      savingsGoalCount,
-      firstSavingsGoal,
-      recurringExpenseCount,
-      incomeSources,
-      currentMonthUnexpected,
-      budgetPeriods,
+      incomeRes,
+      firstIncomeRes,
+      expenseRes,
+      firstExpenseRes,
+      savingsGoalsRes,
+      activeDebtsRes,
+      savingsGoalCountRes,
+      firstSavingsGoalRes,
+      recurringExpenseRes,
+      currentMonthUnexpectedRes,
+      budgetPeriodsRes,
     ] = await Promise.all([
-      // 1. first-income: any income records exist
-      db.income.count({ where: { accountId } }),
+      // 1. first-income: count income records
+      supabase.from('incomes').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
 
-      db.income.findFirst({
-        where: { accountId },
-        orderBy: { createdAt: 'asc' },
-        select: { createdAt: true },
-      }),
+      // First income by created_at
+      supabase.from('incomes').select('created_at').eq('account_id', accountId).order('created_at', { ascending: true }).limit(1),
 
-      // 2. first-expense: any expense records exist
-      db.expense.count({ where: { accountId } }),
+      // 2. first-expense: count expense records
+      supabase.from('expenses').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
 
-      db.expense.findFirst({
-        where: { accountId },
-        orderBy: { createdAt: 'asc' },
-        select: { createdAt: true },
-      }),
+      // First expense by created_at
+      supabase.from('expenses').select('created_at').eq('account_id', accountId).order('created_at', { ascending: true }).limit(1),
 
       // 3 & 4. savings-1k, savings-10k: total saved across all goals
-      db.savingsGoal.aggregate({
-        _sum: { savedAmount: true },
-        where: { accountId },
-      }),
+      supabase.from('savings_goals').select('saved_amount').eq('account_id', accountId),
 
       // 5. debt-free: any active (pending/partial) debts
-      db.debt.count({
-        where: { accountId, status: { in: ['pending', 'partial'] } },
-      }),
+      supabase.from('debts').select('id', { count: 'exact', head: true }).eq('account_id', accountId).in('status', ['pending', 'partial', 'active']),
 
-      // 7. track-100: count of all Income + Expense + Unexpected
-      Promise.all([
-        db.income.count({ where: { accountId } }),
-        db.expense.count({ where: { accountId } }),
-        db.unexpected.count({ where: { accountId } }),
-      ]),
+      // 9. first-savings-goal: count savings goals
+      supabase.from('savings_goals').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
 
-      // 9. first-savings-goal: any savings goal exists
-      db.savingsGoal.count({ where: { accountId } }),
+      // First savings goal by created_at
+      supabase.from('savings_goals').select('created_at').eq('account_id', accountId).order('created_at', { ascending: true }).limit(1),
 
-      db.savingsGoal.findFirst({
-        where: { accountId },
-        orderBy: { createdAt: 'asc' },
-        select: { createdAt: true },
-      }),
-
-      // 10. recurring-tracker: count of expenses with isRecurring=true
-      db.expense.count({
-        where: { accountId, isRecurring: true },
-      }),
-
-      // 11. multi-income: distinct income sources
-      db.income.groupBy({
-        by: ['source'],
-        where: { accountId },
-      }),
+      // 10. recurring-tracker: count of expenses with is_recurring=true
+      supabase.from('expenses').select('id', { count: 'exact', head: true }).eq('account_id', accountId).eq('is_recurring', true),
 
       // 12. no-unexpected: unexpected expenses in current month
-      db.unexpected.count({
-        where: {
-          accountId,
-          date: { gte: currentMonthStart, lte: currentMonthEnd },
-        },
-      }),
+      supabase.from('unexpecteds').select('id', { count: 'exact', head: true }).eq('account_id', accountId).gte('date', currentMonthStart.toISOString()).lte('date', currentMonthEnd.toISOString()),
 
       // 6. budget-master: last 3 budget periods
-      db.budgetPeriod.findMany({
-        where: { accountId },
-        orderBy: { startDate: 'desc' },
-        take: 3,
-        select: {
-          plannedNeeds: true,
-          plannedWants: true,
-          plannedSavings: true,
-          actualNeeds: true,
-          actualWants: true,
-          actualSavings: true,
-        },
-      }),
+      supabase.from('budget_periods').select('planned_needs, planned_wants, planned_savings, actual_needs, actual_wants, actual_savings').eq('account_id', accountId).order('start_date', { ascending: false }).limit(3),
     ])
 
-    const totalSaved = savingsAggregate._sum.savedAmount ?? 0
-    const transactionCount = (totalTransactions as number[]).reduce((a, b) => a + b, 0)
-    const distinctIncomeSources = (incomeSources as { source: string }[]).length
+    // 7. track-100: count of all Income + Expense + Unexpected
+    const [incCount, expCount, unexpCount] = await Promise.all([
+      supabase.from('incomes').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
+      supabase.from('expenses').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
+      supabase.from('unexpecteds').select('id', { count: 'exact', head: true }).eq('account_id', accountId),
+    ])
+
+    // 11. multi-income: distinct income sources (need actual data)
+    const { data: incomeSourceRows } = await supabase
+      .from('incomes')
+      .select('source')
+      .eq('account_id', accountId)
+
+    const incomeCount = incomeRes.count || 0
+    const expenseCount = expenseRes.count || 0
+    const totalSaved = sumField(savingsGoalsRes.data || [], 'saved_amount')
+    const activeDebts = activeDebtsRes.count || 0
+    const savingsGoalCount = savingsGoalCountRes.count || 0
+    const recurringExpenseCount = recurringExpenseRes.count || 0
+    const currentMonthUnexpected = currentMonthUnexpectedRes.count || 0
+    const transactionCount = (incCount.count || 0) + (expCount.count || 0) + (unexpCount.count || 0)
+    const distinctIncomeSources = new Set((incomeSourceRows || []).map((r: any) => r.source)).size
+    const firstIncome = firstIncomeRes.data?.[0] || null
+    const firstExpense = firstExpenseRes.data?.[0] || null
+    const firstSavingsGoal = firstSavingsGoalRes.data?.[0] || null
+    const budgetPeriods = rowsToCamel(budgetPeriodsRes.data || [])
 
     // 8. emergency-fund: check for savings goal with "emergency" in name
-    const emergencyGoals = await db.savingsGoal.findMany({
-      where: {
-        accountId,
-        name: { contains: 'emergency' },
-      },
-      select: { id: true, savedAmount: true },
-    })
+    const { data: emergencyGoals } = await supabase
+      .from('savings_goals')
+      .select('id, saved_amount')
+      .eq('account_id', accountId)
+      .ilike('name', '%emergency%')
 
     let emergencyProgress = 0
     let emergencyUnlocked = false
-    if (emergencyGoals.length > 0) {
+    if (emergencyGoals && emergencyGoals.length > 0) {
       const totalEmergencySaved = emergencyGoals.reduce(
-        (sum, g) => sum + g.savedAmount,
+        (sum, g) => sum + (g.saved_amount || 0),
         0
       )
       // Calculate average monthly expenses from last 6 months
@@ -151,11 +125,13 @@ export async function GET(request: NextRequest) {
         const monthDate = subMonths(now, i)
         const start = startOfMonth(monthDate)
         const end = endOfMonth(monthDate)
-        const monthExpenses = await db.expense.aggregate({
-          _sum: { amount: true },
-          where: { accountId, date: { gte: start, lte: end } },
-        })
-        totalMonthlyExpenses += monthExpenses._sum.amount ?? 0
+        const { data: monthExpenses } = await supabase
+          .from('expenses')
+          .select('amount')
+          .eq('account_id', accountId)
+          .gte('date', start.toISOString())
+          .lte('date', end.toISOString())
+        totalMonthlyExpenses += sumField(monthExpenses || [], 'amount')
       }
       const avgMonthlyExpenses = totalMonthlyExpenses / 6
       const target = 3 * avgMonthlyExpenses
@@ -177,7 +153,7 @@ export async function GET(request: NextRequest) {
         color: '#10b981',
         unlocked: incomeCount > 0,
         ...(incomeCount > 0 && firstIncome
-          ? { unlockedAt: firstIncome.createdAt.toISOString() }
+          ? { unlockedAt: new Date(firstIncome.created_at).toISOString() }
           : {}),
       },
 
@@ -190,7 +166,7 @@ export async function GET(request: NextRequest) {
         color: '#f43f5e',
         unlocked: expenseCount > 0,
         ...(expenseCount > 0 && firstExpense
-          ? { unlockedAt: firstExpense.createdAt.toISOString() }
+          ? { unlockedAt: new Date(firstExpense.created_at).toISOString() }
           : {}),
       },
 
@@ -203,8 +179,8 @@ export async function GET(request: NextRequest) {
         color: '#f59e0b',
         unlocked: totalSaved >= 1000,
         progress: Math.min(1, totalSaved / 1000),
-        ...(totalSaved >= 1000
-          ? { unlockedAt: firstSavingsGoal?.createdAt.toISOString() }
+        ...(totalSaved >= 1000 && firstSavingsGoal
+          ? { unlockedAt: new Date(firstSavingsGoal.created_at).toISOString() }
           : {}),
       },
 
@@ -239,7 +215,7 @@ export async function GET(request: NextRequest) {
         unlocked:
           budgetPeriods.length >= 3 &&
           budgetPeriods.every(
-            (p) =>
+            (p: any) =>
               p.actualNeeds <= p.plannedNeeds &&
               p.actualWants <= p.plannedWants &&
               p.actualSavings <= p.plannedSavings
@@ -277,7 +253,7 @@ export async function GET(request: NextRequest) {
         color: '#f97316',
         unlocked: savingsGoalCount > 0,
         ...(savingsGoalCount > 0 && firstSavingsGoal
-          ? { unlockedAt: firstSavingsGoal.createdAt.toISOString() }
+          ? { unlockedAt: new Date(firstSavingsGoal.created_at).toISOString() }
           : {}),
       },
 
@@ -301,7 +277,7 @@ export async function GET(request: NextRequest) {
         color: '#10b981',
         unlocked: distinctIncomeSources >= 3,
         ...(distinctIncomeSources >= 3 && firstIncome
-          ? { unlockedAt: firstIncome.createdAt.toISOString() }
+          ? { unlockedAt: new Date(firstIncome.created_at).toISOString() }
           : {}),
       },
 

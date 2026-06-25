@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
+import { toCamel } from '@/lib/supabase-helpers'
 import { z } from 'zod'
 
 const expenseCreateSchema = z.object({
@@ -23,32 +24,20 @@ export async function GET(request: NextRequest) {
     const dependentId = searchParams.get('dependentId')
     const isRecurring = searchParams.get('isRecurring')
 
-    if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
-    }
+    if (!accountId) return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
 
-    const where: Record<string, unknown> = { accountId }
+    let query = supabase.from('expenses').select('*').eq('account_id', accountId)
+    if (from) query = query.gte('date', from)
+    if (to) query = query.lte('date', to)
+    if (categoryId) query = query.eq('category_id', categoryId)
+    if (dependentId) query = query.eq('dependent_id', dependentId)
+    if (isRecurring !== null) query = query.eq('is_recurring', isRecurring === 'true')
 
-    if (from || to) {
-      where.date = {} as Record<string, unknown>
-      if (from) (where.date as Record<string, unknown>).gte = new Date(from)
-      if (to) (where.date as Record<string, unknown>).lte = new Date(to)
-    }
-    if (categoryId) where.categoryId = categoryId
-    if (dependentId) where.dependentId = dependentId
-    if (isRecurring !== null) where.isRecurring = isRecurring === 'true'
+    const { data, error } = await query.order('date', { ascending: false })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    const expenses = await db.expense.findMany({
-      where,
-      orderBy: { date: 'desc' },
-      include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
-        dependent: { select: { id: true, name: true, relationship: true } },
-      },
-    })
-
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0)
-
+    const expenses = (data || []).map(toCamel)
+    const total = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
     return NextResponse.json({ expenses, total: Number(total.toFixed(2)) })
   } catch (error) {
     console.error('List expenses error:', error)
@@ -61,36 +50,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = expenseCreateSchema.parse(body)
 
-    const expense = await db.expense.create({
-      data: {
-        amount: parsed.amount,
-        description: parsed.description,
-        date: parsed.date ? new Date(parsed.date) : new Date(),
-        categoryId: parsed.categoryId,
-        dependentId: parsed.dependentId,
-        isRecurring: parsed.isRecurring,
-        frequency: parsed.frequency,
-        accountId: parsed.accountId,
-      },
-      include: {
-        category: { select: { id: true, name: true, icon: true, color: true } },
-        dependent: { select: { id: true, name: true, relationship: true } },
-      },
+    const { data, error } = await supabase.from('expenses').insert({
+      amount: parsed.amount,
+      description: parsed.description,
+      date: parsed.date || new Date().toISOString(),
+      category_id: parsed.categoryId || null,
+      dependent_id: parsed.dependentId || null,
+      is_recurring: parsed.isRecurring,
+      frequency: parsed.frequency || null,
+      account_id: parsed.accountId,
+    }).select().single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    await supabase.from('movements').insert({
+      type: 'expense', amount: parsed.amount,
+      description: `Gasto: ${parsed.description}`,
+      date: parsed.date || new Date().toISOString(),
+      category_id: parsed.categoryId || null,
+      account_id: parsed.accountId,
     })
 
-    // Create movement record
-    await db.movement.create({
-      data: {
-        type: 'expense',
-        amount: expense.amount,
-        description: `Gasto: ${expense.description}`,
-        date: expense.date,
-        categoryId: expense.categoryId,
-        accountId: expense.accountId,
-      },
-    })
-
-    return NextResponse.json({ expense }, { status: 201 })
+    return NextResponse.json({ expense: toCamel(data) }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
