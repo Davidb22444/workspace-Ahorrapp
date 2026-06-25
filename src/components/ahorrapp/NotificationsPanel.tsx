@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, Trash2 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, Trash2, PartyPopper } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
@@ -33,10 +31,30 @@ const mockNotifications: Notification[] = [
 ]
 
 const typeConfig = {
-  info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-  warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-  success: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-  error: { icon: XCircle, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-500/10' },
+  info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10', borderColor: 'border-l-blue-500' },
+  warning: { icon: AlertTriangle, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-500/10', borderColor: 'border-l-amber-500' },
+  success: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-500/10', borderColor: 'border-l-emerald-500' },
+  error: { icon: XCircle, color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-500/10', borderColor: 'border-l-rose-500' },
+}
+
+function timeAgo(dateStr: string): string {
+  const now = new Date()
+  const date = new Date(dateStr)
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  const weeks = Math.floor(days / 7)
+  if (weeks < 4) return `${weeks}w ago`
+  const months = Math.floor(days / 30)
+  if (months < 12) return `${months}mo ago`
+  const years = Math.floor(days / 365)
+  return `${years}y ago`
 }
 
 export default function NotificationsPanel() {
@@ -90,12 +108,13 @@ export default function NotificationsPanel() {
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length
+  const allRead = notifications.length > 0 && unreadCount === 0
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Notificaciones</h1>
+          <h1 className="text-2xl font-bold text-gradient">Notificaciones</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
             {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
           </p>
@@ -114,11 +133,70 @@ export default function NotificationsPanel() {
           ))}
         </div>
       ) : notifications.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-lg font-medium">No notifications</p>
           <p className="text-sm mt-1">You&apos;re all caught up!</p>
         </div>
+      ) : allRead ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="empty-state rounded-xl text-center py-16 px-6">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+              <PartyPopper className="w-8 h-8 text-emerald-500" />
+            </div>
+            <p className="text-lg font-semibold text-foreground">All caught up! 🎉</p>
+            <p className="text-sm text-muted-foreground mt-1">You have no unread notifications</p>
+          </div>
+
+          <div className="space-y-2 max-h-[calc(100vh-20rem)] overflow-y-auto pr-1 mt-4">
+            {notifications.map((notif, idx) => {
+              const config = typeConfig[notif.type]
+              const Icon = config.icon
+
+              return (
+                <motion.div
+                  key={notif.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.03 }}
+                  className="group"
+                >
+                  <Card className="card-hover cursor-pointer transition-all border-l-4 opacity-60 hover:opacity-100 hover:translate-x-1"
+                    style={{ borderLeftColor: notif.type === 'success' ? '#10b981' : notif.type === 'warning' ? '#f59e0b' : notif.type === 'error' ? '#f43f5e' : '#3b82f6' }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex gap-3">
+                        <div className={cn('p-2 rounded-lg shrink-0', config.bg)}>
+                          <Icon className={cn('w-4 h-4', config.color)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-sm font-medium text-muted-foreground">{notif.title}</h3>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-[11px] text-muted-foreground">{timeAgo(notif.createdAt)}</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
+                                onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id) }}
+                              >
+                                <Trash2 className="w-3 h-3 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-sm mt-0.5 text-muted-foreground/70 truncate">{notif.message}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })}
+          </div>
+        </motion.div>
       ) : (
         <div className="space-y-2 max-h-[calc(100vh-12rem)] overflow-y-auto pr-1">
           {notifications.map((notif, idx) => {
@@ -131,11 +209,13 @@ export default function NotificationsPanel() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03 }}
+                className="group"
               >
                 <Card
                   className={cn(
-                    'card-hover cursor-pointer transition-all',
-                    !notif.read && 'border-primary/30 bg-primary/[0.02] dark:bg-primary/[0.05]'
+                    'card-hover cursor-pointer transition-all border-l-4 hover:translate-x-1',
+                    config.borderColor,
+                    !notif.read && 'bg-primary/[0.02] dark:bg-primary/[0.05]'
                   )}
                   onClick={() => !notif.read && markAsRead(notif.id)}
                 >
@@ -156,7 +236,7 @@ export default function NotificationsPanel() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <span className="text-[11px] text-muted-foreground">
-                              {format(new Date(notif.createdAt), 'MMM d, h:mm a')}
+                              {timeAgo(notif.createdAt)}
                             </span>
                             <Button
                               variant="ghost"

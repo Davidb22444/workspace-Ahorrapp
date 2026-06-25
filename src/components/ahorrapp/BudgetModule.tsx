@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, PieChart, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react'
+import { Plus, PieChart, ArrowUpRight, ArrowDownRight, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { motion } from 'framer-motion'
 import {
   PieChart as RCPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
@@ -57,11 +58,27 @@ const mockBudget: BudgetData = {
   ],
 }
 
+// Mock previous month for comparison
+const mockPrevMonth = {
+  totalPlanned: 5000,
+  totalActual: 5100,
+  needs: { actual: 2650 },
+  wants: { actual: 1550 },
+  savings: { actual: 900 },
+}
+
+const SPLIT_CONFIG = [
+  { key: 'needs' as const, label: 'Needs', sublabel: 'Essentials', color: '#10b981', bgColor: 'bg-emerald-500' },
+  { key: 'wants' as const, label: 'Wants', sublabel: 'Lifestyle', color: '#f59e0b', bgColor: 'bg-amber-500' },
+  { key: 'savings' as const, label: 'Savings', sublabel: 'Future', color: '#06b6d4', bgColor: 'bg-cyan-500' },
+]
+
 export default function BudgetModule() {
   const [budget, setBudget] = useState<BudgetData | null>(null)
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [formPcts, setFormPcts] = useState({ needs: 50, wants: 30, savings: 20 })
+  const [mounted, setMounted] = useState(false)
   const { user } = useAppStore()
 
   useEffect(() => {
@@ -82,6 +99,11 @@ export default function BudgetModule() {
     return () => { cancelled = true }
   }, [user?.id])
 
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   const handleCreate = async () => {
     const total = formPcts.needs + formPcts.wants + formPcts.savings
     if (total !== 100) { toast.error('Percentages must add up to 100%'); return }
@@ -97,7 +119,6 @@ export default function BudgetModule() {
         setBudget(data.budget || data)
         toast.success('Budget created')
         setCreateDialogOpen(false)
-        fetchBudget()
         return
       }
     } catch { /* fallback */ }
@@ -133,10 +154,10 @@ export default function BudgetModule() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Presupuesto</h1>
+          <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Set up your 50/30/20 budget rule</p>
         </div>
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <PieChart className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-lg font-medium">No budget set up</p>
           <p className="text-sm mt-1 mb-6">Create your first budget using the 50/30/20 rule</p>
@@ -185,8 +206,8 @@ export default function BudgetModule() {
 
   const pieData = [
     { name: 'Needs', value: budget.needs.planned, color: '#10b981' },
-    { name: 'Wants', value: budget.wants.planned, color: '#6366f1' },
-    { name: 'Savings', value: budget.savings.planned, color: '#f59e0b' },
+    { name: 'Wants', value: budget.wants.planned, color: '#f59e0b' },
+    { name: 'Savings', value: budget.savings.planned, color: '#06b6d4' },
   ]
 
   const comparisonData = [
@@ -198,22 +219,126 @@ export default function BudgetModule() {
   const totalPlanned = budget.needs.planned + budget.wants.planned + budget.savings.planned
   const totalActual = budget.needs.actual + budget.wants.actual + budget.savings.actual
   const surplus = totalPlanned - totalActual
+  const budgetUsagePct = totalPlanned > 0 ? Math.round((totalActual / totalPlanned) * 100) : 0
+
+  // Budget health logic
+  const budgetHealth = budgetUsagePct <= 80
+    ? { status: 'good' as const, icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', label: 'On Track', desc: 'Spending is well within budget limits' }
+    : budgetUsagePct <= 100
+      ? { status: 'warning' as const, icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', label: 'Caution', desc: `${budgetUsagePct}% of budget used — watch your spending` }
+      : { status: 'danger' as const, icon: AlertCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', label: 'Over Budget', desc: `You've exceeded your budget by ${formatCurrency(Math.abs(surplus))}` }
+
+  // Period comparison
+  const prevTotalActual = mockPrevMonth.totalActual
+  const currentTotalActual = totalActual
+  const monthChangePct = prevTotalActual > 0 ? Math.round(((currentTotalActual - prevTotalActual) / prevTotalActual) * 100) : 0
+  const isImproved = currentTotalActual <= prevTotalActual
+
+  const HealthIcon = budgetHealth.icon
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Presupuesto</h1>
+          <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
           <p className="text-muted-foreground text-sm mt-0.5">50/30/20 budget rule</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchBudget}>
+          <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
             <RefreshCw className="w-4 h-4 mr-2" /> Refresh
           </Button>
           <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
             <Plus className="w-4 h-4 mr-2" /> New Budget
           </Button>
         </div>
+      </div>
+
+      {/* 50/30/20 Split Bars */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold">Budget Split</CardTitle>
+          <CardDescription>Your income allocation</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {SPLIT_CONFIG.map((item, idx) => {
+            const data = budget[item.key]
+            const pct = budget[`${item.key}Pct` as keyof BudgetData] as number
+            const usagePct = data.planned > 0 ? Math.round((data.actual / data.planned) * 100) : 0
+            const isOver = usagePct > 100
+
+            return (
+              <div key={item.key} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={cn('w-3 h-3 rounded-sm', item.bgColor)} />
+                    <span className="text-sm font-medium text-foreground">{item.label}</span>
+                    <span className="text-xs text-muted-foreground">({pct}%)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="tabular-nums">{formatCurrency(data.actual)}</span>
+                    <span>of</span>
+                    <span className="tabular-nums font-medium text-foreground">{formatCurrency(data.planned)}</span>
+                  </div>
+                </div>
+                <div className="relative h-8 bg-muted rounded-lg overflow-hidden">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 rounded-lg"
+                    style={{ background: item.color }}
+                    initial={{ width: '0%' }}
+                    animate={{ width: `${mounted ? Math.min(usagePct, 100) : 0}%` }}
+                    transition={{ duration: 0.8, delay: idx * 0.15, ease: 'easeOut' }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className={cn('text-xs font-semibold tabular-nums', isOver ? 'text-rose-600 dark:text-rose-400' : 'text-foreground')}>
+                      {usagePct}%
+                    </span>
+                  </div>
+                </div>
+                {isOver && (
+                  <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Over by {formatCurrency(data.actual - data.planned)}
+                  </p>
+                )}
+              </div>
+            )
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Budget Health & Period Comparison */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Budget Health */}
+        <Card className={cn('border-2', budgetHealth.status === 'good' ? 'border-emerald-200 dark:border-emerald-800' : budgetHealth.status === 'warning' ? 'border-amber-200 dark:border-amber-800' : 'border-rose-200 dark:border-rose-800')}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={cn('p-2.5 rounded-xl', budgetHealth.bg)}>
+                <HealthIcon className={cn('w-5 h-5', budgetHealth.color)} />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget Health</p>
+                <p className={cn('text-lg font-bold', budgetHealth.color)}>{budgetHealth.label}</p>
+                <p className="text-xs text-muted-foreground">{budgetHealth.desc}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Period Comparison */}
+        <Card className="stat-card card-hover">
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">This Month vs Last Month</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{formatCurrency(currentTotalActual)}</p>
+                <p className="text-xs text-muted-foreground">vs {formatCurrency(prevTotalActual)} last month</p>
+              </div>
+              <div className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold', isImproved ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400')}>
+                {isImproved ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                {Math.abs(monthChangePct)}%
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Surplus/Deficit Card */}

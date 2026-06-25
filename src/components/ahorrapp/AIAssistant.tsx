@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Send, Loader2, Sparkles, User, Lightbulb } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Bot, Send, Sparkles, User, Lightbulb, Wallet } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
+import { motion } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 
 interface Message {
@@ -89,33 +90,32 @@ Try increasing savings to **25%** over the next 3 months by:
 - Finding a side income source`,
 }
 
+function timeAgo(date: Date): string {
+  const now = new Date()
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (seconds < 60) return 'Just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
 export default function AIAssistant() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: `Hello! 👋 I'm your AI financial assistant. I can help you with:
-
-- **Savings strategies** and goal planning
-- **Expense analysis** and optimization
-- **Budget recommendations** based on the 50/30/20 rule
-- **Debt payoff** strategies
-- **General financial** advice
-
-Click a quick question below or type your own!`,
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { user } = useAppStore()
+  const hasUserMessages = messages.some((m) => m.role === 'user')
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages, loading])
 
   const sendMessage = async (content: string) => {
     if (!content.trim()) return
@@ -188,65 +188,136 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex-shrink-0 mb-4">
-        <h1 className="text-2xl font-bold text-foreground">Asistente IA</h1>
+        <h1 className="text-2xl font-bold text-gradient">Asistente IA</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Your AI-powered financial advisor</p>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-          {/* Messages */}
+          {/* Messages or Empty State */}
           <ScrollArea className="flex-1 p-4" ref={scrollRef as any}>
-            <div className="space-y-4 max-w-3xl mx-auto">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={cn('flex gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+            {!hasUserMessages && !loading ? (
+              /* Welcome Empty State */
+              <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mb-6"
                 >
-                  {msg.role === 'assistant' && (
+                  <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
+                    <Wallet className="w-10 h-10 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold text-foreground mb-1">Ask me anything about your finances</h2>
+                  <p className="text-sm text-muted-foreground">
+                    I can help with savings strategies, expense analysis, budget planning, and more.
+                  </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="w-full"
+                >
+                  <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center justify-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Try a quick question
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {QUICK_QUESTIONS.map((q) => (
+                      <button
+                        key={q.label}
+                        onClick={() => sendMessage(q.label)}
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-muted hover:bg-accent text-sm text-foreground transition-colors border border-border hover:border-primary/30 text-left"
+                      >
+                        <span className="text-lg">{q.icon}</span>
+                        <span className="font-medium">{q.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            ) : (
+              /* Chat Messages */
+              <div className="space-y-4 max-w-3xl mx-auto">
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn('flex gap-3', msg.role === 'user' ? 'justify-end' : 'justify-start')}
+                  >
+                    {msg.role === 'assistant' && (
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mt-1">
+                        <Bot className="w-4 h-4 text-primary" />
+                      </div>
+                    )}
+                    <div className="max-w-[80%]">
+                      <div className={cn(
+                        'px-4 py-3',
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm'
+                          : 'bg-muted rounded-2xl rounded-tl-sm'
+                      )}>
+                        {msg.role === 'assistant' ? (
+                          <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2 [&_table]:text-xs [&_th]:p-1.5 [&_td]:p-1.5 [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:mt-2 [&_h3]:mb-1">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        )}
+                      </div>
+                      <p className={cn(
+                        'text-[10px] mt-1',
+                        msg.role === 'user' ? 'text-right' : 'text-left'
+                      )}>
+                        <span className="text-muted-foreground">{timeAgo(msg.timestamp)}</span>
+                      </p>
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="shrink-0 w-8 h-8 rounded-lg bg-primary flex items-center justify-center mt-1">
+                        <User className="w-4 h-4 text-primary-foreground" />
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+
+                {/* Typing Indicator */}
+                {loading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex gap-3 justify-start"
+                  >
                     <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mt-1">
                       <Bot className="w-4 h-4 text-primary" />
                     </div>
-                  )}
-                  <div className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-3',
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-tr-sm'
-                      : 'bg-muted rounded-tl-sm'
-                  )}>
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:mb-2 [&_ol]:mb-2 [&_table]:text-xs [&_th]:p-1.5 [&_td]:p-1.5 [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:mt-2 [&_h3]:mb-1">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
+                      <div className="flex items-center gap-1.5 h-5">
+                        <motion.span
+                          className="w-2 h-2 rounded-full bg-primary/60"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.span
+                          className="w-2 h-2 rounded-full bg-primary/60"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
+                        />
+                        <motion.span
+                          className="w-2 h-2 rounded-full bg-primary/60"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
+                        />
                       </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    )}
-                  </div>
-                  {msg.role === 'user' && (
-                    <div className="shrink-0 w-8 h-8 rounded-lg bg-primary flex items-center justify-center mt-1">
-                      <User className="w-4 h-4 text-primary-foreground" />
                     </div>
-                  )}
-                </div>
-              ))}
-
-              {loading && (
-                <div className="flex gap-3 justify-start">
-                  <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mt-1">
-                    <Bot className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      <span className="text-sm text-muted-foreground">Thinking...</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </ScrollArea>
 
-          {/* Quick Questions (show when no user messages) */}
-          {messages.length <= 1 && !loading && (
+          {/* Quick Questions (show after first message) */}
+          {hasUserMessages && !loading && (
             <div className="px-4 pb-3 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                 <Lightbulb className="w-3 h-3" /> Quick questions
@@ -282,7 +353,7 @@ Would you like me to analyze a specific aspect of your finances? Try one of the 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
                 disabled={loading || !input.trim()}
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <Send className="w-4 h-4" />
               </Button>
             </form>
           </div>

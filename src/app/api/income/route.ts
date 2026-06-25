@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const total = incomes.reduce((sum, i) => sum + i.amount, 0)
 
-    return NextResponse.json({ incomes, total: Number(total.toFixed(2)) })
+    return NextResponse.json(incomes)
   } catch (error) {
     console.error('List income error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

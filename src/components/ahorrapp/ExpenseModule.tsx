@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, ShoppingCart, Trash2, Edit2, Filter, ArrowDownRight, Search, AlertTriangle } from 'lucide-react'
+import { Plus, ShoppingCart, Trash2, Edit2, Filter, ArrowDownRight, Search, AlertTriangle, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -217,9 +217,28 @@ export default function ExpenseModule() {
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
         </div>
       ) : items.length === 0 ? (
-        <div className="p-12 text-center text-muted-foreground">
-          {isUnexp ? <AlertTriangle className="w-10 h-10 mx-auto mb-3 opacity-30" /> : <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />}
-          <p>No {isUnexp ? 'unexpected expenses' : 'expenses'} found</p>
+        <div className="relative p-16 text-center overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-8 right-1/4 w-32 h-32 rounded-full bg-rose-100/50 dark:bg-rose-500/5" />
+            <div className="absolute bottom-8 left-1/4 w-24 h-24 rounded-full bg-rose-100/30 dark:bg-rose-500/5" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-rose-100/20 dark:bg-rose-500/3" />
+          </div>
+          <div className="relative z-10">
+            <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
+              {isUnexp
+                ? <AlertTriangle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
+                : <ShoppingCart className="w-8 h-8 text-rose-500 dark:text-rose-400" />}
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No {isUnexp ? 'unexpected expenses' : 'expenses'} yet</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+              {isUnexp
+                ? 'Good news! No unexpected expenses recorded. Keep it that way.'
+                : 'Start tracking your expenses to understand where your money goes.'}
+            </p>
+            <Button onClick={() => openAdd(isUnexp)} className={isUnexp ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-rose-600 hover:bg-rose-700 text-white'}>
+              <Plus className="w-4 h-4 mr-2" /> Log {isUnexp ? 'Unexpected Expense' : 'Your First Expense'}
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -288,7 +307,15 @@ export default function ExpenseModule() {
           <h1 className="text-2xl font-bold text-foreground">Gastos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track and manage your expenses</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => {
+            const link = document.createElement('a')
+            link.href = `/api/export?accountId=${user?.id}&type=expense`
+            link.download = `ahorrapp-expenses-${format(new Date(), 'yyyy-MM-dd')}.csv`
+            link.click()
+          }}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
           <Button variant="outline" onClick={() => setActiveModule('unexpected')}>
             <AlertTriangle className="w-4 h-4 mr-2" /> Manage Imprevistos
           </Button>

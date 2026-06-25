@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, TrendingUp, Trash2, Edit2, Filter, ArrowUpRight, Search } from 'lucide-react'
+import { Plus, TrendingUp, Trash2, Edit2, Filter, ArrowUpRight, Search, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -161,9 +161,19 @@ export default function IncomeModule() {
           <h1 className="text-2xl font-bold text-foreground">Ingresos</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Manage your income sources</p>
         </div>
-        <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Add Income
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => {
+            const link = document.createElement('a')
+            link.href = `/api/export?accountId=${user?.id}&type=income`
+            link.download = `ahorrapp-income-${format(new Date(), 'yyyy-MM-dd')}.csv`
+            link.click()
+          }}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
+          <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Plus className="w-4 h-4 mr-2" /> Add Income
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -209,9 +219,24 @@ export default function IncomeModule() {
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="p-12 text-center text-muted-foreground">
-              <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>No incomes found</p>
+            <div className="relative p-16 text-center overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-8 left-1/4 w-32 h-32 rounded-full bg-emerald-100/50 dark:bg-emerald-500/5" />
+                <div className="absolute bottom-8 right-1/4 w-24 h-24 rounded-full bg-emerald-100/30 dark:bg-emerald-500/5" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-emerald-100/20 dark:bg-emerald-500/3" />
+              </div>
+              <div className="relative z-10">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-1">No incomes yet</h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+                  Start tracking your income sources to get a clear picture of your earnings.
+                </p>
+                <Button onClick={openAdd} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Plus className="w-4 h-4 mr-2" /> Add Your First Income
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">

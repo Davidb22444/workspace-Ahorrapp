@@ -43,6 +43,12 @@ interface AppState {
   // Notifications
   unreadCount: number
   setUnreadCount: (count: number) => void
+
+  // Quick Add Transaction
+  showQuickAdd: boolean
+  setShowQuickAdd: (open: boolean) => void
+  quickAddType: 'income' | 'expense'
+  setQuickAddType: (type: 'income' | 'expense') => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -75,4 +81,10 @@ export const useAppStore = create<AppState>((set) => ({
   // Notifications
   unreadCount: 0,
   setUnreadCount: (count) => set({ unreadCount: count }),
+
+  // Quick Add Transaction
+  showQuickAdd: false,
+  setShowQuickAdd: (open) => set({ showQuickAdd: open }),
+  quickAddType: 'expense' as 'income' | 'expense',
+  setQuickAddType: (type) => set({ quickAddType: type }),
 }))

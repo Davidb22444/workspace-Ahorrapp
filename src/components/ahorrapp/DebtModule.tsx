@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, CreditCard, Trash2, DollarSign, Calendar, Percent, ChevronDown, ChevronUp, History, AlertCircle } from 'lucide-react'
+import { Plus, CreditCard, Trash2, DollarSign, Calendar, Percent, ChevronDown, ChevronUp, History, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,6 +52,7 @@ const mockDebts: Debt[] = [
     payments: [
       { id: 'p1', amount: 475, date: '2025-06-01', note: 'Monthly payment' },
       { id: 'p2', amount: 475, date: '2025-05-01', note: 'Monthly payment' },
+      { id: 'p9', amount: 475, date: '2025-04-01', note: 'Monthly payment' },
     ],
   },
   {
@@ -61,7 +62,7 @@ const mockDebts: Debt[] = [
     ],
   },
   {
-    id: '3', name: 'Credit Card', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'pending',
+    id: '3', name: 'Credit Card', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'overdue',
     payments: [
       { id: 'p4', amount: 500, date: '2025-06-05', note: 'Monthly payment' },
       { id: 'p5', amount: 500, date: '2025-05-05', note: 'Monthly payment' },
@@ -77,6 +78,32 @@ const mockDebts: Debt[] = [
 ]
 
 const DEBT_TYPES = ['installment', 'revolving', 'mortgage', 'student', 'other']
+
+function getStatusInfo(status: string) {
+  switch (status) {
+    case 'paid':
+      return {
+        dotColor: 'bg-emerald-500',
+        badgeClass: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+        label: 'Active',
+        dotGlow: 'shadow-emerald-500/40',
+      }
+    case 'overdue':
+      return {
+        dotColor: 'bg-rose-500',
+        badgeClass: 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+        label: 'Overdue',
+        dotGlow: 'shadow-rose-500/40',
+      }
+    default:
+      return {
+        dotColor: 'bg-amber-500',
+        badgeClass: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+        label: 'In Progress',
+        dotGlow: 'shadow-amber-500/40',
+      }
+  }
+}
 
 export default function DebtModule() {
   const [debts, setDebts] = useState<Debt[]>([])
@@ -178,23 +205,27 @@ export default function DebtModule() {
     toast.success('Debt deleted')
   }
 
-  const totalDebt = debts.reduce((sum, d) => sum + (d.total - d.paid), 0)
+  const totalOwed = debts.reduce((sum, d) => sum + d.total, 0)
   const totalPaid = debts.reduce((sum, d) => sum + d.paid, 0)
-  const activeDebts = debts.filter((d) => d.status !== 'paid')
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-      case 'overdue': return 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-      default: return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-    }
-  }
+  // Calculate last month's payments
+  const lastMonth = new Date()
+  lastMonth.setMonth(lastMonth.getMonth() - 1)
+  const monthlyPayments = debts.reduce((sum, d) => {
+    const lastMonthPayments = (d.payments || []).filter((p) => {
+      const pDate = new Date(p.date)
+      return pDate.getMonth() === lastMonth.getMonth() && pDate.getFullYear() === lastMonth.getFullYear()
+    })
+    return sum + lastMonthPayments.reduce((s, p) => s + p.amount, 0)
+  }, 0)
+
+  const activeDebts = debts.filter((d) => d.status !== 'paid')
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Deudas</h1>
+          <h1 className="text-2xl font-bold text-gradient">Deudas</h1>
           <p className="text-muted-foreground text-sm mt-0.5">Track and manage your debts</p>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -202,20 +233,20 @@ export default function DebtModule() {
         </Button>
       </div>
 
-      {/* Summary */}
+      {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="card-hover">
+        <Card className="stat-card card-hover">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10">
               <CreditCard className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Remaining</p>
-              <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{formatCurrency(totalDebt)}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Owed</p>
+              <p className="text-2xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{formatCurrency(totalOwed)}</p>
             </div>
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="stat-card card-hover">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
               <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
@@ -226,14 +257,14 @@ export default function DebtModule() {
             </div>
           </CardContent>
         </Card>
-        <Card className="card-hover">
+        <Card className="stat-card card-hover">
           <CardContent className="p-4 flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10">
-              <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+            <div className="p-3 rounded-xl bg-cyan-50 dark:bg-cyan-500/10">
+              <Clock className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active Debts</p>
-              <p className="text-2xl font-bold tabular-nums text-foreground">{activeDebts.length}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Payments</p>
+              <p className="text-2xl font-bold tabular-nums text-cyan-600 dark:text-cyan-400">{formatCurrency(monthlyPayments)}</p>
             </div>
           </CardContent>
         </Card>
@@ -245,7 +276,7 @@ export default function DebtModule() {
           {[1, 2, 3].map((i) => <Card key={i}><CardContent className="p-6"><Skeleton className="h-32 w-full" /></CardContent></Card>)}
         </div>
       ) : debts.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <CreditCard className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-lg font-medium">No debts tracked</p>
           <p className="text-sm mt-1">Add your first debt to start tracking</p>
@@ -255,33 +286,49 @@ export default function DebtModule() {
           {debts.map((debt, idx) => {
             const pct = Math.min(100, Math.round((debt.paid / debt.total) * 100))
             const isExpanded = expandedId === debt.id
+            const remaining = debt.total - debt.paid
+            const statusInfo = getStatusInfo(debt.status)
 
             return (
               <motion.div key={debt.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                <Card className="card-hover">
+                <Card className="card-hover overflow-hidden">
                   <CardContent className="p-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10">
-                          <CreditCard className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        <div className="relative">
+                          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10">
+                            <CreditCard className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full ${statusInfo.dotColor} shadow-lg ${statusInfo.dotGlow}`} />
                         </div>
                         <div>
                           <h3 className="font-semibold text-foreground">{debt.name}</h3>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="outline" className={statusColor(debt.status)}>{debt.status}</Badge>
+                            <Badge variant="outline" className={statusInfo.badgeClass}>
+                              {statusInfo.label}
+                            </Badge>
                             <span className="text-xs text-muted-foreground capitalize">{debt.type}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Percent className="w-3 h-3" /> {debt.interestRate}%
-                        </span>
-                        {debt.nextPayment && debt.status !== 'paid' && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Calendar className="w-3 h-3" /> Next: {format(new Date(debt.nextPayment), 'MMM d')}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          {debt.status !== 'paid' && (
+                            <p className="text-lg font-bold tabular-nums text-foreground">
+                              {formatCurrency(remaining)}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Percent className="w-3 h-3" /> {debt.interestRate}%
+                            </span>
+                            {debt.nextPayment && debt.status !== 'paid' && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" /> {format(new Date(debt.nextPayment), 'MMM d')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                         <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setExpandedId(isExpanded ? null : debt.id)}>
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
@@ -290,7 +337,15 @@ export default function DebtModule() {
 
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Paid: {formatCurrency(debt.paid)} of {formatCurrency(debt.total)}</span>
+                        <span className="text-muted-foreground">
+                          {debt.status === 'paid' ? (
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Fully Paid
+                            </span>
+                          ) : (
+                            <>Paid: {formatCurrency(debt.paid)} of {formatCurrency(debt.total)}</>
+                          )}
+                        </span>
                         <span className="font-semibold tabular-nums">{pct}%</span>
                       </div>
                       <Progress value={pct} className="h-2.5" />
@@ -321,18 +376,36 @@ export default function DebtModule() {
                           {debt.payments && debt.payments.length > 0 && (
                             <div className="space-y-2">
                               <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                <History className="w-3 h-3" /> Payment History
+                                <History className="w-3 h-3" /> Payment Timeline
                               </p>
-                              <div className="max-h-40 overflow-y-auto space-y-1.5">
-                                {debt.payments.map((p) => (
-                                  <div key={p.id} className="flex items-center justify-between text-xs py-1.5 border-b border-border/50 last:border-0">
-                                    <div className="min-w-0">
-                                      <span className="text-emerald-600 dark:text-emerald-400 font-medium tabular-nums">{formatCurrency(p.amount)}</span>
-                                      {p.note && <span className="text-muted-foreground ml-1.5">- {p.note}</span>}
-                                    </div>
-                                    <span className="text-muted-foreground shrink-0">{format(new Date(p.date), 'MMM d, yyyy')}</span>
-                                  </div>
-                                ))}
+                              <div className="max-h-48 overflow-y-auto pl-4 relative">
+                                <div className="absolute left-[7px] top-2 bottom-2 w-px border-l-2 border-dashed border-border" />
+                                <div className="space-y-3">
+                                  {debt.payments.slice(0, 8).map((p, pIdx) => (
+                                    <motion.div
+                                      key={p.id}
+                                      initial={{ opacity: 0, x: -8 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      transition={{ delay: pIdx * 0.05 }}
+                                      className="relative flex items-start gap-3"
+                                    >
+                                      <div className="absolute -left-[13px] top-2 w-3 h-3 rounded-full border-2 border-background bg-emerald-500" />
+                                      <div className="flex-1 min-w-0 flex items-center justify-between">
+                                        <div className="min-w-0">
+                                          <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                            {formatCurrency(p.amount)}
+                                          </span>
+                                          {p.note && (
+                                            <span className="text-xs text-muted-foreground ml-1.5">- {p.note}</span>
+                                          )}
+                                        </div>
+                                        <span className="text-[11px] text-muted-foreground shrink-0">
+                                          {format(new Date(p.date), 'MMM d, yyyy')}
+                                        </span>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           )}

@@ -304,11 +304,45 @@
 }
 
 .sidebar-item.active {
-  background: rgba(16, 185, 129, 0.15);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+  border-right: 3px solid #10b981;
   color: #059669;
 }
 
 .dark .sidebar-item.active {
-  background: rgba(16, 185, 129, 0.2);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
   color: #10b981;
+}
+
+/* Gradient text utility */
+.text-gradient {
+  background: linear-gradient(135deg, #059669, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Stat card shimmer effect */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  transition: left 0.5s ease;
+}
+.stat-card:hover::before {
+  left: 150%;
+}
+
+/* Better empty state styling */
+.empty-state {
+  background: linear-gradient(135deg, var(--muted) 0%, transparent 100%);
+  border: 2px dashed var(--border);
 }
