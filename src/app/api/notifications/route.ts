@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { supabase } from '@/lib/supabase'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
@@ -8,23 +9,20 @@ const notificationCreateSchema = z.object({
   message: z.string().min(1),
   type: z.string().default('info'),
   link: z.string().optional(),
-  accountId: z.string().min(1),
 })
 
-const markAllReadSchema = z.object({
-  accountId: z.string().min(1),
-})
+const markAllReadSchema = z.object({})
 
 export async function GET(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
     const isRead = searchParams.get('isRead')
     const type = searchParams.get('type')
     const limit = searchParams.get('limit')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -72,24 +70,25 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const parsed = markAllReadSchema.parse(body)
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from('notifications')
-      .update({ is_read: true }, { count: 'exact' })
-      .eq('account_id', parsed.accountId)
+      .update({ is_read: true })
+      .eq('account_id', accountId)
       .eq('is_read', false)
+      .select()
 
     if (error) {
       console.error('Mark all read error:', error)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    return NextResponse.json({ updated: count || 0 })
+    return NextResponse.json({ updated: data?.length || 0 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Mark all read error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -98,6 +97,9 @@ export async function PUT(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const body = await request.json()
     const parsed = notificationCreateSchema.parse(body)
 
@@ -105,7 +107,7 @@ export async function POST(request: NextRequest) {
       title: parsed.title,
       message: parsed.message,
       type: parsed.type,
-      account_id: parsed.accountId,
+      account_id: accountId,
     }
     if (parsed.link) insertData.link = parsed.link
 
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ notification }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create notification error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -17,12 +17,14 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 const SOURCES = ['salary', 'bonus', 'rent', 'freelance', 'investment', 'other'] as const
 const FREQUENCIES = ['one-time', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const
@@ -55,22 +57,8 @@ interface Income {
   category?: string
 }
 
-const mockIncomes: Income[] = [
-  { id: '1', source: 'salary', amount: 5200, description: 'Salario Mensual - Corp Tecnológico', date: '2025-06-01', frequency: 'monthly', category: 'Empleo' },
-  { id: '2', source: 'freelance', amount: 800, description: 'Proyecto de rediseño web', date: '2025-06-05', frequency: 'one-time', category: 'Freelance' },
-  { id: '3', source: 'investment', amount: 150, description: 'Pago de dividendos - ETF', date: '2025-06-09', frequency: 'quarterly', category: 'Inversión' },
-  { id: '4', source: 'rent', amount: 1200, description: 'Ingreso por renta de apartamento', date: '2025-06-03', frequency: 'monthly', category: 'Pasivo' },
-  { id: '5', source: 'bonus', amount: 2000, description: 'Bono trimestral de rendimiento', date: '2025-05-30', frequency: 'one-time', category: 'Empleo' },
-  { id: '6', source: 'salary', amount: 5200, description: 'Salario Mensual - Corp Tecnológico', date: '2025-05-01', frequency: 'monthly', category: 'Empleo' },
-  { id: '7', source: 'freelance', amount: 350, description: 'Diseño de logo para startup', date: '2025-05-15', frequency: 'one-time', category: 'Freelance' },
-  { id: '8', source: 'other', amount: 100, description: 'Reembolso de efectivo', date: '2025-05-20', frequency: 'one-time', category: 'Otro' },
-]
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
 export default function IncomeModule() {
+  const formatCurrency = useFormatCurrency()
   const [incomes, setIncomes] = useState<Income[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -100,11 +88,11 @@ export default function IncomeModule() {
           return
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setIncomes(mockIncomes); setLoading(false) }
+      if (!cancelled) { setIncomes([]); setLoading(false) }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const resetForm = () => {
     setForm({ source: 'salary', amount: '', description: '', frequency: 'one-time', date: format(new Date(), 'yyyy-MM-dd'), category: '' })
@@ -142,15 +130,18 @@ export default function IncomeModule() {
         setDialogOpen(false)
         resetForm()
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback to local */ }
-    // Local fallback
+    } catch { /* network error - use local fallback */ }
+    // Local fallback (offline)
     if (editingId) {
       setIncomes((prev) => prev.map((i) => i.id === editingId ? { ...i, ...payload } : i))
-      toast.success('Ingreso actualizado')
+      toast.warning('Guardado localmente (sin conexión)')
     } else {
       setIncomes((prev) => [{ ...payload, id: Date.now().toString() }, ...prev])
-      toast.success('Ingreso agregado')
+      toast.warning('Guardado localmente (sin conexión)')
     }
     setDialogOpen(false)
     resetForm()
@@ -160,9 +151,10 @@ export default function IncomeModule() {
     try {
       const res = await fetch(`/api/income/${id}?accountId=${user?.id}`, { method: 'DELETE' })
       if (res.ok) { setIncomes((prev) => prev.filter((i) => i.id !== id)); toast.success('Ingreso eliminado'); return }
-    } catch { /* fallback */ }
+      else { toast.error('Error al eliminar en el servidor'); return }
+    } catch { /* network error - use local fallback */ }
     setIncomes((prev) => prev.filter((i) => i.id !== id))
-    toast.success('Ingreso eliminado')
+    toast.warning('Eliminado localmente (sin conexión)')
   }
 
   const filtered = incomes.filter((i) => {
@@ -234,11 +226,7 @@ export default function IncomeModule() {
       <Card>
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
+            <Loading />
           ) : filtered.length === 0 ? (
             <div className="relative p-16 text-center overflow-hidden">
               <div className="absolute inset-0 pointer-events-none">
@@ -281,7 +269,7 @@ export default function IncomeModule() {
                   {filtered.map((inc, idx) => (
                     <TableRow key={inc.id} className={cn('group income-row-hover table-row-interactive', idx % 2 === 1 && 'bg-muted/30')}>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(inc.date), 'MMM d, yyyy')}
+                        {format(new Date(inc.date), 'MMM d, yyyy', { locale: es })}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">

@@ -19,11 +19,13 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 const CATEGORIES = [
   { id: 'housing', name: 'Vivienda', color: '#10b981' },
@@ -83,28 +85,8 @@ function mapApiExpense(raw: Record<string, unknown>): Expense {
   }
 }
 
-const mockExpenses: Expense[] = [
-  { id: '1', amount: 1200, description: 'Pago de Renta', date: '2025-06-02', category: 'housing', categoryColor: '#10b981', isRecurring: true, isUnexpected: false },
-  { id: '2', amount: 156.80, description: 'Supermercado', date: '2025-06-03', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
-  { id: '3', amount: 120, description: 'Recibo de Electricidad', date: '2025-06-04', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
-  { id: '4', amount: 65, description: 'Gasolinera', date: '2025-06-06', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: false },
-  { id: '5', amount: 15.99, description: 'Suscripción Netflix', date: '2025-06-07', category: 'entertainment', categoryColor: '#6366f1', isRecurring: true, isUnexpected: false },
-  { id: '6', amount: 85.50, description: 'Cena en Restaurante', date: '2025-06-08', category: 'food', categoryColor: '#f59e0b', isRecurring: false, isUnexpected: false },
-  { id: '7', amount: 55, description: 'Recibo de Teléfono', date: '2025-06-10', category: 'utilities', categoryColor: '#06b6d4', isRecurring: true, isUnexpected: false },
-  { id: '8', amount: 45, description: 'Membresía de Gimnasio', date: '2025-06-01', category: 'health', categoryColor: '#ec4899', isRecurring: true, isUnexpected: false },
-]
-
-const mockUnexpected: Expense[] = [
-  { id: 'u1', amount: 350, description: 'Reparación de Auto', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e', isRecurring: false, isUnexpected: true },
-  { id: 'u2', amount: 120, description: 'Visita Dental de Emergencia', date: '2025-05-28', category: 'health', categoryColor: '#ec4899', isRecurring: false, isUnexpected: true },
-  { id: 'u3', amount: 200, description: 'Reparación de Plomería', date: '2025-05-15', category: 'housing', categoryColor: '#10b981', isRecurring: false, isUnexpected: true },
-]
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
 export default function ExpenseModule() {
+  const formatCurrency = useFormatCurrency()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [unexpected, setUnexpected] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
@@ -148,14 +130,14 @@ export default function ExpenseModule() {
         }
       } catch { /* fallback */ }
       if (!cancelled) {
-        if (!gotExpenses) setExpenses(mockExpenses)
-        if (!gotUnexpected) setUnexpected(mockUnexpected)
+        if (!gotExpenses) setExpenses([])
+        if (!gotUnexpected) setUnexpected([])
         setLoading(false)
       }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const resetForm = () => {
     setForm({ amount: '', description: '', date: format(new Date(), 'yyyy-MM-dd'), category: 'food', dependentId: '', isRecurring: false })
@@ -206,15 +188,18 @@ export default function ExpenseModule() {
         setDialogOpen(false)
         resetForm()
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
     const newExp = { ...payload, id: editingId || Date.now().toString() } as Expense
     if (isUnexpectedMode) {
       setUnexpected((prev) => editingId ? prev.map((e) => e.id === editingId ? newExp : e) : [newExp, ...prev])
     } else {
       setExpenses((prev) => editingId ? prev.map((e) => e.id === editingId ? newExp : e) : [newExp, ...prev])
     }
-    toast.success(editingId ? 'Gasto actualizado' : 'Gasto agregado')
+    toast.warning(editingId ? 'Guardado localmente (sin conexión)' : 'Guardado localmente (sin conexión)')
     setDialogOpen(false)
     resetForm()
   }
@@ -227,11 +212,14 @@ export default function ExpenseModule() {
         else setExpenses((prev) => prev.filter((e) => e.id !== id))
         toast.success('Gasto eliminado')
         return
+      } else {
+        toast.error('Error al eliminar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
     if (isUnexp) setUnexpected((prev) => prev.filter((e) => e.id !== id))
     else setExpenses((prev) => prev.filter((e) => e.id !== id))
-    toast.success('Gasto eliminado')
+    toast.warning('Eliminado localmente (sin conexión)')
   }
 
   const filterList = (list: Expense[]) =>
@@ -251,9 +239,7 @@ export default function ExpenseModule() {
   const renderExpenseTable = (items: Expense[], isUnexp: boolean) => (
     <>
       {loading ? (
-        <div className="p-4 space-y-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-        </div>
+        <Loading />
       ) : items.length === 0 ? (
         <div className="relative p-16 text-center overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
@@ -298,7 +284,7 @@ export default function ExpenseModule() {
               {items.map((exp) => (
                 <TableRow key={exp.id} className="group table-row-interactive">
                   <TableCell className="text-sm text-muted-foreground">
-                    {format(new Date(exp.date), 'MMM d, yyyy')}
+                    {format(new Date(exp.date), 'MMM d, yyyy', { locale: es })}
                   </TableCell>
                   <TableCell>
                     <Badge

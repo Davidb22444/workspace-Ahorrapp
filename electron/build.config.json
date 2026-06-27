@@ -1,0 +1,32 @@
+{
+  "appId": "com.ahorrapp.desktop",
+  "productName": "AhorrApp",
+  "directories": {
+    "output": "../dist-electron"
+  },
+  "files": [
+    "main.js",
+    "../package.json",
+    "../next.config.ts",
+    "../.next/**/*",
+    "../public/**/*"
+  ],
+  "win": {
+    "target": ["nsis"],
+    "icon": "../public/icons/icon-512.svg",
+    "artifactName": "AhorrApp-${version}-Setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "language": "Spanish"
+  },
+  "linux": {
+    "target": ["AppImage"],
+    "icon": "../public/icons/icon-512.svg"
+  },
+  "mac": {
+    "target": ["dmg"],
+    "icon": "../public/icons/icon-512.svg"
+  }
+}

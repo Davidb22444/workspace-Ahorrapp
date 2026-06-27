@@ -55,6 +55,10 @@ interface AppState {
   setShowQuickAdd: (open: boolean) => void
   quickAddType: 'income' | 'expense'
   setQuickAddType: (type: 'income' | 'expense') => void
+
+  // Currency
+  currency: string
+  setCurrency: (currency: string) => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -62,14 +66,16 @@ export const useAppStore = create<AppState>((set) => ({
   isAuthenticated: false,
   user: null,
   login: (user) => set({ isAuthenticated: true, user }),
-  logout: () =>
+  logout: () => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
     set({
       isAuthenticated: false,
       user: null,
       activeModule: 'dashboard',
       dashboardData: null,
       unreadCount: 0,
-    }),
+    })
+  },
 
   // Navigation
   activeModule: 'dashboard',
@@ -93,4 +99,8 @@ export const useAppStore = create<AppState>((set) => ({
   setShowQuickAdd: (open) => set({ showQuickAdd: open }),
   quickAddType: 'expense' as 'income' | 'expense',
   setQuickAddType: (type) => set({ quickAddType: type }),
+
+  // Currency
+  currency: 'USD',
+  setCurrency: (currency) => set({ currency }),
 }))

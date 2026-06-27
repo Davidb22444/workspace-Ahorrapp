@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const { id } = await params
+    if (id !== accountId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const { data: user, error } = await supabase
       .from('accounts')

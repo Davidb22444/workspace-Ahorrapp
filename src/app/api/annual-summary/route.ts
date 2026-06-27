@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { rowsToCamel, keysToCamel, sumField } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 
@@ -16,16 +17,11 @@ const CATEGORY_COLORS = [
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
-    const yearParam = searchParams.get('year')
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'accountId is required' },
-        { status: 400 }
-      )
-    }
+    const { searchParams } = new URL(request.url)
+    const yearParam = searchParams.get('year')
 
     const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear()
 
@@ -84,17 +80,20 @@ export async function GET(request: NextRequest) {
         .eq('account_id', accountId),
     ])
 
-    const incomes = rowsToCamel(incomeRes.data || [])
-    const expenses = rowsToCamel(expenseRes.data || [])
+    type ExpenseRow = Record<string, unknown> & { categoryId?: string; amount?: number }
+    type IncomeRow = Record<string, unknown> & { categoryId?: string; amount?: number; source?: string }
+
+    const incomes = rowsToCamel<IncomeRow>(incomeRes.data || [])
+    const expenses = rowsToCamel<ExpenseRow>(expenseRes.data || [])
     const unexpecteds = rowsToCamel(unexpectedRes.data || [])
     const savingsContributions = rowsToCamel(savingsContributionsRes.data || [])
     const debtPayments = rowsToCamel(debtPaymentsRes.data || [])
     const savingsGoals = rowsToCamel(savingsGoalsRes.data || [])
 
     // Fetch category info for expenses
-    const expCatIds = [...new Set(expenses.map((e: any) => e.categoryId).filter(Boolean))] as string[]
-    const incCatIds = [...new Set(incomes.map((i: any) => i.categoryId).filter(Boolean))] as string[]
-    const allCatIds = [...new Set([...expCatIds, ...incCatIds])] as string[]
+    const expCatIds = [...new Set(expenses.map((e) => e.categoryId).filter(Boolean))]
+    const incCatIds = [...new Set(incomes.map((i) => i.categoryId).filter(Boolean))]
+    const allCatIds = [...new Set([...expCatIds, ...incCatIds])]
 
     let catMap = new Map<string, any>()
     if (allCatIds.length > 0) {
@@ -154,7 +153,7 @@ export async function GET(request: NextRequest) {
     // Top expense categories
     const categoryMap = new Map<string, { amount: number; color: string }>()
     for (const exp of expenses) {
-      const cat = exp.categoryId ? catMap.get(exp.categoryId) : null
+      const cat = exp.categoryId ? catMap.get(exp.categoryId) ?? null : null
       const name = cat?.name || 'Uncategorized'
       const color = cat?.color || '#94a3b8'
       const existing = categoryMap.get(name) || { amount: 0, color }
@@ -174,8 +173,9 @@ export async function GET(request: NextRequest) {
     // Income sources
     const sourceMap = new Map<string, number>()
     for (const inc of incomes) {
-      const existing = sourceMap.get(inc.source) || 0
-      sourceMap.set(inc.source, existing + (inc.amount || 0))
+      const src = inc.source || 'Unknown'
+      const existing = sourceMap.get(src) || 0
+      sourceMap.set(src, existing + (inc.amount || 0))
     }
 
     const incomeSources = Array.from(sourceMap.entries())

@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { sumField } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, format, parse } from 'date-fns'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
-    const monthParam = searchParams.get('month')
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'accountId is required' },
-        { status: 400 }
-      )
-    }
+    const { searchParams } = new URL(request.url)
+    const monthParam = searchParams.get('month')
 
     const now = new Date()
     const targetMonth = monthParam

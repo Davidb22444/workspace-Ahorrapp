@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
 
@@ -8,7 +9,6 @@ const savingsCreateSchema = z.object({
   icon: z.string().default('PiggyBank'),
   color: z.string().default('#10b981'),
   deadline: z.string().optional(),
-  accountId: z.string().min(1),
 })
 
 function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
@@ -22,12 +22,12 @@ function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
 
 export async function GET(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
     const status = searchParams.get('status')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -102,6 +102,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const body = await request.json()
     const parsed = savingsCreateSchema.parse(body)
 
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
         icon: parsed.icon,
         color: parsed.color,
         deadline: parsed.deadline || null,
-        account_id: parsed.accountId,
+        account_id: accountId,
         saved_amount: 0,
         status: 'active',
       })
@@ -130,7 +133,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ savingsGoal: camelGoal }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create savings error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

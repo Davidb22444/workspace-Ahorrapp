@@ -3,49 +3,48 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String?
-  role      String   @default("user")
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  incomes               Income[]
-  expenses              Expense[]
-  unexpecteds           Unexpected[]
-  debts                 Debt[]
-  debtPayments          DebtPayment[]
-  savingsGoals          SavingsGoal[]
-  savingsContributions  SavingsContribution[]
-  budgets               Budget[]
-  budgetPeriods         BudgetPeriod[]
-  dependents            Dependent[]
-  categories            Category[]
-  notifications         Notification[]
-  movements             Movement[]
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  name                 String
+  password             String?
+  role                 String                @default("user")
+  avatar               String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  budgets              Budget[]
+  budgetPeriods        BudgetPeriod[]
+  categories           Category[]
+  debts                Debt[]
+  debtPayments         DebtPayment[]
+  dependents           Dependent[]
+  expenses             Expense[]
+  incomes              Income[]
+  movements            Movement[]
+  notifications        Notification[]
+  savingsContributions SavingsContribution[]
+  savingsGoals         SavingsGoal[]
+  unexpecteds          Unexpected[]
 
   @@index([email])
 }
 
 model Category {
-  id        String   @id @default(cuid())
-  name      String
-  icon      String   @default("Circle")
-  color     String   @default("#6366f1")
-  type      String   @default("expense")
-  isDefault Boolean  @default(false)
-  accountId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  name        String
+  icon        String       @default("Circle")
+  color       String       @default("#6366f1")
+  type        String       @default("expense")
+  isDefault   Boolean      @default(false)
+  accountId   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   expenses    Expense[]
   incomes     Income[]
   movements   Movement[]
@@ -55,117 +54,111 @@ model Category {
 }
 
 model Dependent {
-  id             String    @id @default(cuid())
+  id             String       @id @default(cuid())
   name           String
-  relationship   String    @default("other")
-  economicWeight Float     @default(1.0)
+  relationship   String       @default("other")
+  economicWeight Float        @default(1.0)
   birthDate      DateTime?
   notes          String?
   accountId      String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  expenses    Expense[]
-  unexpecteds Unexpected[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expenses       Expense[]
+  unexpecteds    Unexpected[]
 
   @@index([accountId])
 }
 
 model Movement {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   type        String
   amount      Float
   description String
-  date        DateTime @default(now())
+  date        DateTime  @default(now())
   categoryId  String?
   accountId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   @@index([accountId])
   @@index([date])
 }
 
 model Income {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   source      String
   amount      Float
   description String?
-  frequency   String   @default("monthly")
-  date        DateTime @default(now())
+  frequency   String    @default("monthly")
+  date        DateTime  @default(now())
   categoryId  String?
   accountId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id])
 
   @@index([accountId])
   @@index([date])
 }
 
 model Expense {
-  id           String   @id @default(cuid())
-  amount       Float
-  description  String
-  date         DateTime @default(now())
-  categoryId   String?
-  dependentId  String?
-  isRecurring  Boolean  @default(false)
-  frequency    String?
-  accountId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category  Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  dependent Dependent? @relation(fields: [dependentId], references: [id], onDelete: SetNull)
+  id          String     @id @default(cuid())
+  amount      Float
+  description String
+  date        DateTime   @default(now())
+  categoryId  String?
+  dependentId String?
+  isRecurring Boolean    @default(false)
+  frequency   String?
+  accountId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  dependent   Dependent? @relation(fields: [dependentId], references: [id])
 
   @@index([accountId])
   @@index([date])
 }
 
 model Unexpected {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   amount      Float
   description String
-  date        DateTime @default(now())
+  date        DateTime   @default(now())
   categoryId  String?
   dependentId String?
-  resolved    Boolean  @default(false)
+  resolved    Boolean    @default(false)
   accountId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category  Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  dependent Dependent? @relation(fields: [dependentId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  dependent   Dependent? @relation(fields: [dependentId], references: [id])
 
   @@index([accountId])
 }
 
 model Debt {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   name         String
   totalAmount  Float
-  paidAmount   Float    @default(0)
+  paidAmount   Float         @default(0)
   interestRate Float?
-  startDate    DateTime @default(now())
+  startDate    DateTime      @default(now())
   dueDate      DateTime?
-  status       String   @default("pending")
-  type         String   @default("loan")
+  status       String        @default("pending")
+  type         String        @default("loan")
   installments Int?
   accountId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  account  Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  payments DebtPayment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  payments     DebtPayment[]
 
   @@index([accountId])
 }
@@ -179,65 +172,61 @@ model DebtPayment {
   accountId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  debt    Debt    @relation(fields: [debtId], references: [id], onDelete: Cascade)
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  debt      Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
 
   @@index([debtId])
   @@index([accountId])
 }
 
 model SavingsGoal {
-  id           String    @id @default(cuid())
-  name         String
-  targetAmount Float
-  savedAmount  Float     @default(0)
-  icon         String    @default("PiggyBank")
-  color        String    @default("#10b981")
-  deadline     DateTime?
-  status       String    @default("active")
-  accountId    String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  account       Account              @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  id            String                @id @default(cuid())
+  name          String
+  targetAmount  Float
+  savedAmount   Float                 @default(0)
+  icon          String                @default("PiggyBank")
+  color         String                @default("#10b981")
+  deadline      DateTime?
+  status        String                @default("active")
+  accountId     String
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
   contributions SavingsContribution[]
+  account       Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
 }
 
 model SavingsContribution {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   amount    Float
-  date      DateTime @default(now())
+  date      DateTime    @default(now())
   note      String?
   goalId    String
   accountId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  goal    SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  account Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  account   Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  goal      SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@index([goalId])
   @@index([accountId])
 }
 
 model Budget {
-  id             String   @id @default(cuid())
+  id             String         @id @default(cuid())
   name           String
   totalAmount    Float
-  needsPercent   Float    @default(50)
-  wantsPercent   Float    @default(30)
-  savingsPercent Float    @default(20)
-  cycle          String   @default("monthly")
-  isActive       Boolean  @default(true)
+  needsPercent   Float          @default(50)
+  wantsPercent   Float          @default(30)
+  savingsPercent Float          @default(20)
+  cycle          String         @default("monthly")
+  isActive       Boolean        @default(true)
   accountId      String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  account  Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  periods  BudgetPeriod[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  account        Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  periods        BudgetPeriod[]
 
   @@index([accountId])
 }
@@ -258,9 +247,8 @@ model BudgetPeriod {
   accountId      String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  budget  Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  budget         Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
 
   @@index([budgetId])
   @@index([accountId])
@@ -275,8 +263,7 @@ model Notification {
   link      String?
   accountId String
   createdAt DateTime @default(now())
-
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
   @@index([isRead])
@@ -293,4 +280,291 @@ model AuditLog {
 
   @@index([accountId])
   @@index([createdAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model accounts {
+  id                    String                  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  email                 String                  @unique
+  name                  String
+  password              String?
+  role                  String                  @default("user")
+  avatar                String?
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                @default(now()) @db.Timestamptz(6)
+  budget_periods        budget_periods[]
+  budgets               budgets[]
+  categories            categories[]
+  debt_payments         debt_payments[]
+  debts                 debts[]
+  dependents            dependents[]
+  expenses              expenses[]
+  incomes               incomes[]
+  movements             movements[]
+  notifications         notifications[]
+  savings_contributions savings_contributions[]
+  savings_goals         savings_goals[]
+  unexpecteds           unexpecteds[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model audit_logs {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  action     String
+  entity     String
+  entity_id  String?
+  details    String?
+  account_id String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([account_id], map: "idx_audit_logs_account_id")
+  @@index([created_at], map: "idx_audit_logs_created_at")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model budget_periods {
+  id              String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  start_date      DateTime @db.Timestamptz(6)
+  end_date        DateTime @db.Timestamptz(6)
+  planned_income  Float
+  planned_needs   Float
+  planned_wants   Float
+  planned_savings Float
+  actual_income   Float    @default(0)
+  actual_needs    Float    @default(0)
+  actual_wants    Float    @default(0)
+  actual_savings  Float    @default(0)
+  budget_id       String
+  account_id      String
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+  accounts        accounts @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  budgets         budgets  @relation(fields: [budget_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_budget_periods_account_id")
+  @@index([budget_id], map: "idx_budget_periods_budget_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model budgets {
+  id              String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name            String
+  total_amount    Float
+  needs_percent   Float            @default(50)
+  wants_percent   Float            @default(30)
+  savings_percent Float            @default(20)
+  cycle           String           @default("monthly")
+  is_active       Boolean          @default(true)
+  account_id      String
+  created_at      DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime         @default(now()) @db.Timestamptz(6)
+  budget_periods  budget_periods[]
+  accounts        accounts         @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_budgets_account_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model categories {
+  id          String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name        String
+  icon        String        @default("Circle")
+  color       String        @default("#6366f1")
+  type        String        @default("expense")
+  is_default  Boolean       @default(false)
+  account_id  String
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime      @default(now()) @db.Timestamptz(6)
+  accounts    accounts      @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  expenses    expenses[]
+  incomes     incomes[]
+  movements   movements[]
+  unexpecteds unexpecteds[]
+
+  @@index([account_id], map: "idx_categories_account_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model debt_payments {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  amount     Float
+  date       DateTime @default(now()) @db.Timestamptz(6)
+  note       String?
+  debt_id    String
+  account_id String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  accounts   accounts @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  debts      debts    @relation(fields: [debt_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_debt_payments_account_id")
+  @@index([debt_id], map: "idx_debt_payments_debt_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model debts {
+  id            String          @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name          String
+  total_amount  Float
+  paid_amount   Float           @default(0)
+  interest_rate Float?
+  start_date    DateTime        @default(now()) @db.Timestamptz(6)
+  due_date      DateTime?       @db.Timestamptz(6)
+  status        String          @default("pending")
+  type          String          @default("loan")
+  installments  Int?
+  account_id    String
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  debt_payments debt_payments[]
+  accounts      accounts        @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_debts_account_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dependents {
+  id              String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name            String
+  relationship    String        @default("other")
+  economic_weight Float         @default(1.0)
+  birth_date      DateTime?     @db.Timestamptz(6)
+  notes           String?
+  account_id      String
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @default(now()) @db.Timestamptz(6)
+  accounts        accounts      @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  expenses        expenses[]
+  unexpecteds     unexpecteds[]
+
+  @@index([account_id], map: "idx_dependents_account_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model expenses {
+  id           String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  amount       Float
+  description  String
+  date         DateTime    @default(now()) @db.Timestamptz(6)
+  category_id  String?
+  dependent_id String?
+  is_recurring Boolean     @default(false)
+  frequency    String?
+  account_id   String
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime    @default(now()) @db.Timestamptz(6)
+  accounts     accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories   categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  dependents   dependents? @relation(fields: [dependent_id], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_expenses_account_id")
+  @@index([date], map: "idx_expenses_date")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model incomes {
+  id          String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  source      String
+  amount      Float
+  description String?
+  frequency   String      @default("monthly")
+  date        DateTime    @default(now()) @db.Timestamptz(6)
+  category_id String?
+  account_id  String
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime    @default(now()) @db.Timestamptz(6)
+  accounts    accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_incomes_account_id")
+  @@index([date], map: "idx_incomes_date")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model movements {
+  id          String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  type        String
+  amount      Float
+  description String
+  date        DateTime    @default(now()) @db.Timestamptz(6)
+  category_id String?
+  account_id  String
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime    @default(now()) @db.Timestamptz(6)
+  accounts    accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_movements_account_id")
+  @@index([date], map: "idx_movements_date")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notifications {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  title      String
+  message    String
+  type       String   @default("info")
+  is_read    Boolean  @default(false)
+  link       String?
+  account_id String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  accounts   accounts @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_notifications_account_id")
+  @@index([is_read], map: "idx_notifications_is_read")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model savings_contributions {
+  id            String        @id @default(dbgenerated("(gen_random_uuid())::text"))
+  amount        Float
+  date          DateTime      @default(now()) @db.Timestamptz(6)
+  note          String?
+  goal_id       String
+  account_id    String
+  created_at    DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime      @default(now()) @db.Timestamptz(6)
+  accounts      accounts      @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  savings_goals savings_goals @relation(fields: [goal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_savings_contributions_account_id")
+  @@index([goal_id], map: "idx_savings_contributions_goal_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model savings_goals {
+  id                    String                  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                  String
+  target_amount         Float
+  saved_amount          Float                   @default(0)
+  icon                  String                  @default("PiggyBank")
+  color                 String                  @default("#10b981")
+  deadline              DateTime?               @db.Timestamptz(6)
+  status                String                  @default("active")
+  account_id            String
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime                @default(now()) @db.Timestamptz(6)
+  savings_contributions savings_contributions[]
+  accounts              accounts                @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_savings_goals_account_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model unexpecteds {
+  id           String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  amount       Float
+  description  String
+  date         DateTime    @default(now()) @db.Timestamptz(6)
+  category_id  String?
+  dependent_id String?
+  resolved     Boolean     @default(false)
+  account_id   String
+  created_at   DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime    @default(now()) @db.Timestamptz(6)
+  accounts     accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  categories   categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  dependents   dependents? @relation(fields: [dependent_id], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_unexpecteds_account_id")
 }

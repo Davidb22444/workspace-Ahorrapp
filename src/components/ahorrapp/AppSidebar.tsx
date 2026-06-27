@@ -178,16 +178,18 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             </div>
           </div>
         )}
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className={cn(
-            'sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground',
-            collapsed && 'justify-center px-2'
-          )}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-          {!collapsed && <span className="animate-fade-in">{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>}
-        </button>
+        <div className={cn('flex items-center gap-3', collapsed ? 'justify-center px-2' : 'px-3 py-1')}>
+          <label className="theme-switch">
+            <input
+              className="theme-toggle"
+              type="checkbox"
+              checked={theme === 'dark'}
+              onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            />
+            <span className="theme-slider"></span>
+          </label>
+          {!collapsed && <span className="text-xs text-muted-foreground">{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>}
+        </div>
         <button
           onClick={logout}
           className={cn(

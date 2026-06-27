@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 const debtCreateSchema = z.object({
   name: z.string().min(1),
@@ -10,7 +11,6 @@ const debtCreateSchema = z.object({
   dueDate: z.string().optional(),
   type: z.string().default('loan'),
   installments: z.number().int().positive().optional(),
-  accountId: z.string().min(1),
 })
 
 function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
@@ -25,12 +25,12 @@ function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
+    const accountId = getAuthFromCookie(request)
     const status = searchParams.get('status')
     const type = searchParams.get('type')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request); if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const body = await request.json()
     const parsed = debtCreateSchema.parse(body)
 
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
         due_date: parsed.dueDate || null,
         type: parsed.type,
         installments: parsed.installments ?? null,
-        account_id: parsed.accountId,
+        account_id: accountId,
         status: 'pending',
       })
       .select()
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ debt: camelDebt }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create debt error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

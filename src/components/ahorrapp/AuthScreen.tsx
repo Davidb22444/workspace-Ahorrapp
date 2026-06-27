@@ -39,12 +39,12 @@ const containerVariants = {
     opacity: 1,
     transition: { staggerChildren: 0.12, delayChildren: 0.2 },
   },
-}
+} as const
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
-}
+} as const
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true)
@@ -109,14 +109,7 @@ export default function AuthScreen() {
       })
       const data = await res.json()
       if (!res.ok) {
-        login({
-          id: 'demo-1',
-          email: 'demo@ahorrapp.com',
-          name: 'Demo User',
-          role: 'user',
-        })
-        toast.success('¡Bienvenido al demo!')
-        return
+        throw new Error(data.error || 'Error al iniciar demo')
       }
       login({
         id: data.user?.id || 'demo-1',
@@ -125,14 +118,8 @@ export default function AuthScreen() {
         role: data.user?.role || 'user',
       })
       toast.success('¡Bienvenido al demo!')
-    } catch {
-      login({
-        id: 'demo-1',
-        email: 'demo@ahorrapp.com',
-        name: 'Demo User',
-        role: 'user',
-      })
-      toast.success('¡Bienvenido al demo!')
+    } catch (err: any) {
+      toast.error(err.message || 'No se pudo cargar la cuenta demo. Verifica que la base de datos esté inicializada.')
     } finally {
       setLoading(false)
     }

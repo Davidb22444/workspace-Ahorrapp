@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
+import { compare } from 'bcryptjs'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -32,7 +33,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (parsed.password !== user.password) {
+    const isBcrypt = user.password.startsWith('$2')
+    const valid = isBcrypt
+      ? await compare(parsed.password, user.password)
+      : parsed.password === user.password
+    if (!valid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -59,7 +64,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       )
     }

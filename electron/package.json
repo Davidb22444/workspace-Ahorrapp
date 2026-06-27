@@ -1,0 +1,15 @@
+{
+  "name": "ahorrapp-desktop",
+  "version": "1.0.0",
+  "description": "AhorrApp - Aplicación de escritorio",
+  "main": "main.js",
+  "scripts": {
+    "build:win": "electron-builder --win --config build.config.json",
+    "build:linux": "electron-builder --linux --config build.config.json",
+    "build:mac": "electron-builder --mac --config build.config.json"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}

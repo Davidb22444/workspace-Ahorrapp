@@ -29,7 +29,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -58,12 +58,9 @@ import {
 import { format, startOfMonth, getDay, getDaysInMonth, startOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { type Module } from '@/lib/store'
+import { useFormatCurrency, formatCurrency } from '@/lib/format-currency'
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
 
 interface DashboardData {
   balance: number
@@ -89,52 +86,6 @@ interface DashboardData {
     target: number
     deadline?: string
   }>
-}
-
-const mockData: DashboardData = {
-  balance: 12450.75,
-  totalIncome: 5200.0,
-  totalExpenses: 3420.5,
-  totalDebt: 8500.0,
-  monthlyCashFlow: [
-    { month: 'Jan', income: 4800, expenses: 3200 },
-    { month: 'Feb', income: 5100, expenses: 2900 },
-    { month: 'Mar', income: 4900, expenses: 3500 },
-    { month: 'Apr', income: 5300, expenses: 3100 },
-    { month: 'May', income: 5000, expenses: 3400 },
-    { month: 'Jun', income: 5200, expenses: 3420 },
-  ],
-  expenseCategories: [
-    { name: 'Vivienda', value: 1200, color: '#10b981' },
-    { name: 'Alimentación', value: 680, color: '#f59e0b' },
-    { name: 'Transporte', value: 450, color: '#f43f5e' },
-    { name: 'Entretenimiento', value: 320, color: '#6366f1' },
-    { name: 'Servicios', value: 380, color: '#06b6d4' },
-    { name: 'Otro', value: 390.5, color: '#8b5cf6' },
-  ],
-  budgetVsActual: [
-    { name: 'Necesidades', planned: 2600, actual: 2510 },
-    { name: 'Deseos', planned: 1560, actual: 1480 },
-    { name: 'Ahorros', planned: 1040, actual: 770 },
-  ],
-  recentTransactions: [
-    { id: '1', type: 'income', description: 'Salario Mensual', amount: 5200, date: '2025-06-01', category: 'Salario' },
-    { id: '2', type: 'expense', description: 'Pago de Renta', amount: -1200, date: '2025-06-02', category: 'Vivienda', categoryColor: '#10b981' },
-    { id: '3', type: 'expense', description: 'Supermercado', amount: -156.80, date: '2025-06-03', category: 'Alimentación', categoryColor: '#f59e0b' },
-    { id: '4', type: 'expense', description: 'Recibo de Electricidad', amount: -120, date: '2025-06-04', category: 'Servicios', categoryColor: '#06b6d4' },
-    { id: '5', type: 'income', description: 'Proyecto Freelance', amount: 800, date: '2025-06-05', category: 'Freelance' },
-    { id: '6', type: 'expense', description: 'Gasolinera', amount: -65, date: '2025-06-06', category: 'Transporte', categoryColor: '#f43f5e' },
-    { id: '7', type: 'expense', description: 'Suscripción Netflix', amount: -15.99, date: '2025-06-07', category: 'Entretenimiento', categoryColor: '#6366f1' },
-    { id: '8', type: 'expense', description: 'Cena en Restaurante', amount: -85.50, date: '2025-06-08', category: 'Alimentación', categoryColor: '#f59e0b' },
-    { id: '9', type: 'income', description: 'Retorno de Inversión', amount: 150, date: '2025-06-09', category: 'Inversión' },
-    { id: '10', type: 'expense', description: 'Recibo de Teléfono', amount: -55, date: '2025-06-10', category: 'Servicios', categoryColor: '#06b6d4' },
-  ],
-  savingsGoals: [
-    { id: '1', name: 'Fondo de Emergencia', saved: 4500, target: 10000, deadline: '2025-12-31' },
-    { id: '2', name: 'Vacaciones', saved: 1200, target: 3000, deadline: '2025-08-15' },
-    { id: '3', name: 'Laptop Nueva', saved: 800, target: 2000 },
-    { id: '4', name: 'Enganche', saved: 15000, target: 50000, deadline: '2027-06-01' },
-  ],
 }
 
 // ── Enhanced Tooltip ──────────────────────────────────────────────
@@ -217,7 +168,7 @@ function QuickAddDialog({
         .then(data => {
           const cats = data.categories || data || []
           setCategories(Array.isArray(cats) ? cats.map((c: any) => ({ id: c.id, name: c.name })) : [])
-          if (cats.length > 0 && !category) setCategory(cats[0].name)
+          if (cats.length > 0) setCategory(cats[0].name)
         })
         .catch(() => {
           setCategories([
@@ -230,7 +181,7 @@ function QuickAddDialog({
             { id: '7', name: 'Educación' },
             { id: '8', name: 'Otro' },
           ])
-          if (!category) setCategory('Vivienda')
+          setCategory('Vivienda')
         })
     }
   }, [type, accountId])
@@ -441,6 +392,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [dailySpendingData, setDailySpendingData] = useState<Array<{ date: string; amount: number }>>([])
   const { user, dashboardData, setDashboardData, showQuickAdd, setShowQuickAdd, quickAddType, setQuickAddType, setActiveModule } = useAppStore()
+  const [fetchTrigger, setFetchTrigger] = useState(0)
 
   const mapApiData = (api: any): DashboardData => ({
     balance: api.balance ?? 0,
@@ -476,52 +428,8 @@ export default function Dashboard() {
     })),
   })
 
-  const doFetchData = async () => {
-    setLoading(true)
-    try {
-      if (user?.id) {
-        const currentMonth = format(new Date(), 'yyyy-MM')
-        const [dashRes, budgetRes, dailyRes] = await Promise.all([
-          fetch(`/api/dashboard?accountId=${user.id}`),
-          fetch(`/api/budget?accountId=${user.id}`),
-          fetch(`/api/dashboard/daily-spending?accountId=${user.id}&month=${currentMonth}`),
-        ])
-        if (dailyRes.ok) {
-          const dailyJson = await dailyRes.json()
-          setDailySpendingData(dailyJson.days ?? [])
-        }
-        if (dashRes.ok) {
-          const json = await dashRes.json()
-          const mapped = mapApiData(json)
-
-          if (budgetRes.ok) {
-            try {
-              const budgetJson = await budgetRes.json()
-              const budgets = budgetJson.budgets || []
-              if (budgets.length > 0) {
-                const b = budgets[0]
-                const totalIncome = mapped.totalIncome || b.totalAmount || 5200
-                const needsPct = b.needsPercent ?? 50
-                const wantsPct = b.wantsPercent ?? 30
-                const savingsPct = b.savingsPercent ?? 20
-                mapped.budgetVsActual = [
-                  { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
-                  { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
-                  { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
-                ]
-              }
-            } catch { /* keep mock budgetVsActual */ }
-          }
-
-          setDashboardData(mapped)
-          setData(mapped)
-          setLoading(false)
-          return
-        }
-      }
-    } catch { /* fallback */ }
-    setData(dashboardData || mockData)
-    setLoading(false)
+  const doFetchData = () => {
+    setData(null); setLoading(true); setFetchTrigger((p) => p + 1)
   }
 
   useEffect(() => {
@@ -543,6 +451,8 @@ export default function Dashboard() {
             const json = await dashRes.json()
             const mapped = mapApiData(json)
 
+            let budgetVsActual = mapped.budgetVsActual
+
             if (budgetRes.ok) {
               try {
                 const budgetJson = await budgetRes.json()
@@ -553,7 +463,7 @@ export default function Dashboard() {
                   const needsPct = b.needsPercent ?? 50
                   const wantsPct = b.wantsPercent ?? 30
                   const savingsPct = b.savingsPercent ?? 20
-                  mapped.budgetVsActual = [
+                  budgetVsActual = [
                     { name: 'Necesidades', planned: Math.round(totalIncome * needsPct / 100), actual: Math.round(mapped.totalExpenses * needsPct / 100) },
                     { name: 'Deseos', planned: Math.round(totalIncome * wantsPct / 100), actual: Math.round(mapped.totalExpenses * wantsPct / 100) },
                     { name: 'Ahorros', planned: Math.round(totalIncome * savingsPct / 100), actual: Math.round((totalIncome - mapped.totalExpenses) * savingsPct / 100) },
@@ -562,20 +472,30 @@ export default function Dashboard() {
               } catch { /* keep mock budgetVsActual */ }
             }
 
-            setDashboardData(mapped)
-            setData(mapped)
+            setDashboardData({ ...mapped, budgetVsActual })
+            setData({ ...mapped, budgetVsActual })
             setLoading(false)
             return
           }
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setData(dashboardData || mockData); setLoading(false) }
+      if (!cancelled) { setData(dashboardData); setLoading(false) }
     }
     load()
     return () => { cancelled = true }
-  }, [user?.id])
+  }, [user?.id, fetchTrigger])
 
-  const d = data || mockData
+  const d: DashboardData = data ?? {
+    balance: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
+    totalDebt: 0,
+    monthlyCashFlow: [],
+    expenseCategories: [],
+    budgetVsActual: [],
+    recentTransactions: [],
+    savingsGoals: [],
+  }
 
   // ── Calculate Financial Health Score ──
   const healthScore = (() => {
@@ -585,11 +505,15 @@ export default function Dashboard() {
     score += Math.min(40, Math.max(0, savingsRate * 100)) * (40 / 50) // 50% savings rate = full 40 pts
 
     // Debt-to-income ratio (up to 30 points, lower is better)
-    const debtRatio = d.totalIncome > 0 ? d.totalDebt / d.totalIncome : 0
-    score += Math.max(0, 30 - (debtRatio * 15)) // 0 debt = 30 pts, high debt = 0
+    // Use monthly income estimate for comparison (divide by months of data, capped at 6)
+    const monthsOfData = d.monthlyCashFlow?.length || 1
+    const monthlyIncome = d.totalIncome > 0 ? d.totalIncome / monthsOfData : 0
+    const debtRatio = monthlyIncome > 0 ? d.totalDebt / (monthlyIncome * 12) : 0 // annual income basis
+    score += Math.max(0, 30 - (debtRatio * 20)) // 0 debt = 30 pts, 150% annual = 0
 
     // Emergency fund coverage (up to 30 points)
-    const monthsCovered = d.totalExpenses > 0 ? d.balance / d.totalExpenses : 0
+    const monthlyExpenses = d.totalExpenses > 0 ? d.totalExpenses / monthsOfData : 0
+    const monthsCovered = monthlyExpenses > 0 ? d.balance / monthlyExpenses : 0
     score += Math.min(30, monthsCovered * 6) // 5 months = full 30 pts
 
     return Math.round(Math.max(0, Math.min(100, score)))
@@ -692,7 +616,7 @@ export default function Dashboard() {
       cells.push({ day, amount, isToday, isFuture, colorClass })
     }
 
-    return { dayNames, cells, monthName: format(now, 'MMMM yyyy') }
+    return { dayNames, cells,         monthName: format(now, 'MMMM yyyy', { locale: es }) }
   })()
 
   // ── Net Worth Trend Data ──
@@ -1014,15 +938,20 @@ export default function Dashboard() {
           <div className="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-700 dark:to-teal-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-xs font-medium uppercase tracking-wider">Patrimonio Neto</p>
-                <p className="text-3xl sm:text-4xl font-bold text-white mt-1 tabular-nums number-pop">
-                  {formatCurrency(d.balance - d.totalDebt)}
+                <p className="text-emerald-100 text-xs font-medium uppercase tracking-wider">Balance Actual</p>
+                <p className={`text-3xl sm:text-4xl font-bold mt-1 tabular-nums number-pop ${d.balance >= 0 ? 'text-white' : 'text-rose-200'}`}>
+                  {formatCurrency(d.balance)}
                 </p>
                 <div className="flex items-center gap-3 mt-2">
                   <span className="flex items-center gap-1 text-emerald-100 text-xs">
                     <TrendingUp className="w-3 h-3" />
                     {d.totalIncome > 0 ? `+${Math.round((d.totalIncome - d.totalExpenses) / d.totalIncome * 100)}%` : '0%'} flujo positivo
                   </span>
+                  {d.totalDebt > 0 && (
+                    <span className="text-emerald-100/70 text-xs">
+                      Deuda pendiente: {formatCurrency(d.totalDebt)}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="hidden sm:block">
@@ -1031,6 +960,7 @@ export default function Dashboard() {
             </div>
           </div>
         </Card>
+
       </motion.div>
 
       {/* Header (compact, right-aligned) */}
@@ -1154,14 +1084,7 @@ export default function Dashboard() {
 
       {/* ── Charts ── */}
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardHeader><Skeleton className="h-5 w-32" /></CardHeader>
-              <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
-            </Card>
-          ))}
-        </div>
+        <Loading />
       ) : (
         <>
           {/* ── E. Enhanced Charts Row 1 ── */}
@@ -1735,7 +1658,7 @@ export default function Dashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setQuickAddType('income'); setShowQuickAdd(true) }}
+              onClick={() => { setQuickAddType('income') }}
               className="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg flex items-center justify-center"
             >
               <ArrowUpRight className="w-5 h-5" />
@@ -1743,7 +1666,7 @@ export default function Dashboard() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setQuickAddType('expense'); setShowQuickAdd(true) }}
+              onClick={() => { setQuickAddType('expense') }}
               className="w-12 h-12 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-lg flex items-center justify-center"
             >
               <ArrowDownRight className="w-5 h-5" />

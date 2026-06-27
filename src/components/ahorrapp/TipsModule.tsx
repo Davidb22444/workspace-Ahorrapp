@@ -10,8 +10,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -233,7 +231,21 @@ function DifficultyDots({ level }: { level: 1 | 2 | 3 }) {
   )
 }
 
-function FeaturedTipCard({ tip }: { tip: FinancialTip }) {
+function FeaturedTipCard({ 
+  tip,
+  isBookmarked,
+  onBookmark,
+  onShare,
+  isExpanded,
+  onToggleExpand,
+}: { 
+  tip: FinancialTip
+  isBookmarked: boolean
+  onBookmark: () => void
+  onShare: () => void
+  isExpanded: boolean
+  onToggleExpand: () => void
+}) {
   const config = CATEGORY_CONFIG[tip.category]
   return (
     <motion.div
@@ -267,13 +279,52 @@ function FeaturedTipCard({ tip }: { tip: FinancialTip }) {
                 <Sparkles className="w-6 h-6 text-amber-500 shrink-0" />
                 {tip.title}
               </h2>
-              <p className="text-muted-foreground leading-relaxed mb-4">{tip.description}</p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-sm">{tip.readTime} lectura</span>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                {isExpanded ? tip.extendedDescription : tip.description}
+              </p>
+              <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm">{tip.readTime} lectura</span>
+                  </div>
+                  <DifficultyDots level={tip.difficulty} />
                 </div>
-                <DifficultyDots level={tip.difficulty} />
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-primary hover:text-primary font-medium"
+                    onClick={onToggleExpand}
+                  >
+                    {isExpanded ? (
+                      <>Ver menos <ChevronUp className="w-3.5 h-3.5 ml-1" /></>
+                    ) : (
+                      <>Leer más <ChevronDown className="w-3.5 h-3.5 ml-1" /></>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={onBookmark}
+                  >
+                    {isBookmarked ? (
+                      <BookmarkCheck className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Bookmark className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={onShare}
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -402,7 +453,6 @@ function TipCard({
 // ── Main Module ─────────────────────────────────────────────────────────────
 
 export default function TipsModule() {
-  const { user } = useAppStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState<TipCategory | 'Todos'>('Todos')
@@ -476,7 +526,14 @@ export default function TipsModule() {
 
       {/* ── Featured Tip ─────────────────────────────────────────────── */}
       {activeCategory === 'Todos' && !searchQuery.trim() && (
-        <FeaturedTipCard tip={featuredTip} />
+        <FeaturedTipCard 
+          tip={featuredTip}
+          isBookmarked={bookmarkedIds.has(featuredTip.id)}
+          onBookmark={() => toggleBookmark(featuredTip.id)}
+          onShare={() => handleShare(featuredTip)}
+          isExpanded={expandedIds.has(featuredTip.id)}
+          onToggleExpand={() => toggleExpand(featuredTip.id)}
+        />
       )}
 
       {/* ── Search & Filter Bar ──────────────────────────────────────── */}

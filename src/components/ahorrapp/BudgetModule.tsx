@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -21,10 +21,7 @@ import {
   PieChart as RCPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { useFormatCurrency } from '@/lib/format-currency'
 
 interface BudgetData {
   id: string
@@ -38,36 +35,6 @@ interface BudgetData {
   categories?: Array<{ name: string; planned: number; actual: number; color: string }>
 }
 
-const mockBudget: BudgetData = {
-  id: '1',
-  totalIncome: 5200,
-  needsPct: 50,
-  wantsPct: 30,
-  savingsPct: 20,
-  needs: { planned: 2600, actual: 2510 },
-  wants: { planned: 1560, actual: 1480 },
-  savings: { planned: 1040, actual: 770 },
-  categories: [
-    { name: 'Vivienda', planned: 1200, actual: 1200, color: '#10b981' },
-    { name: 'Alimentación', planned: 600, actual: 680, color: '#f59e0b' },
-    { name: 'Transporte', planned: 400, actual: 450, color: '#f43f5e' },
-    { name: 'Servicios', planned: 250, actual: 280, color: '#06b6d4' },
-    { name: 'Entretenimiento', planned: 800, actual: 720, color: '#6366f1' },
-    { name: 'Compras', planned: 460, actual: 390, color: '#8b5cf6' },
-    { name: 'Ahorros', planned: 1040, actual: 770, color: '#14b8a6' },
-    { name: 'Otro', planned: 450, actual: 410, color: '#64748b' },
-  ],
-}
-
-// Mock previous month for comparison
-const mockPrevMonth = {
-  totalPlanned: 5000,
-  totalActual: 5100,
-  needs: { actual: 2650 },
-  wants: { actual: 1550 },
-  savings: { actual: 900 },
-}
-
 const SPLIT_CONFIG = [
   { key: 'needs' as const, label: 'Necesidades', sublabel: 'Esenciales', color: '#10b981', bgColor: 'bg-emerald-500' },
   { key: 'wants' as const, label: 'Deseos', sublabel: 'Estilo de Vida', color: '#f59e0b', bgColor: 'bg-amber-500' },
@@ -75,6 +42,7 @@ const SPLIT_CONFIG = [
 ]
 
 export default function BudgetModule() {
+  const formatCurrency = useFormatCurrency()
   const [budget, setBudget] = useState<BudgetData | null>(null)
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -98,6 +66,7 @@ export default function BudgetModule() {
       needs: { planned: totalIncome * needsPct / 100, actual: (latest.actualNeeds as number) || 0 },
       wants: { planned: totalIncome * wantsPct / 100, actual: (latest.actualWants as number) || 0 },
       savings: { planned: totalIncome * savingsPct / 100, actual: (latest.actualSavings as number) || 0 },
+      categories: [],
     }
   }
 
@@ -105,13 +74,41 @@ export default function BudgetModule() {
     let cancelled = false
     const fetchBudget = async () => {
       try {
-        const res = await fetch(`/api/budget?accountId=${user?.id}`)
-        if (res.ok && !cancelled) {
-          const data = await res.json()
+        const [budgetRes, dashRes] = await Promise.all([
+          fetch(`/api/budget?accountId=${user?.id}`),
+          fetch(`/api/dashboard?accountId=${user?.id}`),
+        ])
+        if (budgetRes.ok && !cancelled) {
+          const data = await budgetRes.json()
           const list = Array.isArray(data.budgets) ? data.budgets : Array.isArray(data.budget) ? [data.budget] : Array.isArray(data) ? data : []
           const active = list.find((b: Record<string, unknown>) => b.isActive) || list[0]
           if (active) {
-            setBudget(mapApiBudget(active))
+            const mapped = mapApiBudget(active)
+            if (mapped) {
+              // If period actuals are all 0, use real expense data from dashboard
+              const allActualsZero = mapped.needs.actual === 0 && mapped.wants.actual === 0 && mapped.savings.actual === 0
+              if (allActualsZero && dashRes.ok) {
+                try {
+                  const dashData = await dashRes.json()
+                  const totalExpenses = dashData.totalExpenses || 0
+                  const totalIncome = dashData.totalIncome || mapped.totalIncome || 0
+                  if (totalExpenses > 0) {
+                    mapped.needs.actual = Math.round(totalExpenses * mapped.needsPct / 100)
+                    mapped.wants.actual = Math.round(totalExpenses * mapped.wantsPct / 100)
+                    mapped.savings.actual = Math.max(0, Math.round(totalIncome - totalExpenses))
+                    if (totalIncome > 0 && mapped.totalIncome === 0) {
+                      mapped.totalIncome = totalIncome
+                      mapped.needs.planned = Math.round(totalIncome * mapped.needsPct / 100)
+                      mapped.wants.planned = Math.round(totalIncome * mapped.wantsPct / 100)
+                      mapped.savings.planned = Math.round(totalIncome * mapped.savingsPct / 100)
+                    }
+                  }
+                } catch { /* ignore */ }
+              }
+              setBudget(mapped)
+            } else {
+              setBudget(null)
+            }
           } else {
             setBudget(null)
           }
@@ -119,7 +116,7 @@ export default function BudgetModule() {
           return
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setBudget(mockBudget); setLoading(false) }
+      if (!cancelled) { setBudget(null); setLoading(false) }
     }
     fetchBudget()
     return () => { cancelled = true }
@@ -138,11 +135,21 @@ export default function BudgetModule() {
       const res = await fetch('/api/budget', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formPcts, accountId: user?.id }),
+        body: JSON.stringify({
+          name: 'Presupuesto Mensual',
+          totalAmount: budget?.totalIncome || 4500,
+          needsPercent: formPcts.needs,
+          wantsPercent: formPcts.wants,
+          savingsPercent: formPcts.savings,
+          cycle: 'monthly',
+          isActive: true,
+          accountId: user?.id,
+        }),
       })
       if (res.ok) {
         const data = await res.json()
-        setBudget(data.budget || data)
+        const mapped = mapApiBudget(data.budget || data)
+        if (mapped) setBudget(mapped)
         toast.success('Presupuesto creado')
         setCreateDialogOpen(false)
         return
@@ -167,15 +174,7 @@ export default function BudgetModule() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card><CardContent className="p-6"><Skeleton className="h-[300px] w-full" /></CardContent></Card>
-          <Card><CardContent className="p-6"><Skeleton className="h-[300px] w-full" /></CardContent></Card>
-        </div>
-      </div>
-    )
+    return <Loading />
   }
 
   if (!budget) {
@@ -267,7 +266,7 @@ export default function BudgetModule() {
       : { status: 'danger' as const, icon: AlertCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-500/10', label: 'Sobre Presupuesto', desc: `Has excedido tu presupuesto en ${formatCurrency(Math.abs(surplus))}` }
 
   // Period comparison
-  const prevTotalActual = mockPrevMonth.totalActual
+  const prevTotalActual = 0
   const currentTotalActual = totalActual
   const monthChangePct = prevTotalActual > 0 ? Math.round(((currentTotalActual - prevTotalActual) / prevTotalActual) * 100) : 0
   const isImproved = currentTotalActual <= prevTotalActual

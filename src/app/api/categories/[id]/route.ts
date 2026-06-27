@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
     const { data: category, error: fetchError } = await supabase
       .from('categories')
       .select('is_default')
       .eq('id', id)
+      .eq('account_id', accountId)
       .single()
 
     if (fetchError || !category) {
@@ -24,7 +28,7 @@ export async function DELETE(
       )
     }
 
-    const { error } = await supabase.from('categories').delete().eq('id', id)
+    const { error } = await supabase.from('categories').delete().eq('id', id).eq('account_id', accountId)
 
     if (error) {
       console.error('Delete category error:', error)

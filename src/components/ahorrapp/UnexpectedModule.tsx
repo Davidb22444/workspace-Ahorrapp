@@ -17,11 +17,13 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 const CATEGORIES = [
   { id: 'transport', name: 'Transporte', color: '#f43f5e' },
@@ -71,19 +73,8 @@ function mapApiUnexpected(raw: Record<string, unknown>): UnexpectedExpense {
   }
 }
 
-const mockUnexpected: UnexpectedExpense[] = [
-  { id: 'u1', amount: 350, description: 'Reparación de Auto', date: '2025-06-12', category: 'transport', categoryColor: '#f43f5e' },
-  { id: 'u2', amount: 120, description: 'Visita Dental de Emergencia', date: '2025-05-28', category: 'health', categoryColor: '#ec4899' },
-  { id: 'u3', amount: 200, description: 'Reparación de Plomería', date: '2025-05-15', category: 'housing', categoryColor: '#10b981' },
-  { id: 'u4', amount: 75, description: 'Cargador de Teléfono Perdido', date: '2025-05-10', category: 'other', categoryColor: '#64748b' },
-  { id: 'u5', amount: 450, description: 'Visita de Emergencia al Veterinario', date: '2025-04-20', category: 'health', categoryColor: '#ec4899' },
-]
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
 export default function UnexpectedModule() {
+  const formatCurrency = useFormatCurrency()
   const [expenses, setExpenses] = useState<UnexpectedExpense[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -111,11 +102,11 @@ export default function UnexpectedModule() {
           return
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setExpenses(mockUnexpected); setLoading(false) }
+      if (!cancelled) { setExpenses([]); setLoading(false) }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const resetForm = () => {
     setForm({ amount: '', description: '', date: format(new Date(), 'yyyy-MM-dd'), category: 'other' })
@@ -149,18 +140,21 @@ export default function UnexpectedModule() {
         setDialogOpen(false)
         resetForm()
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
 
     const newExp = { ...payload, id: editingId || Date.now().toString() } as UnexpectedExpense
     setExpenses((prev) => editingId ? prev.map((e) => e.id === editingId ? newExp : e) : [newExp, ...prev])
-    toast.success(editingId ? 'Gasto actualizado' : 'Gasto imprevisto agregado')
+    toast.warning('Guardado localmente (sin conexión)')
     setDialogOpen(false)
     resetForm()
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/unexpected/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
+    try { const res = await fetch(`/api/unexpected/${id}?accountId=${user?.id}`, { method: 'DELETE' }); if (!res.ok) { toast.error('Error al eliminar en el servidor'); return } } catch { /* network error */ }
     setExpenses((prev) => prev.filter((e) => e.id !== id))
     toast.success('Gasto eliminado')
   }
@@ -224,9 +218,7 @@ export default function UnexpectedModule() {
       <Card>
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
-            </div>
+            <Loading />
           ) : filtered.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground">
               <motion.div
@@ -256,7 +248,7 @@ export default function UnexpectedModule() {
                   {filtered.map((exp) => (
                     <TableRow key={exp.id} className="group table-row-interactive">
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(exp.date), 'MMM d, yyyy')}
+                        {format(new Date(exp.date), 'MMM d, yyyy', { locale: es })}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" style={{

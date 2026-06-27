@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore, type Module } from '@/lib/store'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Menu, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import AuthScreen from '@/components/ahorrapp/AuthScreen'
+import LandingPage from '@/components/ahorrapp/LandingPage'
+import { Loading } from '@/components/ui/loading'
 import AppSidebar from '@/components/ahorrapp/AppSidebar'
 import Dashboard from '@/components/ahorrapp/Dashboard'
 import IncomeModule from '@/components/ahorrapp/IncomeModule'
@@ -67,7 +69,31 @@ const moduleTitles: Record<Module, string> = {
 }
 
 export default function Home() {
-  const { isAuthenticated, activeModule, setUnreadCount, user, unreadCount, setSidebarOpen } = useAppStore()
+  const { isAuthenticated, activeModule, setUnreadCount, user, unreadCount, setSidebarOpen, login } = useAppStore()
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [showLanding, setShowLanding] = useState(true)
+
+  // Restore session on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        if (res.ok) {
+          const data = await res.json()
+          if (data.user) {
+            login({
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role || 'user',
+            })
+          }
+        }
+      } catch { /* ok */ }
+      setCheckingAuth(false)
+    }
+    restoreSession()
+  }, [login])
 
   // Fetch notification count periodically
   useEffect(() => {
@@ -90,7 +116,16 @@ export default function Home() {
     return () => { clearInterval(interval); clearTimeout(timeout) }
   }, [isAuthenticated, setUnreadCount, user?.id])
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loading />
+      </div>
+    )
+  }
+
   if (!isAuthenticated) {
+    if (showLanding) return <LandingPage onLogin={() => setShowLanding(false)} />
     return <AuthScreen />
   }
 

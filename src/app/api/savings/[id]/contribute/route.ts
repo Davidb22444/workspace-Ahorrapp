@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { z } from 'zod'
 
 const contributeSchema = z.object({
@@ -22,6 +23,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const { id } = await params
     const body = await request.json()
     const parsed = contributeSchema.parse(body)
@@ -36,6 +40,8 @@ export async function POST(
     if (goalError || !goal) {
       return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
     }
+
+    if (goal.account_id !== accountId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     // Insert contribution
     const { data: contribution, error: contribError } = await supabase
@@ -55,8 +61,9 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create contribution' }, { status: 500 })
     }
 
-    // Update goal's saved amount
-    const newSavedAmount = Number(goal.saved_amount) + parsed.amount
+    // Update goal's saved amount with optimistic lock
+    const originalSavedAmount = Number(goal.saved_amount)
+    const newSavedAmount = originalSavedAmount + parsed.amount
     let newStatus = goal.status
     if (newSavedAmount >= Number(goal.target_amount)) {
       newStatus = 'completed'
@@ -71,12 +78,14 @@ export async function POST(
         status: newStatus,
       })
       .eq('id', id)
+      .eq('saved_amount', originalSavedAmount)
       .select()
       .single()
 
-    if (updateError) {
-      console.error('Update savings goal error:', updateError)
-      return NextResponse.json({ error: 'Failed to update savings goal' }, { status: 500 })
+    if (updateError || !updatedGoal) {
+      await supabase.from('savings_contributions').delete().eq('id', contribution.id)
+      if (updateError) console.error('Update savings goal error:', updateError)
+      return NextResponse.json({ error: 'Conflict, please retry' }, { status: 409 })
     }
 
     const camelGoal = snakeToCamel(updatedGoal as unknown as Record<string, unknown>) as {
@@ -98,7 +107,7 @@ export async function POST(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Contribute to savings error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

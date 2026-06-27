@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -22,6 +22,7 @@ import {
   format, startOfMonth, endOfMonth, subMonths,
   parseISO, isWithinInterval, getYear, getMonth,
 } from 'date-fns'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 // --- Types ---
 
@@ -90,10 +91,6 @@ interface MonthData {
   debtPayments: { debtName: string; amount: number; date: string }[]
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -113,7 +110,29 @@ function getGoalEmoji(name: string): string {
 
 // --- Component ---
 
+const Delta = ({ current, previous }: { current: number; previous: number }) => {
+  const diff = current - previous
+  const pct = previous !== 0 ? ((diff / Math.abs(previous)) * 100) : (current > 0 ? 100 : 0)
+  const isPositive = diff > 0
+  const isZero = diff === 0
+
+  if (isZero) return <span className="text-xs text-muted-foreground ml-2">— sin cambio</span>
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 text-xs font-medium ml-2',
+        isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+      )}
+    >
+      {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+      {Math.abs(pct).toFixed(1)}%
+    </span>
+  )
+}
+
 export default function MonthlyReport() {
+  const formatCurrency = useFormatCurrency()
   const { user } = useAppStore()
   const [loading, setLoading] = useState(true)
 
@@ -254,7 +273,7 @@ export default function MonthlyReport() {
   const expenseByCategory = useMemo(() => {
     const map = new Map<string, { name: string; color: string; items: MonthData['expenses']; total: number }>()
     for (const e of currentMonthData.expenses) {
-      const catName = e.category?.name || 'Uncategorized'
+      const catName = e.category?.name || 'Sin categoría'
       const catColor = e.category?.color || '#94a3b8'
       if (!map.has(catName)) {
         map.set(catName, { name: catName, color: catColor, items: [], total: 0 })
@@ -294,45 +313,12 @@ export default function MonthlyReport() {
 
   const isCurrentMonth = selectedYear === getYear(now) && selectedMonth === getMonth(now)
 
-  // Delta helper
-  const Delta = ({ current, previous }: { current: number; previous: number }) => {
-    const diff = current - previous
-    const pct = previous !== 0 ? ((diff / Math.abs(previous)) * 100) : (current > 0 ? 100 : 0)
-    const isPositive = diff > 0
-    const isZero = diff === 0
-
-    if (isZero) return <span className="text-xs text-muted-foreground ml-2">— sin cambio</span>
-
-    return (
-      <span
-        className={cn(
-          'inline-flex items-center gap-0.5 text-xs font-medium ml-2',
-          isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-        )}
-      >
-        {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-        {Math.abs(pct).toFixed(1)}%
-      </span>
-    )
-  }
-
   const handlePrint = () => {
     window.print()
   }
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
-        </div>
-        <Skeleton className="h-64 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
-      </div>
-    )
+    return <Loading />
   }
 
   return (

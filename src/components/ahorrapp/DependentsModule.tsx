@@ -14,14 +14,11 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { useFormatCurrency } from '@/lib/format-currency'
 
 interface Dependent {
   id: string
@@ -41,13 +38,8 @@ const relationshipLabels: Record<string, string> = {
   other: 'Otro',
 }
 
-const mockDependents: Dependent[] = [
-  { id: '1', name: 'Maria Garcia', relationship: 'spouse', economicWeight: 30, totalSpending: 1026 },
-  { id: '2', name: 'Carlos Garcia', relationship: 'child', economicWeight: 20, totalSpending: 684 },
-  { id: '3', name: 'Ana Garcia', relationship: 'child', economicWeight: 15, totalSpending: 513 },
-]
-
 export default function DependentsModule() {
+  const formatCurrency = useFormatCurrency()
   const [dependents, setDependents] = useState<Dependent[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAppStore()
@@ -72,11 +64,11 @@ export default function DependentsModule() {
           return
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setDependents(mockDependents); setLoading(false) }
+      if (!cancelled) { setDependents([]); setLoading(false) }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const resetForm = () => {
     setForm({ name: '', relationship: 'child', economicWeight: '' })
@@ -110,18 +102,21 @@ export default function DependentsModule() {
         setDialogOpen(false)
         resetForm()
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
 
     const newDep = { ...payload, id: editingId || Date.now().toString() }
     setDependents((prev) => editingId ? prev.map((d) => d.id === editingId ? newDep : d) : [...prev, newDep])
-    toast.success(editingId ? 'Dependiente actualizado' : 'Dependiente agregado')
+    toast.warning('Guardado localmente (sin conexión)')
     setDialogOpen(false)
     resetForm()
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/dependents/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
+    try { const res = await fetch(`/api/dependents/${id}?accountId=${user?.id}`, { method: 'DELETE' }); if (!res.ok) { toast.error('Error al eliminar en el servidor'); return } } catch { /* network error */ }
     setDependents((prev) => prev.filter((d) => d.id !== id))
     toast.success('Dependiente eliminado')
   }
@@ -188,9 +183,7 @@ export default function DependentsModule() {
 
       {/* Dependents Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => <Card key={i}><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>)}
-        </div>
+        <Loading />
       ) : dependents.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}

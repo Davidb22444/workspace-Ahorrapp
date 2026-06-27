@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, Trash2, PartyPopper } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -19,17 +19,6 @@ interface Notification {
   read: boolean
   createdAt: string
 }
-
-const mockNotifications: Notification[] = [
-  { id: '1', type: 'success', title: '¡Meta de Presupuesto Cumplida!', message: 'Te mantuviste por debajo del presupuesto de entretenimiento este mes. ¡Excelente trabajo!', read: false, createdAt: '2025-06-12T10:30:00Z' },
-  { id: '2', type: 'warning', title: 'Presupuesto Sobrepasado', message: 'Tu gasto en alimentación está $80 por encima del presupuesto planeado este mes.', read: false, createdAt: '2025-06-11T14:20:00Z' },
-  { id: '3', type: 'info', title: 'Hito de Ahorro', message: '¡Tu Fondo de Emergencia está ahora 45% completo! Sigue así.', read: false, createdAt: '2025-06-10T09:15:00Z' },
-  { id: '4', type: 'error', title: 'Pago de Deuda Vencido', message: 'Tu pago de tarjeta de crédito de $500 vence en 3 días.', read: false, createdAt: '2025-06-09T16:00:00Z' },
-  { id: '5', type: 'info', title: 'Reporte Mensual Listo', message: 'Tu reporte financiero de mayo 2025 está disponible para revisión.', read: true, createdAt: '2025-06-01T08:00:00Z' },
-  { id: '6', type: 'success', title: 'Ingreso Recibido', message: 'El salario mensual de $5,200 ha sido recibido.', read: true, createdAt: '2025-06-01T07:00:00Z' },
-  { id: '7', type: 'warning', title: 'Meta de Ahorro Atrasada', message: 'Tu meta de ahorro para vacaciones está solo 40% completa con 2 meses restantes.', read: true, createdAt: '2025-05-28T12:00:00Z' },
-  { id: '8', type: 'info', title: 'Nueva Función Disponible', message: '¡El Asistente IA ya está disponible! Obtén consejos financieros personalizados.', read: true, createdAt: '2025-05-25T10:00:00Z' },
-]
 
 const typeConfig = {
   info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10', borderColor: 'border-l-blue-500' },
@@ -81,19 +70,22 @@ export default function NotificationsPanel() {
         }
       } catch { /* fallback */ }
       if (!cancelled) {
-        setNotifications(mockNotifications)
-        setUnreadCount(mockNotifications.filter((n) => !n.read).length)
+        setNotifications([])
+        setUnreadCount(0)
         setLoading(false)
       }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [setUnreadCount])
+  }, [setUnreadCount, user?.id])
 
   const markAsRead = async (id: string) => {
     try { await fetch(`/api/notifications/${id}`, { method: 'PUT' }) } catch { /* ok */ }
-    setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n))
-    setUnreadCount(notifications.filter((n) => n.id !== id && !n.read).length)
+    setNotifications((prev) => {
+      const updated = prev.map((n) => n.id === id ? { ...n, read: true } : n)
+      setUnreadCount(updated.filter((n) => !n.read).length)
+      return updated
+    })
   }
 
   const markAllRead = async () => {
@@ -128,11 +120,7 @@ export default function NotificationsPanel() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : notifications.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <Image src="/images/empty-state.png" alt="Sin notificaciones" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto mb-3 opacity-70" />

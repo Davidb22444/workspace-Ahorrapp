@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { hash } from 'bcryptjs'
 
 // GET /api/setup-db - Check database status
 export async function GET() {
@@ -21,7 +22,8 @@ export async function POST() {
     const { data: existing } = await supabase.from('accounts').select('id').eq('email', 'demo@ahorrapp.com').single()
     if (existing) return NextResponse.json({ message: 'Datos de demo ya existen.', seeded: true })
 
-    await supabase.from('accounts').insert({ id: 'demo-1', email: 'demo@ahorrapp.com', name: 'Demo User', password: 'demo123', role: 'user' })
+    const hashedPassword = await hash('demo123', 12)
+    await supabase.from('accounts').insert({ id: 'demo-1', email: 'demo@ahorrapp.com', name: 'Demo User', password: hashedPassword, role: 'user' })
 
     await supabase.from('categories').insert([
       { name: 'Vivienda', icon: 'Home', color: '#10b981', type: 'expense', is_default: true, account_id: 'demo-1' },

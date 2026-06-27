@@ -1,0 +1,14 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "git": {
+    "deploymentEnabled": {
+      "electron": false,
+      "scripts": false,
+      "db": false,
+      "prisma": false
+    }
+  }
+}

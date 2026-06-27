@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
@@ -92,15 +93,9 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
-    const accountId = formData.get('accountId') as string | null
+    const cookieAccountId = getAuthFromCookie(request)
+    if (!cookieAccountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const typeParam = formData.get('type') as string | null
-
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'accountId is required' },
-        { status: 400 }
-      )
-    }
 
     if (!file) {
       return NextResponse.json(
@@ -175,7 +170,7 @@ export async function POST(request: NextRequest) {
             description: description || null,
             date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
             frequency,
-            account_id: accountId,
+            account_id: cookieAccountId,
           })
 
           imported++
@@ -210,7 +205,7 @@ export async function POST(request: NextRequest) {
       const { data: allCats } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('account_id', accountId)
+        .eq('account_id', cookieAccountId)
 
       const catNameMap = new Map<string, string>()
       if (allCats) {
@@ -253,7 +248,7 @@ export async function POST(request: NextRequest) {
             date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
             category_id: categoryId,
             is_recurring: isRecurring,
-            account_id: accountId,
+            account_id: cookieAccountId,
           })
 
           imported++

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -46,9 +46,9 @@ interface CategoryItem {
 }
 
 export default function SettingsPanel() {
-  const { user, logout } = useAppStore()
+  const { user, logout, currency: storeCurrency, setCurrency: setStoreCurrency } = useAppStore()
   const { theme, setTheme } = useTheme()
-  const [currency, setCurrency] = useState('USD')
+  const [currency, setCurrency] = useState(storeCurrency)
   const [name, setName] = useState(user?.name || '')
   const [email, setEmail] = useState(user?.email || '')
 
@@ -293,7 +293,7 @@ export default function SettingsPanel() {
             <Label>Moneda</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Select value={currency} onValueChange={(v) => { setCurrency(v); toast.success(`Moneda configurada a ${v}`) }}>
+              <Select value={currency} onValueChange={(v) => { setCurrency(v); setStoreCurrency(v); toast.success(`Moneda configurada a ${v}`) }}>
                 <SelectTrigger className="pl-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -328,16 +328,7 @@ export default function SettingsPanel() {
         </CardHeader>
         <CardContent>
           {catLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-6 w-32" />
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-              </div>
-              <Skeleton className="h-6 w-36 mt-4" />
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-              </div>
-            </div>
+            <Loading />
           ) : (
             <div className="space-y-5">
               {/* Income Categories */}

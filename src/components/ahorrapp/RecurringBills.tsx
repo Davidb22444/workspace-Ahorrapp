@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
@@ -26,10 +26,8 @@ import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { format, differenceInDays, startOfMonth, getDay, getDaysInMonth, addDays, startOfWeek, endOfMonth, endOfWeek, isSameMonth, isSameDay, parseISO } from 'date-fns'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { es } from 'date-fns/locale'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
 
@@ -61,28 +59,6 @@ const FREQUENCY_OPTIONS = [
   { value: 'yearly', label: 'Anual' },
 ]
 
-const mockBills: RecurringBill[] = [
-  { id: 'b1', description: 'Suscripción Netflix', amount: 15.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 3), 'yyyy-MM-dd'), startDate: '2024-01-01', isPaid: false, category: { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' } },
-  { id: 'b2', description: 'Spotify Premium', amount: 9.99, categoryId: 'ent', frequency: 'monthly', nextDate: format(addDays(new Date(), 12), 'yyyy-MM-dd'), startDate: '2024-02-01', isPaid: false, category: { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' } },
-  { id: 'b3', description: 'Membresía de Gimnasio', amount: 49.99, categoryId: 'hth', frequency: 'monthly', nextDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'), startDate: '2024-01-15', isPaid: false, category: { id: 'hth', name: 'Salud', icon: '🏥', color: '#ec4899', type: 'expense' } },
-  { id: 'b4', description: 'Servicio de Internet', amount: 79.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 8), 'yyyy-MM-dd'), startDate: '2023-06-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
-  { id: 'b5', description: 'Seguro de Auto', amount: 150.00, categoryId: 'trn', frequency: 'monthly', nextDate: format(addDays(new Date(), 2), 'yyyy-MM-dd'), startDate: '2023-01-01', isPaid: false, category: { id: 'trn', name: 'Transporte', icon: '🚗', color: '#f43f5e', type: 'expense' } },
-  { id: 'b6', description: 'Almacenamiento en la Nube', amount: 2.99, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 18), 'yyyy-MM-dd'), startDate: '2024-03-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
-  { id: 'b7', description: 'Renta', amount: 1200.00, categoryId: 'hsg', frequency: 'monthly', nextDate: format(addDays(new Date(), 5), 'yyyy-MM-dd'), startDate: '2022-01-01', isPaid: false, category: { id: 'hsg', name: 'Vivienda', icon: '🏠', color: '#10b981', type: 'expense' } },
-  { id: 'b8', description: 'Recibo de Teléfono', amount: 55.00, categoryId: 'util', frequency: 'monthly', nextDate: format(addDays(new Date(), 25), 'yyyy-MM-dd'), startDate: '2023-03-01', isPaid: false, category: { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' } },
-]
-
-const mockCategories: Category[] = [
-  { id: 'hsg', name: 'Vivienda', icon: '🏠', color: '#10b981', type: 'expense' },
-  { id: 'food', name: 'Alimentación', icon: '🍕', color: '#f59e0b', type: 'expense' },
-  { id: 'trn', name: 'Transporte', icon: '🚗', color: '#f43f5e', type: 'expense' },
-  { id: 'ent', name: 'Entretenimiento', icon: '🎬', color: '#6366f1', type: 'expense' },
-  { id: 'util', name: 'Servicios', icon: '⚡', color: '#06b6d4', type: 'expense' },
-  { id: 'hth', name: 'Salud', icon: '🏥', color: '#ec4899', type: 'expense' },
-  { id: 'edu', name: 'Educación', icon: '📚', color: '#8b5cf6', type: 'expense' },
-  { id: 'oth', name: 'Otro', icon: '📦', color: '#14b8a6', type: 'expense' },
-]
-
 function getDaysUntilText(nextDate: string): { text: string; colorClass: string } {
   const days = differenceInDays(parseISO(nextDate), new Date())
   if (days < 0) return { text: 'Vencido', colorClass: 'text-rose-600 dark:text-rose-400' }
@@ -93,6 +69,7 @@ function getDaysUntilText(nextDate: string): { text: string; colorClass: string 
 }
 
 export default function RecurringBills() {
+  const formatCurrency = useFormatCurrency()
   const { user } = useAppStore()
   const [bills, setBills] = useState<RecurringBill[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -120,6 +97,8 @@ export default function RecurringBills() {
       ])
       const expenseData = await expenseRes.json()
       const catData = await catRes.json()
+      const categoriesList = Array.isArray(catData.categories) ? catData.categories : []
+      setCategories(categoriesList)
       const expenseList = expenseData.expenses || []
       const recurring = expenseList.filter((e: any) => e.isRecurring === true).map((e: any) => ({
         id: e.id,
@@ -134,13 +113,12 @@ export default function RecurringBills() {
       }))
       if (recurring.length > 0) {
         setBills(recurring)
-        setCategories(Array.isArray(catData.categories) ? catData.categories : [])
-        setLoading(false)
-        return
       }
-    } catch { /* fallback */ }
-    setBills(mockBills)
-    setCategories(mockCategories)
+      setLoading(false)
+      return
+    } catch { /* ok */ }
+    setCategories([])
+    setBills([])
     setLoading(false)
   }, [user?.id])
 
@@ -287,11 +265,7 @@ export default function RecurringBills() {
 
       {/* Summary Stats */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="stat-card card-hover"><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
           <Card className="stat-card card-hover">
@@ -325,7 +299,7 @@ export default function RecurringBills() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Próximo Pago</p>
                 {nextPayment ? (
                   <p className="text-sm font-semibold text-foreground mt-0.5">
-                    {format(parseISO(nextPayment.nextDate), 'MMM d, yyyy')}
+                    {format(parseISO(nextPayment.nextDate), 'MMM d, yyyy', { locale: es })}
                     <span className="text-xs text-muted-foreground ml-2">{getDaysUntilText(nextPayment.nextDate).text}</span>
                   </p>
                 ) : (
@@ -338,11 +312,7 @@ export default function RecurringBills() {
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : bills.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -399,7 +369,7 @@ export default function RecurringBills() {
                             {bill.frequency}
                           </Badge>
                           <span className="text-[11px] text-muted-foreground">
-                            {format(parseISO(bill.nextDate), 'MMM d')}
+                            {format(parseISO(bill.nextDate), 'MMM d', { locale: es })}
                           </span>
                         </div>
                       </div>
@@ -440,7 +410,7 @@ export default function RecurringBills() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-semibold">
-                      {format(calendarMonth, 'MMMM yyyy')}
+                      {format(calendarMonth, 'MMMM yyyy', { locale: es })}
                     </CardTitle>
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCalendarMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}>

@@ -9,7 +9,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { Progress } from '@/components/ui/progress'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -18,12 +18,9 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend,
 } from 'recharts'
 import { format } from 'date-fns'
+import { useFormatCurrency, formatCurrency } from '@/lib/format-currency'
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6']
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
 
 interface AnnualData {
   totalIncome: number
@@ -60,25 +57,25 @@ function generateMockData(year: number): AnnualData {
   const savingsRate = totalIncome > 0 ? Math.round((netSavings / totalIncome) * 100) : 0
 
   const incomeSources = [
-    { name: 'Salary', value: Math.round(totalIncome * 0.72) },
+    { name: 'Salario', value: Math.round(totalIncome * 0.72) },
     { name: 'Freelance', value: Math.round(totalIncome * 0.15) },
-    { name: 'Investments', value: Math.round(totalIncome * 0.08) },
-    { name: 'Other', value: Math.round(totalIncome * 0.05) },
+    { name: 'Inversiones', value: Math.round(totalIncome * 0.08) },
+    { name: 'Otros', value: Math.round(totalIncome * 0.05) },
   ]
 
   const topExpenseCategories = [
-    { name: 'Housing', amount: Math.round(totalExpenses * 0.32), percentage: 32 },
-    { name: 'Food', amount: Math.round(totalExpenses * 0.18), percentage: 18 },
-    { name: 'Transport', amount: Math.round(totalExpenses * 0.12), percentage: 12 },
-    { name: 'Entertainment', amount: Math.round(totalExpenses * 0.09), percentage: 9 },
-    { name: 'Utilities', amount: Math.round(totalExpenses * 0.11), percentage: 11 },
-    { name: 'Healthcare', amount: Math.round(totalExpenses * 0.08), percentage: 8 },
+    { name: 'Vivienda', amount: Math.round(totalExpenses * 0.32), percentage: 32 },
+    { name: 'Alimentación', amount: Math.round(totalExpenses * 0.18), percentage: 18 },
+    { name: 'Transporte', amount: Math.round(totalExpenses * 0.12), percentage: 12 },
+    { name: 'Entretenimiento', amount: Math.round(totalExpenses * 0.09), percentage: 9 },
+    { name: 'Servicios', amount: Math.round(totalExpenses * 0.11), percentage: 11 },
+    { name: 'Salud', amount: Math.round(totalExpenses * 0.08), percentage: 8 },
   ]
 
   const savingsGoals = [
-    { name: 'Emergency Fund', saved: rand(1, 3000, 12000), target: 15000 },
-    { name: 'Vacation', saved: rand(2, 800, 3500), target: 4000 },
-    { name: 'New Laptop', saved: rand(3, 400, 2200), target: 2500 },
+    { name: 'Fondo de Emergencia', saved: rand(1, 3000, 12000), target: 15000 },
+    { name: 'Vacaciones', saved: rand(2, 800, 3500), target: 4000 },
+    { name: 'Nueva Laptop', saved: rand(3, 400, 2200), target: 2500 },
   ]
 
   const monthOverMonth = monthlyData.map((m, i) => {
@@ -239,11 +236,7 @@ export default function AnnualSummary() {
 
       {/* Key Metrics Row */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="stat-card"><CardContent className="p-4"><Skeleton className="h-28 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 animate-fade-in">
           {metricCards.map((m, i) => {
@@ -283,11 +276,7 @@ export default function AnnualSummary() {
       )}
 
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2].map((i) => (
-            <Card key={i}><CardContent className="p-6"><Skeleton className="h-72 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : data && (
         <>
           {/* Monthly Overview Area Chart */}
@@ -400,7 +389,7 @@ export default function AnnualSummary() {
                 <CardDescription className="text-xs">Cómo van tus metas de ahorro este año</CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-0 space-y-4">
-                {data.savingsGoals.map((goal, idx) => {
+                {(data.savingsGoals || []).map((goal: any, idx: number) => {
                   const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100))
                   return (
                     <div key={idx}>

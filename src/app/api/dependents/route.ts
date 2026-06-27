@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { supabase } from '@/lib/supabase'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
@@ -9,16 +10,14 @@ const dependentCreateSchema = z.object({
   economicWeight: z.number().min(0).default(1.0),
   birthDate: z.string().optional(),
   notes: z.string().optional(),
-  accountId: z.string().min(1),
 })
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
+    const accountId = getAuthFromCookie(request)
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     const { data, error } = await supabase
@@ -43,6 +42,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const body = await request.json()
     const parsed = dependentCreateSchema.parse(body)
 
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       economic_weight: parsed.economicWeight,
       birth_date: parsed.birthDate || null,
       notes: parsed.notes || null,
-      account_id: parsed.accountId,
+      account_id: accountId,
     }
 
     const { data, error } = await supabase
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ dependent }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create dependent error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

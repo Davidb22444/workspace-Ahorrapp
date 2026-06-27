@@ -10,15 +10,12 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { Progress } from '@/components/ui/progress'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { useFormatCurrency } from '@/lib/format-currency'
 
 interface Achievement {
   id: string
@@ -50,58 +47,8 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   cart: <ShoppingCart className="w-7 h-7" />,
 }
 
-const mockAchievements: Achievement[] = [
-  {
-    id: '1', title: 'Primer Depósito', description: 'Registra tu primer ingreso', icon: 'dollar',
-    color: '#10b981', unlocked: true, unlockedDate: '2025-01-15', category: 'income',
-  },
-  {
-    id: '2', title: 'Ahorrador Principiante', description: 'Ahorra tus primeros $100', icon: 'piggybank',
-    color: '#06b6d4', unlocked: true, unlockedDate: '2025-02-10', category: 'savings',
-  },
-  {
-    id: '3', title: 'Maestro del Presupuesto', description: 'Mantente dentro del presupuesto por 3 meses consecutivos', icon: 'target',
-    color: '#f59e0b', unlocked: true, unlockedDate: '2025-04-01', category: 'budget',
-  },
-  {
-    id: '4', title: 'Destructor de Deudas', description: 'Paga una deuda completamente', icon: 'shield',
-    color: '#f43f5e', unlocked: true, unlockedDate: '2025-05-20', category: 'debt',
-  },
-  {
-    id: '5', title: 'Club del Millar', description: 'Acumula $1,000 en ahorros totales', icon: 'award',
-    color: '#8b5cf6', unlocked: false, progress: 72, targetValue: 1000, currentValue: 720, category: 'savings',
-  },
-  {
-    id: '6', title: 'Rey de la Consistencia', description: 'Registra gastos durante 30 días consecutivos', icon: 'repeat',
-    color: '#ec4899', unlocked: false, progress: 53, targetValue: 30, currentValue: 16, category: 'consistency',
-  },
-  {
-    id: '7', title: 'Buscador de Ofertas', description: 'Reduce los gastos mensuales un 10% respecto al inicio', icon: 'cart',
-    color: '#14b8a6', unlocked: false, progress: 45, targetValue: 10, currentValue: 4.5, category: 'expenses',
-  },
-  {
-    id: '8', title: 'Meta $10K', description: 'Alcanza $10,000 en ahorros totales', icon: 'trophy',
-    color: '#f59e0b', unlocked: false, progress: 21, targetValue: 10000, currentValue: 2150, category: 'savings',
-  },
-  {
-    id: '9', title: 'Líder del Tablero', description: 'Ve tu panel cada día durante una semana', icon: 'barchart',
-    color: '#6366f1', unlocked: true, unlockedDate: '2025-03-14', category: 'engagement',
-  },
-  {
-    id: '10', title: 'Estrella Ascendente', description: 'Incrementa tus ingresos mes a mes 3 veces', icon: 'trendingup',
-    color: '#10b981', unlocked: false, progress: 67, targetValue: 3, currentValue: 2, category: 'income',
-  },
-  {
-    id: '11', title: 'Fijador de Metas', description: 'Completa financieramente una meta de ahorro', icon: 'flag',
-    color: '#f43f5e', unlocked: false, progress: 30, targetValue: 1, currentValue: 0, category: 'savings',
-  },
-  {
-    id: '12', title: 'Súper Ahorrador', description: 'Ahorra 50% de tus ingresos en un solo mes', icon: 'star',
-    color: '#06b6d4', unlocked: false, progress: 38, targetValue: 50, currentValue: 19, category: 'savings',
-  },
-]
-
 export default function AchievementsModule() {
+  const formatCurrency = useFormatCurrency()
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAppStore()
@@ -122,13 +69,13 @@ export default function AchievementsModule() {
         }
       } catch { /* fallback */ }
       if (!cancelled) {
-        setAchievements(mockAchievements)
+        setAchievements([])
         setLoading(false)
       }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length
   const totalCount = achievements.length
@@ -166,10 +113,7 @@ export default function AchievementsModule() {
 
       {/* Summary Stats */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="stat-card card-hover"><CardContent className="p-5"><Skeleton className="h-24 w-full" /></CardContent></Card>
-          <Card className="stat-card card-hover"><CardContent className="p-5"><Skeleton className="h-24 w-full" /></CardContent></Card>
-        </div>
+        <Loading />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Unlocked count with circular ring */}
@@ -241,18 +185,7 @@ export default function AchievementsModule() {
 
       {/* Achievements Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <Skeleton className="w-14 h-14 rounded-full mx-auto mb-4" />
-                <Skeleton className="h-4 w-3/4 mx-auto mb-2" />
-                <Skeleton className="h-3 w-full mb-2" />
-                <Skeleton className="h-2 w-full" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Loading />
       ) : achievements.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -390,11 +323,11 @@ export default function AchievementsModule() {
                 Categorías
               </p>
               <div className="flex flex-wrap gap-2">
-                {Array.from(new Set(achievements.map((a) => a.category))).map((cat) => {
+                {Array.from(new Set(achievements.map((a) => a.category))).map((cat, idx) => {
                   const count = achievements.filter((a) => a.category === cat).length
                   const unlocked = achievements.filter((a) => a.category === cat && a.unlocked).length
                   return (
-                    <Badge key={cat} variant="secondary" className="capitalize text-xs px-2.5 py-1">
+                    <Badge key={cat || `cat-${idx}`} variant="secondary" className="capitalize text-xs px-2.5 py-1">
                       {cat} ({unlocked}/{count})
                     </Badge>
                   )

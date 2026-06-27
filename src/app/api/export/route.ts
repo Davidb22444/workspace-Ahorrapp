@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { rowsToCamel } from '@/lib/supabase-utils'
 
 function escapeCSV(value: string): string {
@@ -15,15 +16,13 @@ function formatUSD(amount: number): string {
 
 export async function GET(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
     const type = searchParams.get('type') || 'all'
     const from = searchParams.get('from')
     const to = searchParams.get('to')
-
-    if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
-    }
 
     // Build date filters
     const dateFilters: string[] = []

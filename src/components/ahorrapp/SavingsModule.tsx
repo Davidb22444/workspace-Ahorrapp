@@ -12,15 +12,13 @@ import { Progress } from '@/components/ui/progress'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { useFormatCurrency } from '@/lib/format-currency'
 
 interface Contribution {
   id: string
@@ -54,40 +52,10 @@ function getGoalEmoji(name: string): string {
   return '💰'
 }
 
-const mockGoals: SavingsGoal[] = [
-  {
-    id: '1', name: 'Fondo de Emergencia', icon: '🛡️', saved: 4500, target: 10000, deadline: '2025-12-31', color: '#10b981',
-    contributions: [
-      { id: 'c1', amount: 500, date: '2025-06-01', note: 'Contribución mensual' },
-      { id: 'c2', amount: 500, date: '2025-05-01', note: 'Contribución mensual' },
-      { id: 'c3', amount: 300, date: '2025-04-15', note: 'Ahorros extra' },
-    ],
-  },
-  {
-    id: '2', name: 'Vacaciones a Europa', icon: '✈️', saved: 1200, target: 3000, deadline: '2025-08-15', color: '#06b6d4',
-    contributions: [
-      { id: 'c4', amount: 200, date: '2025-06-01', note: 'Ahorro para vuelos' },
-      { id: 'c5', amount: 150, date: '2025-05-15', note: 'Ingreso extra' },
-    ],
-  },
-  {
-    id: '3', name: 'Laptop Nueva', icon: '💻', saved: 800, target: 2000, color: '#8b5cf6',
-    contributions: [
-      { id: 'c6', amount: 200, date: '2025-06-05', note: 'Ahorros mensuales' },
-    ],
-  },
-  {
-    id: '4', name: 'Enganche de Casa', icon: '🏠', saved: 15000, target: 50000, deadline: '2027-06-01', color: '#f59e0b',
-    contributions: [
-      { id: 'c7', amount: 2000, date: '2025-06-01', note: 'Contribución mensual' },
-      { id: 'c8', amount: 2000, date: '2025-05-01', note: 'Contribución mensual' },
-    ],
-  },
-]
-
 const ICON_OPTIONS = ['🛡️', '✈️', '💻', '🏠', '🚗', '🎓', '💍', '💰', '🎁', '📱', '🎮', '🐕']
 
 export default function SavingsModule() {
+  const formatCurrency = useFormatCurrency()
   const [goals, setGoals] = useState<SavingsGoal[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAppStore()
@@ -116,9 +84,15 @@ export default function SavingsModule() {
         const res = await fetch(`/api/savings?accountId=${user?.id}`)
         if (res.ok && !cancelled) {
           const data = await res.json()
-          const goalsData = (data.goals || data || []).map((g: SavingsGoal, idx: number) => ({
-            ...g,
+          const goalsData = (data.savingsGoals || []).map((g: any, idx: number) => ({
+            id: g.id,
+            name: g.name,
+            icon: g.icon || '💰',
             color: g.color || GOAL_COLORS[idx % GOAL_COLORS.length],
+            saved: Number(g.savedAmount ?? g.saved ?? 0),
+            target: Number(g.targetAmount ?? g.target ?? 0),
+            deadline: g.deadline || undefined,
+            contributions: g.contributions || [],
           }))
           setGoals(goalsData)
           setLoading(false)
@@ -126,30 +100,44 @@ export default function SavingsModule() {
         }
       } catch { /* fallback */ }
       if (!cancelled) {
-        setGoals(mockGoals)
+        setGoals([])
         setLoading(false)
       }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const handleAddGoal = async () => {
     if (!goalForm.name || !goalForm.target) { toast.error('Por favor completa nombre y meta'); return }
     const payload = { ...goalForm, target: parseFloat(goalForm.target), saved: 0, icon: goalForm.icon || getGoalEmoji(goalForm.name) }
     try {
-      const res = await fetch('/api/savings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, accountId: user?.id }) })
+      const res = await fetch('/api/savings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: payload.name, targetAmount: payload.target, icon: payload.icon, deadline: payload.deadline || undefined, accountId: user?.id }) })
       if (res.ok) {
-        const newGoal = { ...payload, id: Date.now().toString(), contributions: [], color: GOAL_COLORS[goals.length % GOAL_COLORS.length] }
+        const body = await res.json()
+        const g = body.savingsGoal
+        const newGoal: SavingsGoal = {
+          id: g.id,
+          name: g.name,
+          icon: g.icon || payload.icon,
+          color: g.color || GOAL_COLORS[goals.length % GOAL_COLORS.length],
+          saved: Number(g.savedAmount || 0),
+          target: Number(g.targetAmount || payload.target),
+          deadline: g.deadline || undefined,
+          contributions: [],
+        }
         setGoals((prev) => [...prev, newGoal])
         toast.success('Meta de ahorro creada')
         setAddDialogOpen(false)
         setGoalForm({ name: '', icon: '💰', target: '', deadline: '' })
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
-    setGoals((prev) => [...prev, { ...payload, id: Date.now().toString(), contributions: [], color: GOAL_COLORS[goals.length % GOAL_COLORS.length] }])
-    toast.success('Meta de ahorro creada')
+    } catch { /* network error - use local fallback */ }
+    setGoals((prev) => [...prev, { ...payload, id: `local_${Date.now()}`, contributions: [], color: GOAL_COLORS[goals.length % GOAL_COLORS.length] }])
+    toast.warning('Guardado localmente (sin conexión)')
     setAddDialogOpen(false)
     setGoalForm({ name: '', icon: '💰', target: '', deadline: '' })
   }
@@ -175,14 +163,17 @@ export default function SavingsModule() {
         setContributeDialogOpen(false)
         setContributeForm({ amount: '', note: '' })
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
     setGoals((prev) => prev.map((g) =>
       g.id === selectedGoal.id
         ? { ...g, saved: g.saved + amount, contributions: [contribution, ...(g.contributions || [])] }
         : g
     ))
-    toast.success(`Contribución de ${formatCurrency(amount)} a ${selectedGoal.name}`)
+    toast.warning(`Contribución guardada localmente (sin conexión)`)
     setContributeDialogOpen(false)
     setContributeForm({ amount: '', note: '' })
   }
@@ -194,7 +185,7 @@ export default function SavingsModule() {
   }
 
   const handleDeleteGoal = async (id: string) => {
-    try { await fetch(`/api/savings/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
+    try { const res = await fetch(`/api/savings/${id}?accountId=${user?.id}`, { method: 'DELETE' }); if (!res.ok) { toast.error('Error al eliminar en el servidor'); return } } catch { /* network error */ }
     setGoals((prev) => prev.filter((g) => g.id !== id))
     toast.success('Meta eliminada')
   }
@@ -249,11 +240,7 @@ export default function SavingsModule() {
 
       {/* Goals Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}><CardContent className="p-6"><Skeleton className="h-40 w-full" /></CardContent></Card>
-          ))}
-        </div>
+        <Loading />
       ) : goals.length === 0 ? (
         <div className="relative py-20 text-center overflow-hidden">
           <div className="absolute inset-0 pointer-events-none">
@@ -310,7 +297,7 @@ export default function SavingsModule() {
                             {goal.deadline && (
                               <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                 <Calendar className="w-3 h-3" />
-                                {format(new Date(goal.deadline), 'MMM d, yyyy')}
+                                {format(new Date(goal.deadline), 'MMM d, yyyy', { locale: es })}
                               </p>
                             )}
                           </div>
@@ -392,7 +379,7 @@ export default function SavingsModule() {
                                             {formatCurrency(c.amount)}
                                           </span>
                                           <span className="text-[11px] text-muted-foreground shrink-0">
-                                            {format(new Date(c.date), 'MMM d, yyyy')}
+                                            {format(new Date(c.date), 'MMM d, yyyy', { locale: es })}
                                           </span>
                                         </div>
                                         {c.note && (

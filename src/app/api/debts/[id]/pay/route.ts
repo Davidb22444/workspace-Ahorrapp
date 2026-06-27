@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { z } from 'zod'
 
 const paySchema = z.object({
@@ -22,6 +23,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const { id } = await params
     const body = await request.json()
     const parsed = paySchema.parse(body)
@@ -36,6 +40,8 @@ export async function POST(
     if (debtError || !debt) {
       return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
     }
+
+    if (debt.account_id !== accountId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     const remaining = Number(debt.total_amount) - Number(debt.paid_amount)
 
@@ -64,8 +70,9 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 })
     }
 
-    // Update debt's paid amount
-    const newPaidAmount = Number(debt.paid_amount) + parsed.amount
+    // Update debt's paid amount with optimistic lock
+    const originalPaidAmount = Number(debt.paid_amount)
+    const newPaidAmount = originalPaidAmount + parsed.amount
     let newStatus = debt.status
     if (newPaidAmount >= Number(debt.total_amount)) {
       newStatus = 'paid'
@@ -80,12 +87,14 @@ export async function POST(
         status: newStatus,
       })
       .eq('id', id)
+      .eq('paid_amount', originalPaidAmount)
       .select()
       .single()
 
-    if (updateError) {
-      console.error('Update debt error:', updateError)
-      return NextResponse.json({ error: 'Failed to update debt' }, { status: 500 })
+    if (updateError || !updatedDebt) {
+      await supabase.from('debt_payments').delete().eq('id', payment.id)
+      if (updateError) console.error('Update debt error:', updateError)
+      return NextResponse.json({ error: 'Conflict, please retry' }, { status: 409 })
     }
 
     const camelDebt = snakeToCamel(updatedDebt as unknown as Record<string, unknown>) as {
@@ -107,7 +116,7 @@ export async function POST(
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Pay debt error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

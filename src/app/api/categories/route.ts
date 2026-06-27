@@ -2,23 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 const categoryCreateSchema = z.object({
   name: z.string().min(1),
   icon: z.string().default('Circle'),
   color: z.string().default('#6366f1'),
   type: z.string().default('expense'),
-  accountId: z.string().min(1),
 })
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
+    const accountId = getAuthFromCookie(request)
     const type = searchParams.get('type')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request); if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const body = await request.json()
     const parsed = categoryCreateSchema.parse(body)
 
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
         color: parsed.color,
         type: parsed.type,
         is_default: false,
-        account_id: parsed.accountId,
+        account_id: accountId,
       })
       .select()
       .single()
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ category }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create category error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

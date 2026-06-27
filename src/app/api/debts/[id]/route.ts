@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 const debtUpdateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -22,16 +23,19 @@ function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
     const { data: debt, error: debtError } = await supabase
       .from('debts')
       .select('*')
       .eq('id', id)
+      .eq('account_id', accountId)
       .single()
 
     if (debtError || !debt) {
@@ -79,6 +83,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
     const body = await request.json()
     const parsed = debtUpdateSchema.parse(body)
@@ -96,6 +102,7 @@ export async function PUT(
       .from('debts')
       .update(updateData)
       .eq('id', id)
+      .eq('account_id', accountId)
       .select()
       .single()
 
@@ -109,7 +116,7 @@ export async function PUT(
     return NextResponse.json({ debt: camelDebt })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Update debt error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -117,16 +124,18 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
     // Delete payments first
     await supabase.from('debt_payments').delete().eq('debt_id', id)
 
-    const { error } = await supabase.from('debts').delete().eq('id', id)
+    const { error } = await supabase.from('debts').delete().eq('id', id).eq('account_id', accountId)
 
     if (error) {
       console.error('Delete debt error:', error)

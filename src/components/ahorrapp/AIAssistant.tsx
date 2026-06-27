@@ -27,69 +27,6 @@ const QUICK_QUESTIONS = [
   { icon: '🎯', label: 'Tips para metas de ahorro' },
 ]
 
-const MOCK_RESPONSES: Record<string, string> = {
-  '¿Cómo puedo ahorrar más?': `Aquí tienes algunas estrategias comprobadas para aumentar tus ahorros:
-
-## 💰 Mejores Tips de Ahorro
-
-1. **Automatiza tus ahorros** - Configura transferencias automáticas a tu cuenta de ahorros el día de pago
-2. **La regla de los 30 días** - Espera 30 días antes de realizar cualquier compra no esencial mayor a $50
-3. **Revisa tus suscripciones** - Cancela las suscripciones que no uses (podrías ahorrar $50-100/mes)
-4. **Planificación de comidas** - Planifica las comidas semanalmente y cocina en casa (ahorra $200-400/mes)
-5. **Ahorro de energía** - Reduce las facturas de servicios un 10-15% con hábitos simples
-
-## 📊 Basado en Tus Datos
-- Actualmente estás ahorrando el **20%** de tus ingresos
-- Aumentar al **25%** agregaría **$260/mes** extra a tus ahorros
-- Tu gasto en alimentación está **13%** por encima del presupuesto recomendado
-
-¿Te gustaría que cree un plan de ahorro detallado?`,
-  'Analiza mis gastos': `## 📊 Análisis de Gastos
-
-### Desglose del Mes Actual
-| Categoría | Monto | % del Presupuesto | Estado |
-|----------|--------|-------------|--------|
-| Vivienda | $1,200 | 46% | ✅ En objetivo |
-| Alimentación | $680 | 20% | ⚠️ Sobrepasado |
-| Transporte | $450 | 13% | ⚠️ Ligeramente sobrepasado |
-| Entretenimiento | $320 | 9% | ✅ Debajo del presupuesto |
-| Servicios | $380 | 11% | ✅ En objetivo |
-
-### Hallazgos Clave
-- El **gasto en alimentación** está $80 por encima de tu presupuesto planeado
-- Los **costos de transporte** han aumentado un 15% respecto al mes pasado
-- **Entretenimiento** está muy por debajo del presupuesto - ¡excelente trabajo! 🎉
-- **Vivienda** es estable en el 23% de los ingresos (rango saludable)
-
-### Recomendaciones
-1. Considera preparar comidas para reducir los costos de alimentación
-2. Investiga opciones de transporte público para desplazarte
-3. Tu presupuesto de entretenimiento podría reducirse más si es necesario`,
-  'Recomendaciones de presupuesto': `## 📋 Recomendaciones de Presupuesto
-
-### Asignación Sugerida 50/30/20
-
-Basado en tus ingresos de **$5,200/mes**:
-
-| Categoría | Monto | Tu Actual | Diferencia |
-|----------|--------|-------------|------------|
-| **Necesidades** (50%) | $2,600 | $2,510 | +$90 sobrante |
-| **Deseos** (30%) | $1,560 | $1,480 | +$80 sobrante |
-| **Ahorros** (20%) | $1,040 | $770 | -$270 déficit |
-
-### ⚠️ Acciones a Tomar
-1. **Prioriza el ahorro** - Solo estás ahorrando 14.8% en lugar del 20%
-2. **Redirige el sobrante** - Mueve los $170 sobrantes de necesidades/deseos a ahorros
-3. **Configura ahorros automáticos** - Conviértelo en la primera "factura" que pagas cada mes
-4. **Revisa las necesidades** - Asegúrate de que todas las "necesidades" sean realmente esenciales
-
-### 🎯 Meta Ambiciosa
-Intenta aumentar los ahorros al **25%** en los próximos 3 meses mediante:
-- Reducir el desperdicio de alimentos
-- Negociar facturas
-- Encontrar una fuente de ingresos adicional`,
-}
-
 function timeAgo(date: Date): string {
   const now = new Date()
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
@@ -108,8 +45,13 @@ export default function AIAssistant() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const mountedRef = useRef(true)
   const { user } = useAppStore()
   const hasUserMessages = messages.some((m) => m.role === 'user')
+
+  useEffect(() => {
+    return () => { mountedRef.current = false }
+  }, [])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -151,33 +93,15 @@ export default function AIAssistant() {
       }
     } catch { /* fallback */ }
 
-    // Fallback to mock responses
-    setTimeout(() => {
-      const matchedKey = Object.keys(MOCK_RESPONSES).find((k) => content.toLowerCase().includes(k.toLowerCase()))
-      const response = matchedKey
-        ? MOCK_RESPONSES[matchedKey]
-        : `¡Excelente pregunta! Basándome en tus datos financieros, esto es lo que te sugeriría:
-
-## Perspectiva Financiera 💡
-
-Aunque necesitaría más contexto para darte una respuesta completamente personalizada, aquí hay algunos consejos generales:
-
-1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar
-2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan
-3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos
-4. **Paga primero las deudas con alto interés** - El método avalancha es el que más ahorra
-
-¿Te gustaría que analice un aspecto específico de tus finanzas? ¡Prueba una de las preguntas rápidas para obtener información más detallada!`
-
-      const assistantMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMsg])
-      setLoading(false)
-    }, 1200)
+    // Fallback error message
+    const assistantMsg: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: 'Lo siento, no pude conectarme con el asistente. Intenta de nuevo más tarde.',
+      timestamp: new Date(),
+    }
+    setMessages((prev) => [...prev, assistantMsg])
+    setLoading(false)
   }
 
   const handleSubmit = (e: React.FormEvent) => {

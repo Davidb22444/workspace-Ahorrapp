@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { supabase } from '@/lib/supabase'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
@@ -10,18 +11,17 @@ const unexpectedCreateSchema = z.object({
   categoryId: z.string().optional(),
   dependentId: z.string().optional(),
   resolved: z.boolean().default(false),
-  accountId: z.string().min(1),
 })
 
 export async function GET(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
     const resolved = searchParams.get('resolved')
     const categoryId = searchParams.get('categoryId')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -79,6 +79,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
     const body = await request.json()
     const parsed = unexpectedCreateSchema.parse(body)
 
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
       description: parsed.description,
       date: parsed.date || new Date().toISOString(),
       resolved: parsed.resolved,
-      account_id: parsed.accountId,
+      account_id: accountId,
     }
     if (parsed.categoryId) insertData.category_id = parsed.categoryId
     if (parsed.dependentId) insertData.dependent_id = parsed.dependentId
@@ -103,8 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    // Create movement record
-    await supabase.from('movements').insert({
+    const { error: movError } = await supabase.from('movements').insert({
       type: 'unexpected',
       amount: data.amount,
       description: `Imprevisto: ${data.description}`,
@@ -113,12 +115,18 @@ export async function POST(request: NextRequest) {
       account_id: data.account_id,
     })
 
+    if (movError) {
+      await supabase.from('unexpecteds').delete().eq('id', data.id)
+      console.error('Create movement error:', movError)
+      return NextResponse.json({ error: 'Failed to create movement' }, { status: 500 })
+    }
+
     const unexpected = keysToCamel(data)
 
     return NextResponse.json({ unexpected }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create unexpected error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

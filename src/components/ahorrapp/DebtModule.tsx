@@ -16,15 +16,13 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
+import { useFormatCurrency } from '@/lib/format-currency'
 
 interface Payment {
   id: string
@@ -36,8 +34,8 @@ interface Payment {
 interface Debt {
   id: string
   name: string
-  total: number
-  paid: number
+  totalAmount: number
+  paidAmount: number
   interestRate: number
   type: string
   installments: number
@@ -47,37 +45,6 @@ interface Debt {
   payments?: Payment[]
 }
 
-const mockDebts: Debt[] = [
-  {
-    id: '1', name: 'Préstamo de Auto', total: 25000, paid: 8500, interestRate: 4.5, type: 'installment', installments: 60, dueDate: '2030-06-01', nextPayment: '2025-07-01', status: 'pending',
-    payments: [
-      { id: 'p1', amount: 475, date: '2025-06-01', note: 'Pago mensual' },
-      { id: 'p2', amount: 475, date: '2025-05-01', note: 'Pago mensual' },
-      { id: 'p9', amount: 475, date: '2025-04-01', note: 'Pago mensual' },
-    ],
-  },
-  {
-    id: '2', name: 'Préstamo Estudiantil', total: 35000, paid: 12000, interestRate: 3.2, type: 'installment', installments: 120, dueDate: '2035-06-01', nextPayment: '2025-07-15', status: 'pending',
-    payments: [
-      { id: 'p3', amount: 350, date: '2025-06-15', note: 'Pago mensual' },
-    ],
-  },
-  {
-    id: '3', name: 'Tarjeta de Crédito', total: 3200, paid: 1500, interestRate: 18.9, type: 'revolving', installments: 0, nextPayment: '2025-07-05', status: 'overdue',
-    payments: [
-      { id: 'p4', amount: 500, date: '2025-06-05', note: 'Pago mensual' },
-      { id: 'p5', amount: 500, date: '2025-05-05', note: 'Pago mensual' },
-      { id: 'p6', amount: 500, date: '2025-04-05', note: 'Pago mensual' },
-    ],
-  },
-  {
-    id: '4', name: 'Préstamo Personal', total: 5000, paid: 5000, interestRate: 8.0, type: 'installment', installments: 12, dueDate: '2025-05-01', status: 'paid',
-    payments: [
-      { id: 'p7', amount: 416.67, date: '2025-05-01', note: 'Pago final' },
-    ],
-  },
-]
-
 const DEBT_TYPES = ['installment', 'revolving', 'mortgage', 'student', 'other']
 
 function getStatusInfo(status: string) {
@@ -86,7 +53,7 @@ function getStatusInfo(status: string) {
       return {
         dotColor: 'bg-emerald-500',
         badgeClass: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-        label: 'Activo',
+        label: 'Pagado',
         dotGlow: 'shadow-emerald-500/40',
       }
     case 'overdue':
@@ -107,6 +74,7 @@ function getStatusInfo(status: string) {
 }
 
 export default function DebtModule() {
+  const formatCurrency = useFormatCurrency()
   const [debts, setDebts] = useState<Debt[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAppStore()
@@ -116,7 +84,7 @@ export default function DebtModule() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const [debtForm, setDebtForm] = useState({
-    name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '',
+    name: '', totalAmount: '', interestRate: '', type: 'installment', installments: '', dueDate: '',
   })
 
   const [paymentForm, setPaymentForm] = useState({ amount: '', note: '' })
@@ -133,20 +101,20 @@ export default function DebtModule() {
           return
         }
       } catch { /* fallback */ }
-      if (!cancelled) { setDebts(mockDebts); setLoading(false) }
+      if (!cancelled) { setDebts([]); setLoading(false) }
     }
     doFetch()
     return () => { cancelled = true }
-  }, [])
+  }, [user?.id])
 
   const handleAddDebt = async () => {
-    if (!debtForm.name || !debtForm.total) { toast.error('Por favor completa nombre y monto total'); return }
+    if (!debtForm.name || !debtForm.totalAmount) { toast.error('Por favor completa nombre y monto total'); return }
     const payload = {
       ...debtForm,
-      total: parseFloat(debtForm.total),
+      totalAmount: parseFloat(debtForm.totalAmount),
       interestRate: parseFloat(debtForm.interestRate) || 0,
       installments: parseInt(debtForm.installments) || 0,
-      paid: 0,
+      paidAmount: 0,
       status: 'pending' as const,
     }
     try {
@@ -155,14 +123,17 @@ export default function DebtModule() {
         setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
         toast.success('Deuda agregada')
         setAddDialogOpen(false)
-        setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
+        setDebtForm({ name: '', totalAmount: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
+        return
+      } else {
+        toast.error('Error al guardar en el servidor')
         return
       }
-    } catch { /* fallback */ }
+    } catch { /* network error - use local fallback */ }
     setDebts((prev) => [...prev, { ...payload, id: Date.now().toString(), payments: [] }])
-    toast.success('Deuda agregada')
+    toast.warning('Guardado localmente (sin conexión)')
     setAddDialogOpen(false)
-    setDebtForm({ name: '', total: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
+    setDebtForm({ name: '', totalAmount: '', interestRate: '', type: 'installment', installments: '', dueDate: '' })
   }
 
   const handleRecordPayment = async () => {
@@ -177,37 +148,40 @@ export default function DebtModule() {
         body: JSON.stringify({ ...payment, accountId: user?.id }),
       })
       if (res.ok) {
-        const newPaid = selectedDebt.paid + amount
+        const newPaid = selectedDebt.paidAmount + amount
         setDebts((prev) => prev.map((d) =>
           d.id === selectedDebt.id
-            ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
+            ? { ...d, paidAmount: newPaid, status: newPaid >= d.totalAmount ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
             : d
         ))
         toast.success(`Pago de ${formatCurrency(amount)} registrado`)
         setPaymentDialogOpen(false)
         setPaymentForm({ amount: '', note: '' })
         return
+      } else {
+        toast.error('Error al guardar en el servidor')
+        return
       }
-    } catch { /* fallback */ }
-    const newPaid = selectedDebt.paid + amount
+    } catch { /* network error - use local fallback */ }
+    const newPaid = selectedDebt.paidAmount + amount
     setDebts((prev) => prev.map((d) =>
       d.id === selectedDebt.id
-        ? { ...d, paid: newPaid, status: newPaid >= d.total ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
+        ? { ...d, paidAmount: newPaid, status: newPaid >= d.totalAmount ? 'paid' as const : 'pending' as const, payments: [payment, ...(d.payments || [])] }
         : d
     ))
-    toast.success(`Pago de ${formatCurrency(amount)} registrado`)
+    toast.warning(`Pago guardado localmente (sin conexión)`)
     setPaymentDialogOpen(false)
     setPaymentForm({ amount: '', note: '' })
   }
 
   const handleDelete = async (id: string) => {
-    try { await fetch(`/api/debts/${id}?accountId=${user?.id}`, { method: 'DELETE' }) } catch { /* ok */ }
+    try { const res = await fetch(`/api/debts/${id}?accountId=${user?.id}`, { method: 'DELETE' }); if (!res.ok) { toast.error('Error al eliminar en el servidor'); return } } catch { /* network error */ }
     setDebts((prev) => prev.filter((d) => d.id !== id))
     toast.success('Deuda eliminada')
   }
 
-  const totalOwed = debts.reduce((sum, d) => sum + d.total, 0)
-  const totalPaid = debts.reduce((sum, d) => sum + d.paid, 0)
+  const totalOwed = debts.reduce((sum, d) => sum + d.totalAmount, 0)
+  const totalPaid = debts.reduce((sum, d) => sum + d.paidAmount, 0)
 
   // Calculate last month's payments
   const lastMonth = new Date()
@@ -276,9 +250,7 @@ export default function DebtModule() {
 
       {/* Debt Cards */}
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => <Card key={i}><CardContent className="p-6"><Skeleton className="h-32 w-full" /></CardContent></Card>)}
-        </div>
+        <Loading />
       ) : debts.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -299,9 +271,9 @@ export default function DebtModule() {
       ) : (
         <div className="space-y-4">
           {debts.map((debt, idx) => {
-            const pct = Math.min(100, Math.round((debt.paid / debt.total) * 100))
+            const pct = Math.min(100, Math.round((debt.paidAmount / debt.totalAmount) * 100))
             const isExpanded = expandedId === debt.id
-            const remaining = debt.total - debt.paid
+            const remaining = debt.totalAmount - debt.paidAmount
             const statusInfo = getStatusInfo(debt.status)
 
             return (
@@ -339,7 +311,7 @@ export default function DebtModule() {
                             </span>
                             {debt.nextPayment && debt.status !== 'paid' && (
                               <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" /> {format(new Date(debt.nextPayment), 'MMM d')}
+                                <Calendar className="w-3 h-3" /> {format(new Date(debt.nextPayment), 'MMM d', { locale: es })}
                               </span>
                             )}
                           </div>
@@ -358,7 +330,7 @@ export default function DebtModule() {
                               <CheckCircle2 className="w-3.5 h-3.5" /> Completamente Pagado
                             </span>
                           ) : (
-                            <>Pagado: {formatCurrency(debt.paid)} de {formatCurrency(debt.total)}</>
+                            <>Pagado: {formatCurrency(debt.paidAmount)} de {formatCurrency(debt.totalAmount)}</>
                           )}
                         </span>
                         <span className="font-semibold tabular-nums">{pct}%</span>
@@ -415,7 +387,7 @@ export default function DebtModule() {
                                           )}
                                         </div>
                                         <span className="text-[11px] text-muted-foreground shrink-0">
-                                          {format(new Date(p.date), 'MMM d, yyyy')}
+                                          {format(new Date(p.date), 'MMM d, yyyy', { locale: es })}
                                         </span>
                                       </div>
                                     </motion.div>
@@ -450,7 +422,7 @@ export default function DebtModule() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Monto Total ($)</Label>
-                <Input type="number" step="0.01" min="0" placeholder="0.00" value={debtForm.total} onChange={(e) => setDebtForm({ ...debtForm, total: e.target.value })} />
+                <Input type="number" step="0.01" min="0" placeholder="0.00" value={debtForm.totalAmount} onChange={(e) => setDebtForm({ ...debtForm, totalAmount: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label>Tasa de Interés (%)</Label>
@@ -495,7 +467,7 @@ export default function DebtModule() {
             <div className="bg-muted rounded-lg p-3 text-center">
               <p className="text-xs text-muted-foreground">Restante</p>
               <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
-                {formatCurrency((selectedDebt?.total || 0) - (selectedDebt?.paid || 0))}
+                {formatCurrency((selectedDebt?.totalAmount || 0) - (selectedDebt?.paidAmount || 0))}
               </p>
             </div>
             <div className="space-y-2">

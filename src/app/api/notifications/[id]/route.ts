@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { keysToCamel } from '@/lib/supabase-utils'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 export async function PUT(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
     // Check existence first
@@ -14,6 +17,7 @@ export async function PUT(
       .from('notifications')
       .select('id')
       .eq('id', id)
+      .eq('account_id', accountId)
       .single()
 
     if (fetchError || !existing) {
@@ -24,6 +28,7 @@ export async function PUT(
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id)
+      .eq('account_id', accountId)
       .select()
       .single()
 
@@ -42,12 +47,14 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { error } = await supabase.from('notifications').delete().eq('id', id)
+    const { error } = await supabase.from('notifications').delete().eq('id', id).eq('account_id', accountId)
 
     if (error) {
       console.error('Delete notification error:', error)

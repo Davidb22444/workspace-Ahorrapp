@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { z } from 'zod'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 
 const budgetCreateSchema = z.object({
   name: z.string().min(1),
@@ -10,7 +11,6 @@ const budgetCreateSchema = z.object({
   savingsPercent: z.number().min(0).max(100).default(20),
   cycle: z.string().default('monthly'),
   isActive: z.boolean().default(true),
-  accountId: z.string().min(1),
 })
 
 function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
@@ -25,11 +25,11 @@ function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
+    const accountId = getAuthFromCookie(request)
     const isActive = searchParams.get('isActive')
 
     if (!accountId) {
-      return NextResponse.json({ error: 'accountId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     let query = supabase
@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const accountId = getAuthFromCookie(request); if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const body = await request.json()
     const parsed = budgetCreateSchema.parse(body)
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
         savings_percent: parsed.savingsPercent,
         cycle: parsed.cycle,
         is_active: parsed.isActive,
-        account_id: parsed.accountId,
+        account_id: accountId,
       })
       .select()
       .single()
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ budget: { ...camelBudget, periods: [] } }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 })
+      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('Create budget error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Loading } from '@/components/ui/loading'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -22,6 +22,8 @@ import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { useFormatCurrency } from '@/lib/format-currency'
 
 // --- Types ---
 
@@ -54,13 +56,10 @@ type TypeFilter = 'all' | 'income' | 'expense' | 'unexpected'
 
 const ITEMS_PER_PAGE = 20
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
-}
-
 // --- Component ---
 
 export default function TransactionCenter() {
+  const formatCurrency = useFormatCurrency()
   const { user } = useAppStore()
   const [transactions, setTransactions] = useState<UnifiedTransaction[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -425,20 +424,7 @@ export default function TransactionCenter() {
       )}
 
       {/* Loading State */}
-      {loading && (
-        <div className="space-y-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-lg border">
-              <Skeleton className="w-10 h-10 rounded-full shrink-0" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-32" />
-              </div>
-              <Skeleton className="h-5 w-24" />
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <Loading />}
 
       {/* Transaction List */}
       {!loading && paged.length === 0 && (
@@ -533,7 +519,7 @@ export default function TransactionCenter() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                    <span>{format(parseISO(t.date), 'MMM d, yyyy')}</span>
+                    <span>{format(parseISO(t.date), 'MMM d, yyyy', { locale: es })}</span>
                     {t.type === 'income' && t.source && (
                       <>
                         <span className="text-border">·</span>

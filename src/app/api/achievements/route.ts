@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { getAuthFromCookie } from '@/lib/auth-utils'
 import { rowsToCamel, sumField } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns'
 
@@ -16,15 +17,8 @@ interface Achievement {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const accountId = searchParams.get('accountId')
-
-    if (!accountId) {
-      return NextResponse.json(
-        { error: 'accountId is required' },
-        { status: 400 }
-      )
-    }
+    const accountId = getAuthFromCookie(request)
+    if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
     const now = new Date()
     const currentMonthStart = startOfMonth(now)
@@ -147,8 +141,8 @@ export async function GET(request: NextRequest) {
       // 1. first-income
       {
         id: 'first-income',
-        title: 'First Income',
-        description: 'Recorded your first income',
+        title: 'Primer Ingreso',
+        description: 'Registraste tu primer ingreso',
         icon: 'DollarSign',
         color: '#10b981',
         unlocked: incomeCount > 0,
@@ -160,8 +154,8 @@ export async function GET(request: NextRequest) {
       // 2. first-expense
       {
         id: 'first-expense',
-        title: 'First Expense',
-        description: 'Logged your first expense',
+        title: 'Primer Gasto',
+        description: 'Registraste tu primer gasto',
         icon: 'ShoppingCart',
         color: '#f43f5e',
         unlocked: expenseCount > 0,
@@ -173,8 +167,8 @@ export async function GET(request: NextRequest) {
       // 3. savings-1k
       {
         id: 'savings-1k',
-        title: 'Saver Starter',
-        description: 'Save $1,000 total',
+        title: 'Ahorrador Inicial',
+        description: 'Ahorra $1,000 en total',
         icon: 'PiggyBank',
         color: '#f59e0b',
         unlocked: totalSaved >= 1000,
@@ -187,8 +181,8 @@ export async function GET(request: NextRequest) {
       // 4. savings-10k
       {
         id: 'savings-10k',
-        title: 'Big Saver',
-        description: 'Save $10,000 total',
+        title: 'Gran Ahorrador',
+        description: 'Ahorra $10,000 en total',
         icon: 'Trophy',
         color: '#8b5cf6',
         unlocked: totalSaved >= 10000,
@@ -198,8 +192,8 @@ export async function GET(request: NextRequest) {
       // 5. debt-free
       {
         id: 'debt-free',
-        title: 'Debt Free',
-        description: 'Pay off all debts',
+        title: 'Libre de Deudas',
+        description: 'Paga todas tus deudas',
         icon: 'PartyPopper',
         color: '#ec4899',
         unlocked: activeDebts === 0,
@@ -208,8 +202,8 @@ export async function GET(request: NextRequest) {
       // 6. budget-master
       {
         id: 'budget-master',
-        title: 'Budget Master',
-        description: 'Stay under budget for 3 months',
+        title: 'Maestro del Presupuesto',
+        description: 'Mantente dentro del presupuesto por 3 meses',
         icon: 'Target',
         color: '#06b6d4',
         unlocked:
@@ -225,8 +219,8 @@ export async function GET(request: NextRequest) {
       // 7. track-100
       {
         id: 'track-100',
-        title: 'Tracker Pro',
-        description: 'Record 100 transactions',
+        title: 'Seguimiento Profesional',
+        description: 'Registra 100 transacciones',
         icon: 'BarChart3',
         color: '#6366f1',
         unlocked: transactionCount >= 100,
@@ -236,8 +230,8 @@ export async function GET(request: NextRequest) {
       // 8. emergency-fund
       {
         id: 'emergency-fund',
-        title: 'Safety Net',
-        description: 'Build 3 months emergency fund',
+        title: 'Red de Seguridad',
+        description: 'Construye un fondo de emergencia de 3 meses',
         icon: 'Shield',
         color: '#14b8a6',
         unlocked: emergencyUnlocked,
@@ -247,8 +241,8 @@ export async function GET(request: NextRequest) {
       // 9. first-savings-goal
       {
         id: 'first-savings-goal',
-        title: 'Goal Setter',
-        description: 'Create your first savings goal',
+        title: 'Metas Claras',
+        description: 'Crea tu primera meta de ahorro',
         icon: 'Flag',
         color: '#f97316',
         unlocked: savingsGoalCount > 0,
@@ -260,8 +254,8 @@ export async function GET(request: NextRequest) {
       // 10. recurring-tracker
       {
         id: 'recurring-tracker',
-        title: 'Recurring Planner',
-        description: 'Track 5+ recurring expenses',
+        title: 'Planificador Recurrente',
+        description: 'Registra 5+ gastos recurrentes',
         icon: 'Repeat',
         color: '#84cc16',
         unlocked: recurringExpenseCount >= 5,
@@ -271,8 +265,8 @@ export async function GET(request: NextRequest) {
       // 11. multi-income
       {
         id: 'multi-income',
-        title: 'Income Diversifier',
-        description: 'Have 3+ income sources',
+        title: 'Diversificador de Ingresos',
+        description: 'Ten 3+ fuentes de ingreso',
         icon: 'TrendingUp',
         color: '#10b981',
         unlocked: distinctIncomeSources >= 3,
@@ -284,8 +278,8 @@ export async function GET(request: NextRequest) {
       // 12. no-unexpected
       {
         id: 'no-unexpected',
-        title: 'Prepared Planner',
-        description: 'No unexpected expenses for a month',
+        title: 'Planificador Preparado',
+        description: 'Sin gastos imprevistos por un mes',
         icon: 'CheckCircle',
         color: '#22d3ee',
         unlocked: currentMonthUnexpected === 0,
