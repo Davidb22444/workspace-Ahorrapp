@@ -4,7 +4,7 @@ import React from 'react'
 import styled from 'styled-components'
 
 interface LogoutButtonProps {
-  onClick: () => void
+  onClick: () => void | Promise<void>
   className?: string
   text?: string
   title?: string
@@ -132,7 +132,7 @@ export default function LogoutButton({
     <StyledWrapper>
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => { void onClick() }}
         title={title}
         aria-label={title}
         className={`Btn${className ? ` ${className}` : ''}`}

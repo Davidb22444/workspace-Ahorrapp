@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef, Component, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppStore, type Module } from '@/lib/store'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Menu, Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { LOGOUT_HISTORY_GUARD_KEY } from '@/lib/auth-history'
 import AuthScreen from '@/components/ahorrapp/AuthScreen'
 import LandingPage from '@/components/ahorrapp/LandingPage'
 import { Loading } from '@/components/ui/loading'
@@ -93,9 +95,10 @@ const moduleTitles: Record<Module, string> = {
 }
 
 export default function Home() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { isAuthenticated, activeModule, setUnreadCount, user, unreadCount, setSidebarOpen, login } = useAppStore()
   const [checkingAuth, setCheckingAuth] = useState(true)
-  const [showLanding, setShowLanding] = useState(true)
 
   // Restore session on mount
   useEffect(() => {
@@ -103,6 +106,7 @@ export default function Home() {
       try {
         const res = await fetch('/api/auth/me', {
           credentials: 'include',
+          cache: 'no-store',
         })
         if (res.ok) {
           const data: { user: { id: string; email: string; name: string; role?: string } | null } = await res.json()
@@ -120,6 +124,26 @@ export default function Home() {
     }
     restoreSession()
   }, [login])
+
+  const showAuthScreen = searchParams.get('auth') === 'login'
+
+  useEffect(() => {
+    if (checkingAuth || isAuthenticated || showAuthScreen) return
+    if (window.sessionStorage.getItem(LOGOUT_HISTORY_GUARD_KEY) !== '1') return
+
+    const guardState = { ahorrappLogoutGuard: true }
+    window.history.replaceState(guardState, '', '/')
+    window.history.pushState(guardState, '', '/')
+
+    const keepLoggedOutLandingVisible = () => {
+      window.history.pushState(guardState, '', '/')
+    }
+
+    window.addEventListener('popstate', keepLoggedOutLandingVisible)
+    return () => {
+      window.removeEventListener('popstate', keepLoggedOutLandingVisible)
+    }
+  }, [checkingAuth, isAuthenticated, showAuthScreen])
 
   // Fetch notification count — only when authenticated
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
@@ -154,7 +178,7 @@ export default function Home() {
   }
 
   if (!isAuthenticated) {
-    if (showLanding) return <LandingPage onLogin={() => setShowLanding(false)} />
+    if (!showAuthScreen) return <LandingPage onLogin={() => router.replace('/?auth=login')} />
     return <AuthScreen />
   }
 

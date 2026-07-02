@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Wallet,
@@ -51,6 +52,7 @@ const itemVariants = {
 } as const
 
 export default function AuthScreen() {
+  const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
@@ -138,6 +140,7 @@ export default function AuthScreen() {
           name: data.user?.name || data.name || name || email.split('@')[0],
           role: data.user?.role || data.role || 'user',
         })
+        router.replace('/')
         toast.success('¡Bienvenido de nuevo!')
       }
     } catch (err: any) {
@@ -174,6 +177,7 @@ export default function AuthScreen() {
         role: data.user?.role || 'user',
       })
       window.sessionStorage.removeItem('auth.pendingVerificationEmail')
+      router.replace('/')
       toast.success('¡Cuenta verificada exitosamente!')
     } catch (err: any) {
       toast.error(err.message || 'Error al verificar el código')
@@ -201,6 +205,7 @@ export default function AuthScreen() {
         name: data.user?.name || 'Demo User',
         role: data.user?.role || 'user',
       })
+      router.replace('/')
       toast.success('¡Bienvenido al demo!')
     } catch (err: any) {
       toast.error(err.message || 'No se pudo cargar la cuenta demo. Verifica que la base de datos esté inicializada.')
@@ -213,7 +218,7 @@ export default function AuthScreen() {
     setLoading(true)
     try {
       const redirectTo = `${window.location.origin}/auth/callback?next=/`
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo,
@@ -222,10 +227,25 @@ export default function AuthScreen() {
             prompt: 'consent',
           },
         },
+        skipBrowserRedirect: true,
       })
 
       if (error) {
         throw error
+      }
+
+      if (!data?.url) {
+        throw new Error('No se pudo generar la URL de autenticación')
+      }
+
+      const popup = window.open(
+        data.url,
+        'ahorrapp-google-auth',
+        'width=520,height=700,left=120,top=120'
+      )
+
+      if (!popup) {
+        window.location.replace(data.url)
       }
     } catch (err: any) {
       toast.error(err.message || 'No se pudo iniciar sesión con Google')

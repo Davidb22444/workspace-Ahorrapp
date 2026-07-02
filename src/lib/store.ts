@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import supabase from '@/lib/supabase'
+import { LOGOUT_HISTORY_GUARD_KEY } from '@/lib/auth-history'
 
 export type Module =
   | 'dashboard'
@@ -32,7 +34,7 @@ interface AppState {
   isAuthenticated: boolean
   user: User | null
   login: (user: User) => void
-  logout: () => void
+  logout: () => Promise<void>
 
   // Session management
   inactivityTimeout: number
@@ -74,10 +76,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   isAuthenticated: false,
   user: null,
   login: (user) => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem(LOGOUT_HISTORY_GUARD_KEY)
+    }
     set({ isAuthenticated: true, user, lastActivity: Date.now() })
   },
-  logout: () => {
-    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
+  logout: async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch {
+      // If the network request fails, still clear local state so the UI exits cleanly.
+    }
+    try {
+      await supabase.auth.signOut({ scope: 'local' })
+    } catch {
+      // Best effort: the app session is already cleared server-side.
+    }
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.setItem(LOGOUT_HISTORY_GUARD_KEY, '1')
+    }
     set({
       isAuthenticated: false,
       user: null,

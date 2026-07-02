@@ -44,8 +44,20 @@ export default function AuthCallbackPage() {
           throw new Error('No se pudo crear la sesión de AhorrApp')
         }
 
+        try {
+          await supabase.auth.signOut({ scope: 'local' })
+        } catch {
+          // Best effort: the app uses its own cookie session after this point.
+        }
+
         if (!cancelled) {
-          router.replace(next.startsWith('/') ? next : '/')
+          const target = next.startsWith('/') ? next : '/'
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.replace(target)
+            window.close()
+            return
+          }
+          router.replace(target)
         }
       } catch (err) {
         console.error(err)

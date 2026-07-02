@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { User, Mail, Moon, Sun, DollarSign, Shield, Plus, X, Tags, Loader2 } from 'lucide-react'
+import { User, Mail, Moon, Sun, DollarSign, Plus, X, Tags } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -48,6 +49,7 @@ interface CategoryItem {
 
 export default function SettingsPanel() {
   const { user, logout, currency: storeCurrency, setCurrency: setStoreCurrency } = useAppStore()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [currency, setCurrency] = useState(storeCurrency)
   const [name, setName] = useState(user?.name || '')
@@ -367,7 +369,12 @@ export default function SettingsPanel() {
           <CardDescription>Zona de peligro - estas acciones son irreversibles</CardDescription>
         </CardHeader>
         <CardContent>
-          <LogoutButton onClick={logout} />
+          <LogoutButton
+            onClick={async () => {
+              await logout()
+              router.replace('/')
+            }}
+          />
         </CardContent>
       </Card>
 

@@ -3,12 +3,18 @@ import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 import { refreshSessionToken, TOKEN_NAME, verifyToken } from '@/lib/jwt'
 
+function noStoreJson(body: unknown, init?: ResponseInit) {
+  const response = NextResponse.json(body, init)
+  response.headers.set('Cache-Control', 'no-store, max-age=0')
+  return response
+}
+
 export async function GET(request: NextRequest) {
   try {
     const sessionCookie = request.cookies.get(TOKEN_NAME)?.value
     const refreshCookie = request.cookies.get('refresh_token')?.value
     if (!sessionCookie && !refreshCookie) {
-      return NextResponse.json({ user: null })
+      return noStoreJson({ user: null })
     }
 
     const accountId = getAuthFromCookie(request)
@@ -26,7 +32,7 @@ export async function GET(request: NextRequest) {
           if (user) {
             const { created_at, updated_at, ...rest } = user
             const safeUser = { ...rest, createdAt: created_at, updatedAt: updated_at }
-            const response = NextResponse.json({ user: safeUser })
+            const response = noStoreJson({ user: safeUser })
             response.cookies.set(TOKEN_NAME, result.accessToken, {
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
@@ -45,7 +51,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-      return NextResponse.json({ user: null })
+      return noStoreJson({ user: null })
     }
 
     const user = await prisma.accounts.findUnique({
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ user: null })
+      return noStoreJson({ user: null })
     }
 
     const { created_at, updated_at, ...rest } = user
@@ -64,11 +70,11 @@ export async function GET(request: NextRequest) {
       updatedAt: updated_at,
     }
 
-    return NextResponse.json({ user: safeUser })
+    return noStoreJson({ user: safeUser })
   } catch (error) {
     console.error('Auth check error:', error)
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack')
     console.error('Error message:', error instanceof Error ? error.message : String(error))
-    return NextResponse.json({ user: null, error: 'Internal server error' }, { status: 500 })
+    return noStoreJson({ user: null, error: 'Internal server error' }, { status: 500 })
   }
 }
