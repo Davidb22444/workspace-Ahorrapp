@@ -1,77 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withCors } from '@/config/cors'
+import { z } from 'zod'
+import { hash } from 'bcryptjs'
+import prisma from '@/lib/prisma'
+import { requireRole } from '@/lib/auth-utils'
+import { validatePassword } from '@/lib/security'
+import { sendEmail } from '@/lib/email-service'
+import { generateEmailVerificationCode, renderEmailVerificationEmail } from '@/lib/email-templates'
+import { createDefaultCategories } from '@/lib/default-categories'
+
+const createUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  name: z.string().min(1),
+  role: z.enum(['user', 'admin']).optional(),
+})
 
 export async function POST(request: NextRequest) {
-  return withCors(async (req: any, res: any) => {
-    try {
-      const body = await req.json()
-      const { email, password, name, role } = body
-      
-      // Validate input
-      if (!email || !password || !name) {
-        return res.status(400).json({ error: 'Faltan campos requeridos' })
-      }
-      
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
-      }
-      
-      // Check if email already exists
-      const existingUser = await prisma.accounts.findUnique({
-        where: { email }
-      })
-      
-      if (existingUser) {
-        return res.status(409).json({ error: 'El correo electrónico ya está en uso' })
-      }
-      
-      // Hash password
-      const hashedPassword = await hash(password, 12)
-      
-      // Create user
-      const user = await prisma.accounts.create({
-        data: {
-          email,
-          password: hashedPassword,
-          name,
-          role: role || 'user',
-          status: 'pending_verification'
-        }
-      })
-      
-      // Generate verification token
-      const verificationToken = generateEmailVerificationToken(user.id)
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
-      
-      // Store verification token
-      await prisma.email_verification.create({
-        data: {
-          account_id: user.id,
-          token: verificationToken,
-          expires_at: expiresAt
-        }
-      })
-      
-      // Send verification email
-      const emailHtml = renderEmailVerificationEmail(email, verificationToken)
-      await sendEmail(email, 'Verifica tu correo electrónico - AhorrApp', emailHtml)
-      
-      // Seed default categories
-      await createDefaultCategories(user.id)
-      
-      return res.status(201).json({
+  try {
+    // Only admins can create users through this endpoint
+    const auth = requireRole(request, ['admin'])
+    if (auth instanceof NextResponse) return auth
+
+    const body = await request.json()
+    const parsed = createUserSchema.parse(body)
+
+    const passwordValidation = validatePassword(parsed.password)
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.message }, { status: 400 })
+    }
+
+    const existing = await prisma.accounts.findUnique({ where: { email: parsed.email } })
+    if (existing) {
+      return NextResponse.json(
+        { error: 'El correo electrónico ya está en uso' },
+        { status: 409 }
+      )
+    }
+
+    const hashedPassword = await hash(parsed.password, 12)
+
+    const user = await prisma.accounts.create({
+      data: {
+        email: parsed.email,
+        password: hashedPassword,
+        name: parsed.name,
+        role: parsed.role || 'user',
+        status: 'pending_verification',
+      },
+    })
+
+    const verificationCode = generateEmailVerificationCode()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    await prisma.email_verification.create({
+      data: {
+        account_id: user.id,
+        token: verificationCode,
+        expires_at: expiresAt,
+      },
+    })
+
+    const emailHtml = renderEmailVerificationEmail(parsed.email, verificationCode)
+    sendEmail(parsed.email, 'Verifica tu correo electrónico - AhorrApp', emailHtml)
+      .then((r) => console.log('[admin/create-user] email sent:', r))
+      .catch((e) => console.error('[admin/create-user] email failed (non-fatal):', e))
+
+    await createDefaultCategories(user.id)
+
+    return NextResponse.json(
+      {
         user: {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
         },
-        message: 'Usuario creado exitosamente. Por favor verifica tu correo electrónico.'
-      })
-      
-    } catch (error) {
-      console.error('Admin user creation error:', error)
-      return res.status(500).json({ error: 'Error interno del servidor' })
+        message: 'Usuario creado exitosamente. Se envió un código de verificación al correo.',
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.issues },
+        { status: 400 }
+      )
     }
-  })(request, new NextResponse())
+    console.error('Admin user creation error:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
 }

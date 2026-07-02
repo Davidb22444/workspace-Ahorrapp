@@ -1,79 +1,31 @@
 import { randomUUID } from 'crypto'
-import jwt from 'jsonwebtoken'
+import { redis } from './redis'
 
-const revoked = new Map<string, number>()
+/**
+ * Lista de revocación de tokens respaldada por Redis.
+ *
+ * Cuando se revoca un token (logout, refresh, reset de contraseña) se guarda
+ * su `jti` en Redis con un TTL igual al tiempo restante de vida del token,
+ * de modo que Redis lo elimina automáticamente al expirar. Esto sustituye al
+ * `Map` en memoria, que no funcionaba de forma fiable en serverless.
+ */
 
-const CLEANUP_INTERVAL = 300_000
-const INACTIVITY_CLEANUP_INTERVAL = 60_000
-
-let activities = new Map<string, number>()
-
-function cleanupRevoked() {
-  const now = Date.now()
-  for (const [jti, expiresAt] of revoked.entries()) {
-    if (now > expiresAt) {
-      revoked.delete(jti)
-      activities.delete(jti)
-    }
-  }
-}
-
-function cleanupInactivity() {
-  const now = Date.now()
-  for (const [jti, lastActivity] of activities.entries()) {
-    const expiresAt = revoked.get(jti)
-    if (expiresAt && now > expiresAt) {
-      revoked.delete(jti)
-      activities.delete(jti)
-    }
-  }
-}
-
-setInterval(cleanupRevoked, CLEANUP_INTERVAL)
-setInterval(cleanupInactivity, INACTIVITY_CLEANUP_INTERVAL)
+const REVOKED_PREFIX = 'revoked:'
 
 export function generateJti(): string {
   return randomUUID()
 }
 
-export function recordActivity(jti: string): void {
-  activities.set(jti, Date.now())
+export async function revokeToken(jti: string, expiresAt: number): Promise<void> {
+  if (!jti) return
+  const ttlSeconds = Math.ceil((expiresAt - Date.now()) / 1000)
+  // Si ya expiró no hace falta guardarlo.
+  if (ttlSeconds <= 0) return
+  await redis.set(`${REVOKED_PREFIX}${jti}`, 1, { ex: ttlSeconds })
 }
 
-export function updateTokenWithNewExpiry(payload: jwt.JwtPayload, secret: string): string {
-  const newPayload = {
-    ...payload,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60
-  }
-  return jwt.sign(newPayload, secret)
-}
-
-export function getLastActivity(jti: string): number | null {
-  return activities.get(jti) || null
-}
-
-export function revokeToken(jti: string, expiresAt: number): void {
-  revoked.set(jti, expiresAt)
-  activities.delete(jti)
-}
-
-export function isTokenRevoked(jti: string): boolean {
-  const expiresAt = revoked.get(jti)
-  if (!expiresAt) return false
-  if (Date.now() > expiresAt) {
-    revoked.delete(jti)
-    activities.delete(jti)
-    return false
-  }
-  return true
-}
-
-export function isTokenActive(
-  jti: string,
-  maxInactiveMs: number
-): boolean {
-  const lastActivity = getLastActivity(jti)
-  if (!lastActivity) return false
-  return Date.now() - lastActivity <= maxInactiveMs
+export async function isTokenRevoked(jti: string): Promise<boolean> {
+  if (!jti) return false
+  const exists = await redis.exists(`${REVOKED_PREFIX}${jti}`)
+  return exists === 1
 }
