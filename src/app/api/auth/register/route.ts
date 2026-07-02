@@ -1,59 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { hash } from 'bcryptjs'
+import { checkRateLimit, getClientIp, validatePassword } from '@/lib/security'
+import { sendEmail } from '@/lib/email-service'
+import { generateEmailVerificationCode, renderEmailVerificationEmail } from '@/lib/email-templates'
+import { createDefaultCategories } from '@/lib/default-categories'
 
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8),
   name: z.string().min(1),
 })
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const parsed = registerSchema.parse(body)
-
-    const { data: existing, error: findError } = await supabase
-      .from('accounts')
-      .select('id')
-      .eq('email', parsed.email)
-      .maybeSingle()
-
-    if (findError) {
-      console.error('Register find error:', findError)
+    const ip = getClientIp(request)
+    const limit = checkRateLimit(`register:${ip}`, 3, 15 * 60 * 1000)
+    if (!limit.allowed) {
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: 'Demasiados registros. Intenta de nuevo en 15 minutos.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil(limit.resetIn / 1000)),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
       )
     }
 
+    const body = await request.json()
+    const parsed = registerSchema.parse(body)
+
+    const passwordValidation = validatePassword(parsed.password)
+    if (!passwordValidation.valid) {
+      return NextResponse.json(
+        { error: passwordValidation.message },
+        { status: 400 }
+      )
+    }
+
+    const existing = await prisma.accounts.findUnique({ where: { email: parsed.email } })
+
     if (existing) {
       return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 409 }
+        { error: 'Este correo ya está registrado. Intenta iniciar sesión.' },
+        { status: 400 }
       )
     }
 
     const hashedPassword = await hash(parsed.password, 12)
 
-    const { data: user, error: insertError } = await supabase
-      .from('accounts')
-      .insert({
+    const user = await prisma.accounts.create({
+      data: {
         email: parsed.email,
         password: hashedPassword,
         name: parsed.name,
-      })
-      .select()
-      .single()
-
-    if (insertError || !user) {
-      console.error('Register insert error:', insertError)
-      return NextResponse.json(
-        { error: 'Failed to create account' },
-        { status: 500 }
-      )
-    }
+        status: 'pending_verification',
+      },
+    })
 
     const { password: _pw, created_at, updated_at, ...rest } = user
     const safeUser = {
@@ -62,27 +68,35 @@ export async function POST(request: NextRequest) {
       updatedAt: updated_at,
     }
 
-    // Seed default categories for new user
-    await supabase.from('categories').insert([
-      { name: 'Vivienda', icon: 'Home', color: '#10b981', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Alimentación', icon: 'UtensilsCrossed', color: '#f59e0b', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Transporte', icon: 'Car', color: '#f43f5e', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Entretenimiento', icon: 'Gamepad2', color: '#6366f1', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Servicios', icon: 'Zap', color: '#06b6d4', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Salud', icon: 'Heart', color: '#ec4899', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Educación', icon: 'GraduationCap', color: '#8b5cf6', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Otros', icon: 'Circle', color: '#94a3b8', type: 'expense', is_default: true, account_id: user.id },
-      { name: 'Salario', icon: 'Banknote', color: '#10b981', type: 'income', is_default: true, account_id: user.id },
-      { name: 'Freelance', icon: 'Laptop', color: '#06b6d4', type: 'income', is_default: true, account_id: user.id },
-      { name: 'Inversión', icon: 'TrendingUp', color: '#8b5cf6', type: 'income', is_default: true, account_id: user.id },
-    ])
+    const verificationCode = generateEmailVerificationCode()
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    const response = NextResponse.json({ user: safeUser }, { status: 201 })
-    response.cookies.set('accountId', user.id, {
+    await prisma.email_verification.create({
+      data: {
+        account_id: user.id,
+        token: verificationCode,
+        expires_at: expiresAt,
+      },
+    })
+
+    const emailHtml = renderEmailVerificationEmail(parsed.email, verificationCode)
+    sendEmail(parsed.email, 'Tu código de verificación - AhorrApp', emailHtml)
+      .then((r) => console.log('[register] email sent:', r))
+      .catch((e) => console.error('[register] email failed (non-fatal):', e))
+
+    await createDefaultCategories(user.id)
+
+    const response = NextResponse.json({
+      user: safeUser,
+      message: 'Registro exitoso. Revisa tu correo electrónico para obtener el código de verificación.',
+      email: parsed.email,
+    }, { status: 201 })
+
+    response.cookies.set('pending_verification_email', parsed.email, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 24 * 60 * 60,
       path: '/',
     })
 

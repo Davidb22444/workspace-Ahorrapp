@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bot, Send, Sparkles, User, Lightbulb, Wallet } from 'lucide-react'
+import { Bot, Send, Sparkles, User, Lightbulb, Wallet, Shield, ShieldOff } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,6 +44,7 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [shareData, setShareData] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const mountedRef = useRef(true)
   const { user } = useAppStore()
@@ -77,7 +78,7 @@ export default function AIAssistant() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: content, accountId: user?.id }),
+        body: JSON.stringify({ question: content, accountId: user?.id, includeFinancialData: shareData }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -159,6 +160,29 @@ export default function AIAssistant() {
                         <span className="font-medium">{q.label}</span>
                       </button>
                     ))}
+                  </div>
+
+                  <div className="mt-6 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                    <div className="flex items-start gap-3">
+                      <Shield className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">Privacidad de datos</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Activa esta opción para compartir tus datos financieros (ingresos, gastos, deudas, metas de ahorro) con el asistente y recibir consejos personalizados.
+                        </p>
+                        <label className="inline-flex items-center gap-2 mt-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={shareData}
+                            onChange={(e) => setShareData(e.target.checked)}
+                            className="w-4 h-4 rounded border-border accent-primary"
+                          />
+                          <span className="text-sm text-foreground">
+                            {shareData ? 'Compartiendo datos financieros' : 'No compartir datos financieros'}
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -282,6 +306,25 @@ export default function AIAssistant() {
                 <Send className="w-4 h-4" />
               </Button>
             </form>
+            <div className="max-w-3xl mx-auto mt-1.5 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setShareData(!shareData)}
+                className="inline-flex items-center gap-1 text-[10px] transition-colors"
+              >
+                {shareData ? (
+                  <>
+                    <Shield className="w-3 h-3 text-green-500" />
+                    <span className="text-green-600 dark:text-green-400 font-medium">Compartiendo datos financieros</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldOff className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-muted-foreground">Datos financieros no compartidos</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>

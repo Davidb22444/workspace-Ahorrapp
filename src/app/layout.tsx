@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "sonner";
 import { PwaRegister } from "@/components/PwaRegister";
+import { FinanceBackground } from "@/components/ahorrapp/FinanceBackground";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,18 +43,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} relative isolate antialiased bg-background text-foreground`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <PwaRegister />
-          <Toaster richColors position="top-right" />
+          <FinanceBackground />
+          <div className="relative z-10">
+            {children}
+            <PwaRegister />
+            <Toaster richColors position="top-right" />
+          </div>
         </ThemeProvider>
       </body>
     </html>

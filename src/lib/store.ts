@@ -18,6 +18,7 @@ export type Module =
   | 'achievements'
   | 'annual-summary'
   | 'settings'
+  | 'admin'
 
 export interface User {
   id: string
@@ -32,6 +33,13 @@ interface AppState {
   user: User | null
   login: (user: User) => void
   logout: () => void
+
+  // Session management
+  inactivityTimeout: number
+  setInactivityTimeout: (timeout: number) => void
+  lastActivity: number | null
+  setLastActivity: (timestamp: number) => void
+  isTokenExpired: () => boolean
 
   // Navigation
   activeModule: Module
@@ -61,16 +69,19 @@ interface AppState {
   setCurrency: (currency: string) => void
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   // Auth
   isAuthenticated: false,
   user: null,
-  login: (user) => set({ isAuthenticated: true, user }),
+  login: (user) => {
+    set({ isAuthenticated: true, user, lastActivity: Date.now() })
+  },
   logout: () => {
     fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
     set({
       isAuthenticated: false,
       user: null,
+      lastActivity: null,
       activeModule: 'dashboard',
       dashboardData: null,
       unreadCount: 0,
@@ -89,6 +100,17 @@ export const useAppStore = create<AppState>((set) => ({
   // Data cache
   dashboardData: null,
   setDashboardData: (data) => set({ dashboardData: data }),
+
+  // Session management
+  inactivityTimeout: 15 * 60 * 1000,
+  setInactivityTimeout: (timeout) => set({ inactivityTimeout: timeout }),
+  lastActivity: null,
+  setLastActivity: (timestamp) => set({ lastActivity: timestamp }),
+  isTokenExpired: () => {
+    const state = get()
+    if (!state.lastActivity) return false
+    return Date.now() - state.lastActivity > state.inactivityTimeout
+  },
 
   // Notifications
   unreadCount: 0,

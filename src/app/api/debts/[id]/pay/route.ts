@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 import { z } from 'zod'
 
@@ -30,14 +30,11 @@ export async function POST(
     const body = await request.json()
     const parsed = paySchema.parse(body)
 
-    // Fetch current debt
-    const { data: debt, error: debtError } = await supabase
-      .from('debts')
-      .select('*')
-      .eq('id', id)
-      .single()
+    const debt = await prisma.debts.findFirst({
+      where: { id },
+    })
 
-    if (debtError || !debt) {
+    if (!debt) {
       return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
     }
 
@@ -52,25 +49,21 @@ export async function POST(
       )
     }
 
-    // Create payment
-    const { data: payment, error: payError } = await supabase
-      .from('debt_payments')
-      .insert({
+    const payment = await prisma.debt_payments.create({
+      data: {
         amount: parsed.amount,
-        date: parsed.date || new Date().toISOString().split('T')[0],
+        date: new Date(parsed.date || new Date().toISOString().split('T')[0]),
         note: parsed.note || null,
         debt_id: id,
         account_id: debt.account_id,
-      })
-      .select()
-      .single()
+      },
+    })
 
-    if (payError) {
-      console.error('Create payment error:', payError)
+    if (!payment) {
+      console.error('Create payment error:')
       return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 })
     }
 
-    // Update debt's paid amount with optimistic lock
     const originalPaidAmount = Number(debt.paid_amount)
     const newPaidAmount = originalPaidAmount + parsed.amount
     let newStatus = debt.status
@@ -80,22 +73,19 @@ export async function POST(
       newStatus = 'partial'
     }
 
-    const { data: updatedDebt, error: updateError } = await supabase
-      .from('debts')
-      .update({
-        paid_amount: newPaidAmount,
-        status: newStatus,
-      })
-      .eq('id', id)
-      .eq('paid_amount', originalPaidAmount)
-      .select()
-      .single()
+    const result = await prisma.debts.updateMany({
+      where: { id, paid_amount: originalPaidAmount },
+      data: { paid_amount: newPaidAmount, status: newStatus },
+    })
 
-    if (updateError || !updatedDebt) {
-      await supabase.from('debt_payments').delete().eq('id', payment.id)
-      if (updateError) console.error('Update debt error:', updateError)
+    if (result.count === 0) {
+      await prisma.debt_payments.delete({ where: { id: payment.id } })
       return NextResponse.json({ error: 'Conflict, please retry' }, { status: 409 })
     }
+
+    const updatedDebt = await prisma.debts.findFirst({
+      where: { id },
+    })
 
     const camelDebt = snakeToCamel(updatedDebt as unknown as Record<string, unknown>) as {
       totalAmount: number

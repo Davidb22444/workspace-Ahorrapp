@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
@@ -30,25 +30,20 @@ export async function GET(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    const { data: goal, error: goalError } = await supabase
-      .from('savings_goals')
-      .select('*')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
+    const goal = await prisma.savings_goals.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    if (goalError || !goal) {
+    if (!goal) {
       return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
     }
 
-    const { data: contributions, error: contribError } = await supabase
-      .from('savings_contributions')
-      .select('*')
-      .eq('goal_id', id)
-      .order('date', { ascending: false })
+    const contributions = await prisma.savings_contributions.findMany({
+      where: { goal_id: id },
+      orderBy: { date: 'desc' },
+    })
 
-    if (contribError) {
-      console.error('Get savings contributions error:', contribError)
+    if (!contributions) {
       return NextResponse.json({ error: 'Failed to fetch contributions' }, { status: 500 })
     }
 
@@ -88,6 +83,14 @@ export async function PUT(
     const body = await request.json()
     const parsed = savingsUpdateSchema.parse(body)
 
+    const existing = await prisma.savings_goals.findFirst({
+      where: { id, account_id: accountId },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
+    }
+
     const updateData: Record<string, unknown> = {}
     if (parsed.name !== undefined) updateData.name = parsed.name
     if (parsed.targetAmount !== undefined) updateData.target_amount = parsed.targetAmount
@@ -96,18 +99,10 @@ export async function PUT(
     if (parsed.deadline !== undefined) updateData.deadline = parsed.deadline
     if (parsed.status !== undefined) updateData.status = parsed.status
 
-    const { data: goal, error } = await supabase
-      .from('savings_goals')
-      .update(updateData)
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Update savings error:', error)
-      return NextResponse.json({ error: 'Failed to update savings goal' }, { status: 500 })
-    }
+    const goal = await prisma.savings_goals.update({
+      where: { id },
+      data: updateData,
+    })
 
     const camelGoal = snakeToCamel(goal as unknown as Record<string, unknown>)
 
@@ -130,15 +125,16 @@ export async function DELETE(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    // Delete contributions first
-    await supabase.from('savings_contributions').delete().eq('goal_id', id)
+    const existing = await prisma.savings_goals.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    const { error } = await supabase.from('savings_goals').delete().eq('id', id).eq('account_id', accountId)
-
-    if (error) {
-      console.error('Delete savings error:', error)
-      return NextResponse.json({ error: 'Failed to delete savings goal' }, { status: 500 })
+    if (!existing) {
+      return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
     }
+
+    await prisma.savings_contributions.deleteMany({ where: { goal_id: id } })
+    await prisma.savings_goals.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

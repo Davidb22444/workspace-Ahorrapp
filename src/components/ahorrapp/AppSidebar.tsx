@@ -1,7 +1,6 @@
 'use client'
 
 import { useAppStore, type Module } from '@/lib/store'
-import { useTheme } from 'next-themes'
 import {
   LayoutDashboard,
   TrendingUp,
@@ -15,7 +14,6 @@ import {
   Bell,
   Users,
   Settings,
-  LogOut,
   ChevronLeft,
   Wallet,
   Search,
@@ -23,6 +21,7 @@ import {
   Trophy,
   CalendarDays,
   Lightbulb,
+  Shield,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -61,13 +60,16 @@ const navItems: NavItem[] = [
 ]
 
 function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
-  const { user, activeModule, setActiveModule, logout, unreadCount } = useAppStore()
-  const { setTheme, theme } = useTheme()
+  const { user, activeModule, setActiveModule, unreadCount } = useAppStore()
 
   const handleNav = (id: Module) => {
     setActiveModule(id)
     onNavigate?.()
   }
+
+  const items = user?.role === 'admin'
+    ? [...navItems, { id: 'admin' as Module, label: 'Administración', icon: Shield, badge: false }]
+    : navItems
 
   return (
     <div className="flex flex-col h-full">
@@ -107,7 +109,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = activeModule === item.id
           const Icon = item.icon
 
@@ -178,28 +180,15 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
             </div>
           </div>
         )}
-        <div className={cn('flex items-center gap-3', collapsed ? 'justify-center px-2' : 'px-3 py-1')}>
-          <label className="theme-switch">
-            <input
-              className="theme-toggle"
-              type="checkbox"
-              checked={theme === 'dark'}
-              onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            />
-            <span className="theme-slider"></span>
-          </label>
-          {!collapsed && <span className="text-xs text-muted-foreground">{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>}
+        <div className={cn('flex justify-center px-3 py-2', collapsed && 'px-2')}>
+          <button
+            type="button"
+            className="w-full max-w-[180px] rounded-lg border border-border bg-muted/40 px-4 py-2 text-xs text-muted-foreground hover:bg-muted/70 transition-colors"
+            onClick={() => setActiveModule('settings')}
+          >
+            Abrir configuración
+          </button>
         </div>
-        <button
-          onClick={logout}
-          className={cn(
-            'sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive/80 hover:text-destructive hover:bg-destructive/10',
-            collapsed && 'justify-center px-2'
-          )}
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
-          {!collapsed && <span className="animate-fade-in">Cerrar Sesión</span>}
-        </button>
       </div>
     </div>
   )
@@ -253,3 +242,4 @@ export default function AppSidebar() {
     </>
   )
 }
+

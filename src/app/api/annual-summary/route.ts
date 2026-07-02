@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
-import { rowsToCamel, keysToCamel, sumField } from '@/lib/supabase-utils'
+import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { startOfMonth, endOfMonth, format } from 'date-fns'
 
 const MONTH_LABELS = [
@@ -32,100 +32,85 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const yearStart = new Date(year, 0, 1).toISOString()
-    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999).toISOString()
+    const yearStart = new Date(year, 0, 1)
+    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999)
 
-    // Fetch all records for the year in parallel
     const [
-      incomeRes,
-      expenseRes,
-      unexpectedRes,
-      savingsContributionsRes,
-      debtPaymentsRes,
-      savingsGoalsRes,
+      incomes,
+      expenses,
+      unexpecteds,
+      savingsContributions,
+      debtPayments,
+      savingsGoals,
     ] = await Promise.all([
-      supabase
-        .from('incomes')
-        .select('amount, date, source, category_id')
-        .eq('account_id', accountId)
-        .gte('date', yearStart)
-        .lte('date', yearEnd),
-      supabase
-        .from('expenses')
-        .select('amount, date, category_id')
-        .eq('account_id', accountId)
-        .gte('date', yearStart)
-        .lte('date', yearEnd),
-      supabase
-        .from('unexpecteds')
-        .select('amount, date')
-        .eq('account_id', accountId)
-        .gte('date', yearStart)
-        .lte('date', yearEnd),
-      supabase
-        .from('savings_contributions')
-        .select('amount, date')
-        .eq('account_id', accountId)
-        .gte('date', yearStart)
-        .lte('date', yearEnd),
-      supabase
-        .from('debt_payments')
-        .select('amount, date')
-        .eq('account_id', accountId)
-        .gte('date', yearStart)
-        .lte('date', yearEnd),
-      supabase
-        .from('savings_goals')
-        .select('name, saved_amount, target_amount, color')
-        .eq('account_id', accountId),
+      prisma.incomes.findMany({
+        where: { account_id: accountId, date: { gte: yearStart, lte: yearEnd } },
+        select: { amount: true, date: true, source: true, category_id: true },
+      }),
+      prisma.expenses.findMany({
+        where: { account_id: accountId, date: { gte: yearStart, lte: yearEnd } },
+        select: { amount: true, date: true, category_id: true },
+      }),
+      prisma.unexpecteds.findMany({
+        where: { account_id: accountId, date: { gte: yearStart, lte: yearEnd } },
+        select: { amount: true, date: true },
+      }),
+      prisma.savings_contributions.findMany({
+        where: { account_id: accountId, date: { gte: yearStart, lte: yearEnd } },
+        select: { amount: true, date: true },
+      }),
+      prisma.debt_payments.findMany({
+        where: { account_id: accountId, date: { gte: yearStart, lte: yearEnd } },
+        select: { amount: true, date: true },
+      }),
+      prisma.savings_goals.findMany({
+        where: { account_id: accountId },
+        select: { name: true, saved_amount: true, target_amount: true, color: true },
+      }),
     ])
 
     type ExpenseRow = Record<string, unknown> & { categoryId?: string; amount?: number }
     type IncomeRow = Record<string, unknown> & { categoryId?: string; amount?: number; source?: string }
 
-    const incomes = rowsToCamel<IncomeRow>(incomeRes.data || [])
-    const expenses = rowsToCamel<ExpenseRow>(expenseRes.data || [])
-    const unexpecteds = rowsToCamel(unexpectedRes.data || [])
-    const savingsContributions = rowsToCamel(savingsContributionsRes.data || [])
-    const debtPayments = rowsToCamel(debtPaymentsRes.data || [])
-    const savingsGoals = rowsToCamel(savingsGoalsRes.data || [])
+    const incomesCamel = rowsToCamel<IncomeRow>(incomes)
+    const expensesCamel = rowsToCamel<ExpenseRow>(expenses)
+    const unexpectedsCamel = rowsToCamel(unexpecteds)
+    const savingsContributionsCamel = rowsToCamel(savingsContributions)
+    const debtPaymentsCamel = rowsToCamel(debtPayments)
+    const savingsGoalsCamel = rowsToCamel(savingsGoals)
 
-    // Fetch category info for expenses
-    const expCatIds = [...new Set(expenses.map((e) => e.categoryId).filter(Boolean))]
-    const incCatIds = [...new Set(incomes.map((i) => i.categoryId).filter(Boolean))]
+    const expCatIds = [...new Set(expensesCamel.map((e: any) => e.categoryId).filter(Boolean))] as string[]
+    const incCatIds = [...new Set(incomesCamel.map((i: any) => i.categoryId).filter(Boolean))] as string[]
     const allCatIds = [...new Set([...expCatIds, ...incCatIds])]
 
     let catMap = new Map<string, any>()
     if (allCatIds.length > 0) {
-      const { data: cats } = await supabase.from('categories').select('id, name, color').in('id', allCatIds)
+      const cats = await prisma.categories.findMany({ where: { id: { in: allCatIds } }, select: { id: true, name: true, color: true } })
       if (cats) catMap = new Map(cats.map((c: any) => [c.id, c]))
     }
 
-    // Monthly breakdown
     const monthlyBreakdown = MONTH_LABELS.map((month, idx) => {
       const monthStart = startOfMonth(new Date(year, idx))
       const monthEnd = endOfMonth(new Date(year, idx))
-      const msISO = monthStart.toISOString()
-      const meISO = monthEnd.toISOString()
 
-      const monthIncome = incomes
-        .filter((i: any) => i.date >= msISO && i.date <= meISO)
+      const monthIncome = incomesCamel
+        .filter((i: any) => new Date(i.date) >= monthStart && new Date(i.date) <= monthEnd)
         .reduce((s: number, i: any) => s + (i.amount || 0), 0)
 
-      const monthExpenses = expenses
-        .filter((e: any) => e.date >= msISO && e.date <= meISO)
+      const monthExpenses = expensesCamel
+        .filter((e: any) => new Date(e.date) >= monthStart && new Date(e.date) <= monthEnd)
         .reduce((s: number, e: any) => s + (e.amount || 0), 0)
 
-      const monthUnexpected = unexpecteds
-        .filter((u: any) => u.date >= msISO && u.date <= meISO)
+      const monthUnexpected = unexpectedsCamel
+        .filter((u: any) => new Date(u.date) >= monthStart && new Date(u.date) <= monthEnd)
         .reduce((s: number, u: any) => s + (u.amount || 0), 0)
 
-      const monthSavings = savingsContributions
-        .filter((c: any) => c.date >= msISO && c.date <= meISO)
+      const monthSavings = savingsContributionsCamel
+        .filter((c: any) => new Date(c.date) >= monthStart && new Date(c.date) <= monthEnd)
         .reduce((s: number, c: any) => s + (c.amount || 0), 0)
 
-      const monthDebt = debtPayments
-        .filter((d: any) => d.date >= msISO && d.date <= meISO)
+      const monthDebt = debtPaymentsCamel
+        .filter((d: any) => new Date(d.date) >= monthStart && new Date(d.date) <= monthEnd)
         .reduce((s: number, d: any) => s + (d.amount || 0), 0)
 
       const net = monthIncome - monthExpenses - monthUnexpected
@@ -141,18 +126,16 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Totals
-    const totalIncome = incomes.reduce((s: number, i: any) => s + (i.amount || 0), 0)
-    const totalExpenses = expenses.reduce((s: number, e: any) => s + (e.amount || 0), 0)
-    const totalUnexpected = unexpecteds.reduce((s: number, u: any) => s + (u.amount || 0), 0)
-    const totalSaved = savingsContributions.reduce((s: number, c: any) => s + (c.amount || 0), 0)
-    const totalDebtPaid = debtPayments.reduce((s: number, d: any) => s + (d.amount || 0), 0)
+    const totalIncome = incomesCamel.reduce((s: number, i: any) => s + (i.amount || 0), 0)
+    const totalExpenses = expensesCamel.reduce((s: number, e: any) => s + (e.amount || 0), 0)
+    const totalUnexpected = unexpectedsCamel.reduce((s: number, u: any) => s + (u.amount || 0), 0)
+    const totalSaved = savingsContributionsCamel.reduce((s: number, c: any) => s + (c.amount || 0), 0)
+    const totalDebtPaid = debtPaymentsCamel.reduce((s: number, d: any) => s + (d.amount || 0), 0)
     const netSavings = totalIncome - totalExpenses - totalUnexpected
     const savingsRate = totalIncome > 0 ? netSavings / totalIncome : 0
 
-    // Top expense categories
     const categoryMap = new Map<string, { amount: number; color: string }>()
-    for (const exp of expenses) {
+    for (const exp of expensesCamel) {
       const cat = exp.categoryId ? catMap.get(exp.categoryId) ?? null : null
       const name = cat?.name || 'Uncategorized'
       const color = cat?.color || '#94a3b8'
@@ -170,9 +153,8 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.amount - a.amount)
 
-    // Income sources
     const sourceMap = new Map<string, number>()
-    for (const inc of incomes) {
+    for (const inc of incomesCamel) {
       const src = inc.source || 'Unknown'
       const existing = sourceMap.get(src) || 0
       sourceMap.set(src, existing + (inc.amount || 0))
@@ -187,15 +169,13 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => b.amount - a.amount)
 
-    // Savings goals progress
-    const savingsGoalsProgress = savingsGoals.map((goal: any) => ({
+    const savingsGoalsProgress = savingsGoalsCamel.map((goal: any) => ({
       name: goal.name,
       saved: Number((goal.savedAmount || 0).toFixed(2)),
       target: Number((goal.targetAmount || 0).toFixed(2)),
       color: goal.color || '#10b981',
     }))
 
-    // Month over month changes (skip first month since there's no prior)
     const monthOverMonth = monthlyBreakdown.slice(1).map((m, idx) => {
       const prev = monthlyBreakdown[idx]
       const incomeChange =
@@ -227,7 +207,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Best and worst months by net savings
     let bestMonth: { month: string; netSavings: number } | null = null
     let worstMonth: { month: string; netSavings: number } | null = null
 

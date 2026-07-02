@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
@@ -20,14 +20,11 @@ export async function GET(
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { data, error } = await supabase
-      .from('dependents')
-      .select('*')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
+    const data = await prisma.dependents.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    if (error || !data) {
+    if (!data) {
       return NextResponse.json({ error: 'Dependent not found' }, { status: 404 })
     }
 
@@ -51,6 +48,15 @@ export async function PUT(
     const body = await request.json()
     const parsed = dependentUpdateSchema.parse(body)
 
+    const existing = await prisma.dependents.findFirst({
+      where: { id, account_id: accountId },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Dependent not found' }, { status: 404 })
+    }
+
     const updateData: Record<string, unknown> = {}
     if (parsed.name !== undefined) updateData.name = parsed.name
     if (parsed.relationship !== undefined) updateData.relationship = parsed.relationship
@@ -58,17 +64,10 @@ export async function PUT(
     if (parsed.birthDate !== undefined) updateData.birth_date = parsed.birthDate
     if (parsed.notes !== undefined) updateData.notes = parsed.notes
 
-    const { data, error } = await supabase
-      .from('dependents')
-      .update(updateData)
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .select()
-      .single()
-
-    if (error || !data) {
-      return NextResponse.json({ error: 'Dependent not found' }, { status: 404 })
-    }
+    const data = await prisma.dependents.update({
+      where: { id },
+      data: updateData,
+    })
 
     const dependent = keysToCamel(data)
 
@@ -90,12 +89,17 @@ export async function DELETE(
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { error } = await supabase.from('dependents').delete().eq('id', id).eq('account_id', accountId)
 
-    if (error) {
-      console.error('Delete dependent error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const existing = await prisma.dependents.findFirst({
+      where: { id, account_id: accountId },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Dependent not found' }, { status: 404 })
     }
+
+    await prisma.dependents.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

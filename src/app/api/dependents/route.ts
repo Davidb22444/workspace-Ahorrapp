@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromCookie } from '@/lib/auth-utils'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 
@@ -20,18 +20,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
-      .from('dependents')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('name', { ascending: true })
+    const data = await prisma.dependents.findMany({
+      where: { account_id: accountId },
+      orderBy: { name: 'asc' },
+    })
 
-    if (error) {
-      console.error('List dependents error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    const dependents = rowsToCamel(data || [])
+    const dependents = rowsToCamel(data)
 
     return NextResponse.json({ dependents })
   } catch (error) {
@@ -48,25 +42,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = dependentCreateSchema.parse(body)
 
-    const insertData: Record<string, unknown> = {
-      name: parsed.name,
-      relationship: parsed.relationship,
-      economic_weight: parsed.economicWeight,
-      birth_date: parsed.birthDate || null,
-      notes: parsed.notes || null,
-      account_id: accountId,
-    }
-
-    const { data, error } = await supabase
-      .from('dependents')
-      .insert(insertData)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create dependent error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    const data = await prisma.dependents.create({
+      data: {
+        name: parsed.name,
+        relationship: parsed.relationship,
+        economic_weight: parsed.economicWeight,
+        birth_date: parsed.birthDate || null,
+        notes: parsed.notes || null,
+        account_id: accountId,
+      },
+    })
 
     const dependent = keysToCamel(data)
 

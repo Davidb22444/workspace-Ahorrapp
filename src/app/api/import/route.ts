@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
 function parseCSV(text: string): string[][] {
@@ -13,10 +13,9 @@ function parseCSV(text: string): string[][] {
 
     if (inQuotes) {
       if (char === '"') {
-        // Check for escaped quote
         if (i + 1 < text.length && text[i + 1] === '"') {
           currentField += '"'
-          i++ // skip next quote
+          i++
         } else {
           inQuotes = false
         }
@@ -31,7 +30,7 @@ function parseCSV(text: string): string[][] {
         currentField = ''
       } else if (char === '\n' || char === '\r') {
         if (char === '\r' && i + 1 < text.length && text[i + 1] === '\n') {
-          i++ // skip \n in \r\n
+          i++
         }
         currentRow.push(currentField.trim())
         if (currentRow.some((f) => f.length > 0)) {
@@ -45,7 +44,6 @@ function parseCSV(text: string): string[][] {
     }
   }
 
-  // Handle last field/row
   currentRow.push(currentField.trim())
   if (currentRow.some((f) => f.length > 0)) {
     rows.push(currentRow)
@@ -74,10 +72,9 @@ function detectType(headers: string[]): ImportType {
   }
   if (hasDescription && hasAmount && hasCategory) return 'expense'
 
-  // If there's a "type" column, it's "all" format
   if (normalized.some((h) => h === 'type')) return 'all'
 
-  return 'income' // default fallback
+  return 'income'
 }
 
 function getColumnIndex(headers: string[], targets: string[]): number {
@@ -88,6 +85,11 @@ function getColumnIndex(headers: string[], targets: string[]): number {
   }
   return -1
 }
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+const MAX_ROWS = 1000
+const ALLOWED_MIME_TYPES = ['text/csv', 'text/plain', 'application/vnd.ms-excel']
+const ALLOWED_EXTENSIONS = ['.csv']
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,6 +102,22 @@ export async function POST(request: NextRequest) {
     if (!file) {
       return NextResponse.json(
         { error: 'file is required' },
+        { status: 400 }
+      )
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.` },
+        { status: 413 }
+      )
+    }
+
+    const fileName = file.name.toLowerCase()
+    const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext))
+    if (!hasValidExtension) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only .csv files are allowed.' },
         { status: 400 }
       )
     }
@@ -120,10 +138,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    if (rows.length > MAX_ROWS + 1) {
+      return NextResponse.json({
+        imported: 0,
+        errors: [`CSV has too many rows (max ${MAX_ROWS} data rows).`],
+      })
+    }
+
     const headers = rows[0]
     const dataRows = rows.slice(1)
 
-    // Auto-detect type if "all"
     let effectiveType = importType
     if (effectiveType === 'all') {
       effectiveType = detectType(headers)
@@ -179,11 +203,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Batch insert
       if (incomeRows.length > 0) {
-        const { error } = await supabase.from('incomes').insert(incomeRows)
-        if (error) {
-          errors.push(`Batch insert error: ${error.message}`)
+        try {
+          await prisma.incomes.createMany({ data: incomeRows as any })
+        } catch (err: any) {
+          errors.push(`Batch insert error: ${err.message}`)
           imported -= incomeRows.length
         }
       }
@@ -201,17 +225,14 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Pre-fetch all categories for this account
-      const { data: allCats } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('account_id', cookieAccountId)
+      const allCats = await prisma.categories.findMany({
+        where: { account_id: cookieAccountId },
+        select: { id: true, name: true },
+      })
 
       const catNameMap = new Map<string, string>()
-      if (allCats) {
-        for (const c of allCats) {
-          catNameMap.set(c.name.toLowerCase(), c.id)
-        }
+      for (const c of allCats) {
+        catNameMap.set(c.name.toLowerCase(), c.id)
       }
 
       const expenseRows: Record<string, unknown>[] = []
@@ -232,7 +253,6 @@ export async function POST(request: NextRequest) {
           const categoryStr = catIdx !== -1 ? row[catIdx] : undefined
           const recurringStr = recIdx !== -1 ? row[recIdx] : undefined
 
-          // Try to find category by name
           let categoryId: string | null = null
           if (categoryStr) {
             categoryId = catNameMap.get(categoryStr.toLowerCase()) || null
@@ -257,11 +277,11 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Batch insert
       if (expenseRows.length > 0) {
-        const { error } = await supabase.from('expenses').insert(expenseRows)
-        if (error) {
-          errors.push(`Batch insert error: ${error.message}`)
+        try {
+          await prisma.expenses.createMany({ data: expenseRows as any })
+        } catch (err: any) {
+          errors.push(`Batch insert error: ${err.message}`)
           imported -= expenseRows.length
         }
       }

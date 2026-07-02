@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromCookie } from '@/lib/auth-utils'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 
@@ -10,8 +10,6 @@ const notificationCreateSchema = z.object({
   type: z.string().default('info'),
   link: z.string().optional(),
 })
-
-const markAllReadSchema = z.object({})
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,43 +23,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    let query = supabase
-      .from('notifications')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('created_at', { ascending: false })
-
+    const where: any = { account_id: accountId }
     if (isRead !== null) {
-      query = query.eq('is_read', isRead === 'true')
+      where.is_read = isRead === 'true'
     }
     if (type) {
-      query = query.eq('type', type)
-    }
-    if (limit) {
-      query = query.limit(parseInt(limit, 10))
+      where.type = type
     }
 
-    const { data, error } = await query
+    const data = await prisma.notifications.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      ...(limit ? { take: parseInt(limit, 10) } : {}),
+    })
 
-    if (error) {
-      console.error('List notifications error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    const notifications = rowsToCamel(data)
 
-    const notifications = rowsToCamel(data || [])
+    const unreadCount = await prisma.notifications.count({
+      where: { account_id: accountId, is_read: false },
+    })
 
-    // Count unread
-    const { count: unreadCount, error: countError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('account_id', accountId)
-      .eq('is_read', false)
-
-    if (countError) {
-      console.error('Count unread error:', countError)
-    }
-
-    return NextResponse.json({ notifications, unreadCount: unreadCount || 0 })
+    return NextResponse.json({ notifications, unreadCount })
   } catch (error) {
     console.error('List notifications error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -73,23 +55,13 @@ export async function PUT(request: NextRequest) {
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('account_id', accountId)
-      .eq('is_read', false)
-      .select()
+    const result = await prisma.notifications.updateMany({
+      where: { account_id: accountId, is_read: false },
+      data: { is_read: true },
+    })
 
-    if (error) {
-      console.error('Mark all read error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    return NextResponse.json({ updated: data?.length || 0 })
+    return NextResponse.json({ updated: result.count })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
-    }
     console.error('Mark all read error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -103,24 +75,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = notificationCreateSchema.parse(body)
 
-    const insertData: Record<string, unknown> = {
-      title: parsed.title,
-      message: parsed.message,
-      type: parsed.type,
-      account_id: accountId,
-    }
-    if (parsed.link) insertData.link = parsed.link
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert(insertData)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create notification error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    const data = await prisma.notifications.create({
+      data: {
+        title: parsed.title,
+        message: parsed.message,
+        type: parsed.type,
+        ...(parsed.link && { link: parsed.link }),
+        account_id: accountId,
+      },
+    })
 
     const notification = keysToCamel(data)
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 import { sumField } from '@/lib/supabase-utils'
 import ZAI from 'z-ai-web-dev-sdk'
@@ -9,6 +9,7 @@ const aiRequestSchema = z.object({
   question: z.string().min(1),
   context: z.record(z.string(), z.unknown()).optional(),
   accountId: z.string().optional(),
+  includeFinancialData: z.boolean().optional().default(false),
 })
 
 const SYSTEM_PROMPT = `Eres AhorrApp AI, un asistente financiero personal experto. Ayudas a los usuarios a:
@@ -32,22 +33,21 @@ export async function POST(request: NextRequest) {
 
     let financialContext = ''
 
-    if (accountId) {
-      // Gather financial summary for context
-      const [incomeRes, expenseRes, debtRes, savingsRes] = await Promise.all([
-        supabase.from('incomes').select('amount').eq('account_id', accountId),
-        supabase.from('expenses').select('amount').eq('account_id', accountId),
-        supabase.from('debts').select('total_amount, paid_amount').eq('account_id', accountId).in('status', ['pending', 'partial', 'active']),
-        supabase.from('savings_goals').select('target_amount, saved_amount').eq('account_id', accountId).eq('status', 'active'),
+    if (accountId && parsed.includeFinancialData) {
+      const [incomes, expenses, debts, savings] = await Promise.all([
+        prisma.incomes.findMany({ where: { account_id: accountId }, select: { amount: true } }),
+        prisma.expenses.findMany({ where: { account_id: accountId }, select: { amount: true } }),
+        prisma.debts.findMany({ where: { account_id: accountId, status: { in: ['pending', 'partial', 'active'] } }, select: { total_amount: true, paid_amount: true } }),
+        prisma.savings_goals.findMany({ where: { account_id: accountId, status: 'active' }, select: { target_amount: true, saved_amount: true } }),
       ])
 
-      const totalIncome = sumField(incomeRes.data || [], 'amount')
-      const totalExpenses = sumField(expenseRes.data || [], 'amount')
-      const totalDebtTotal = sumField(debtRes.data || [], 'total_amount')
-      const totalDebtPaid = sumField(debtRes.data || [], 'paid_amount')
+      const totalIncome = sumField(incomes, 'amount')
+      const totalExpenses = sumField(expenses, 'amount')
+      const totalDebtTotal = sumField(debts, 'total_amount')
+      const totalDebtPaid = sumField(debts, 'paid_amount')
       const totalDebt = totalDebtTotal - totalDebtPaid
-      const savingsTarget = sumField(savingsRes.data || [], 'target_amount')
-      const savingsSaved = sumField(savingsRes.data || [], 'saved_amount')
+      const savingsTarget = sumField(savings, 'target_amount')
+      const savingsSaved = sumField(savings, 'saved_amount')
 
       financialContext = `
 Resumen financiero del usuario:
@@ -59,7 +59,6 @@ Resumen financiero del usuario:
 `.trim()
     }
 
-    // Merge any additional context passed by the client
     let fullContext = financialContext
     if (parsed.context && Object.keys(parsed.context).length > 0) {
       fullContext += '\n\nContexto adicional del usuario:\n' + JSON.stringify(parsed.context, null, 2)
@@ -84,7 +83,6 @@ Resumen financiero del usuario:
       console.warn('ZAI SDK not available, using fallback response:', aiErr)
     }
 
-    // Fallback: build a context-aware response from the financial data
     if (!response) {
       if (financialContext) {
         response = `## 💡 Perspectiva Financiera\n\nBasándome en tus datos financieros:\n\n${financialContext}\n\n### Recomendaciones personalizadas:\n1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar\n2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan\n3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos\n4. **Paga primero las deudas con alto interés** - El método avalancha es el más eficiente\n\n¿Te gustaría que analice un aspecto específico de tus finanzas?`

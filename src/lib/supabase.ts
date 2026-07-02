@@ -1,19 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+function initClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-const serverKey = supabaseServiceKey && supabaseServiceKey.length > 10 ? supabaseServiceKey : supabaseAnonKey
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const missing = [
+      !supabaseUrl && 'NEXT_PUBLIC_SUPABASE_URL',
+      !supabaseAnonKey && 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    ].filter(Boolean).join(', ')
+    throw new Error(
+      `Missing env vars: ${missing}. Add them in Vercel Dashboard → Environment Variables and Redeploy.`
+    )
+  }
 
-export const supabase = supabaseUrl
-  ? createClient(supabaseUrl, serverKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    })
-  : (null as unknown as ReturnType<typeof createClient>)
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  })
+}
 
-export const supabaseAnon = supabaseUrl
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : (null as unknown as ReturnType<typeof createClient>)
+const supabase = initClient()
 
 export default supabase

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
@@ -31,25 +31,20 @@ export async function GET(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    const { data: debt, error: debtError } = await supabase
-      .from('debts')
-      .select('*')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
+    const debt = await prisma.debts.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    if (debtError || !debt) {
+    if (!debt) {
       return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
     }
 
-    const { data: payments, error: payError } = await supabase
-      .from('debt_payments')
-      .select('*')
-      .eq('debt_id', id)
-      .order('date', { ascending: false })
+    const payments = await prisma.debt_payments.findMany({
+      where: { debt_id: id },
+      orderBy: { date: 'desc' },
+    })
 
-    if (payError) {
-      console.error('Get debt payments error:', payError)
+    if (!payments) {
       return NextResponse.json({ error: 'Failed to fetch payments' }, { status: 500 })
     }
 
@@ -89,6 +84,14 @@ export async function PUT(
     const body = await request.json()
     const parsed = debtUpdateSchema.parse(body)
 
+    const existing = await prisma.debts.findFirst({
+      where: { id, account_id: accountId },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
+    }
+
     const updateData: Record<string, unknown> = {}
     if (parsed.name !== undefined) updateData.name = parsed.name
     if (parsed.totalAmount !== undefined) updateData.total_amount = parsed.totalAmount
@@ -98,18 +101,10 @@ export async function PUT(
     if (parsed.type !== undefined) updateData.type = parsed.type
     if (parsed.installments !== undefined) updateData.installments = parsed.installments
 
-    const { data: debt, error } = await supabase
-      .from('debts')
-      .update(updateData)
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Update debt error:', error)
-      return NextResponse.json({ error: 'Failed to update debt' }, { status: 500 })
-    }
+    const debt = await prisma.debts.update({
+      where: { id },
+      data: updateData,
+    })
 
     const camelDebt = snakeToCamel(debt as unknown as Record<string, unknown>)
 
@@ -132,15 +127,16 @@ export async function DELETE(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    // Delete payments first
-    await supabase.from('debt_payments').delete().eq('debt_id', id)
+    const existing = await prisma.debts.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    const { error } = await supabase.from('debts').delete().eq('id', id).eq('account_id', accountId)
-
-    if (error) {
-      console.error('Delete debt error:', error)
-      return NextResponse.json({ error: 'Failed to delete debt' }, { status: 500 })
+    if (!existing) {
+      return NextResponse.json({ error: 'Debt not found' }, { status: 404 })
     }
+
+    await prisma.debt_payments.deleteMany({ where: { debt_id: id } })
+    await prisma.debts.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

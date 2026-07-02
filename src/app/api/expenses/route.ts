@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { createAuditLog } from '@/lib/security'
 
 const expenseCreateSchema = z.object({
   amount: z.number().positive(),
@@ -26,15 +27,20 @@ export async function GET(request: NextRequest) {
 
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    let query = supabase.from('expenses').select('*').eq('account_id', accountId)
-    if (from) query = query.gte('date', from)
-    if (to) query = query.lte('date', to)
-    if (categoryId) query = query.eq('category_id', categoryId)
-    if (dependentId) query = query.eq('dependent_id', dependentId)
-    if (isRecurring !== null) query = query.eq('is_recurring', isRecurring === 'true')
+    const where: Record<string, any> = { account_id: accountId }
+    if (categoryId) where.category_id = categoryId
+    if (dependentId) where.dependent_id = dependentId
+    if (isRecurring !== null) where.is_recurring = isRecurring === 'true'
+    if (from || to) {
+      where.date = {}
+      if (from) where.date.gte = new Date(from)
+      if (to) where.date.lte = new Date(to)
+    }
 
-    const { data, error } = await query.order('date', { ascending: false })
-    if (error) return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 })
+    const data = await prisma.expenses.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    })
 
     const expenses = (data || []).map(keysToCamel)
     const total = expenses.reduce((sum: number, e: any) => sum + e.amount, 0)
@@ -51,34 +57,45 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = expenseCreateSchema.parse(body)
 
-    const { data, error } = await supabase.from('expenses').insert({
-      amount: parsed.amount,
-      description: parsed.description,
-      date: parsed.date || new Date().toISOString(),
-      category_id: parsed.categoryId || null,
-      dependent_id: parsed.dependentId || null,
-      is_recurring: parsed.isRecurring,
-      frequency: parsed.frequency || null,
-      account_id: accountId,
-    }).select().single()
-
-    if (error) return NextResponse.json({ error: 'Failed to create expense' }, { status: 400 })
-
-    const { error: movError } = await supabase.from('movements').insert({
-      type: 'expense', amount: parsed.amount,
-      description: `Gasto: ${parsed.description}`,
-      date: parsed.date || new Date().toISOString(),
-      category_id: parsed.categoryId || null,
-      account_id: accountId,
+    const expense = await prisma.expenses.create({
+      data: {
+        amount: parsed.amount,
+        description: parsed.description,
+        date: parsed.date ? new Date(parsed.date) : new Date(),
+        category_id: parsed.categoryId || null,
+        dependent_id: parsed.dependentId || null,
+        is_recurring: parsed.isRecurring,
+        frequency: parsed.frequency || null,
+        account_id: accountId,
+      },
     })
 
-    if (movError) {
-      await supabase.from('expenses').delete().eq('id', data.id)
+    try {
+      await prisma.movements.create({
+        data: {
+          type: 'expense',
+          amount: parsed.amount,
+          description: `Gasto: ${parsed.description}`,
+          date: parsed.date ? new Date(parsed.date) : new Date(),
+          category_id: parsed.categoryId || null,
+          account_id: accountId,
+        },
+      })
+    } catch (movError) {
+      await prisma.expenses.delete({ where: { id: expense.id } })
       console.error('Create movement error:', movError)
       return NextResponse.json({ error: 'Failed to create movement' }, { status: 500 })
     }
 
-    return NextResponse.json({ expense: keysToCamel(data) }, { status: 201 })
+    createAuditLog({
+      action: 'CREATE',
+      entity: 'expense',
+      entityId: expense.id,
+      details: `Gasto creado: $${parsed.amount} - ${parsed.description}`,
+      accountId,
+    })
+
+    return NextResponse.json({ expense: keysToCamel(expense) }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })

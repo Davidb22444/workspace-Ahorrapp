@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 import { keysToCamel, rowsToCamel, sumField } from '@/lib/supabase-utils'
 import { subMonths, startOfMonth, endOfMonth, format } from 'date-fns'
@@ -14,60 +14,48 @@ export async function GET(request: NextRequest) {
     const monthStart = startOfMonth(sixMonthsAgo)
     const monthEnd = endOfMonth(now)
 
-    // Fetch all necessary data in parallel
     const [
-      incomeRes,
-      expenseRes,
-      unexpectedRes,
-      savingsRes,
-      debtsRes,
-      movementsRes,
-      monthlyIncomeRes,
-      monthlyExpenseRes,
+      incomes,
+      expenses,
+      unexpecteds,
+      savingsGoals,
+      debts,
+      movements,
+      monthlyIncomes,
+      monthlyExpenses,
     ] = await Promise.all([
-      // Total income (all time)
-      supabase.from('incomes').select('amount').eq('account_id', accountId),
-      // Total expenses (all time) — includes category_id for breakdown
-      supabase.from('expenses').select('amount, category_id').eq('account_id', accountId),
-      // Unresolved unexpecteds (all time)
-      supabase.from('unexpecteds').select('amount').eq('account_id', accountId).eq('resolved', false),
-      // Savings goals
-      supabase.from('savings_goals').select('id, name, target_amount, saved_amount, icon, color, deadline, status').eq('account_id', accountId),
-      // Active debts
-      supabase.from('debts').select('id, status, total_amount, paid_amount').eq('account_id', accountId).in('status', ['pending', 'partial', 'active']),
-      // Recent movements (last 10)
-      supabase.from('movements').select('*').eq('account_id', accountId).order('date', { ascending: false }).limit(10),
-      // Monthly incomes for last 6 months (single query)
-      supabase.from('incomes').select('date, amount').eq('account_id', accountId).gte('date', monthStart.toISOString()).lte('date', monthEnd.toISOString()),
-      // Monthly expenses for last 6 months (single query)
-      supabase.from('expenses').select('date, amount').eq('account_id', accountId).gte('date', monthStart.toISOString()).lte('date', monthEnd.toISOString()),
+      prisma.incomes.findMany({ where: { account_id: accountId }, select: { amount: true } }),
+      prisma.expenses.findMany({ where: { account_id: accountId }, select: { amount: true, category_id: true } }),
+      prisma.unexpecteds.findMany({ where: { account_id: accountId, resolved: false }, select: { amount: true } }),
+      prisma.savings_goals.findMany({ where: { account_id: accountId }, select: { id: true, name: true, target_amount: true, saved_amount: true, icon: true, color: true, deadline: true, status: true } }),
+      prisma.debts.findMany({ where: { account_id: accountId, status: { in: ['pending', 'partial', 'active'] } }, select: { id: true, status: true, total_amount: true, paid_amount: true } }),
+      prisma.movements.findMany({ where: { account_id: accountId }, orderBy: { date: 'desc' }, take: 10 }),
+      prisma.incomes.findMany({ where: { account_id: accountId, date: { gte: monthStart, lte: monthEnd } }, select: { date: true, amount: true } }),
+      prisma.expenses.findMany({ where: { account_id: accountId, date: { gte: monthStart, lte: monthEnd } }, select: { date: true, amount: true } }),
     ])
 
-    const totalIncome = sumField(incomeRes.data || [], 'amount')
-    const totalExpenses = sumField(expenseRes.data || [], 'amount')
-    const totalUnexpected = sumField(unexpectedRes.data || [], 'amount')
-    const totalSaved = sumField(savingsRes.data || [], 'saved_amount')
-    const totalDebtRemaining = (debtsRes.data || []).reduce((sum: number, d: any) => sum + Math.max(0, (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)), 0)
-    const totalDebtPayments = (debtsRes.data || []).reduce((sum: number, d: any) => sum + (Number(d.paid_amount) || 0), 0)
-    const activeDebtCount = (debtsRes.data || []).length
+    const totalIncome = sumField(incomes, 'amount')
+    const totalExpenses = sumField(expenses, 'amount')
+    const totalUnexpected = sumField(unexpecteds, 'amount')
+    const totalSaved = sumField(savingsGoals, 'saved_amount')
+    const totalDebtRemaining = debts.reduce((sum: number, d: any) => sum + Math.max(0, (Number(d.total_amount) || 0) - (Number(d.paid_amount) || 0)), 0)
+    const totalDebtPayments = debts.reduce((sum: number, d: any) => sum + (Number(d.paid_amount) || 0), 0)
+    const activeDebtCount = debts.length
 
     const balance = totalIncome - totalExpenses - totalUnexpected
 
-    // Enrich movements with category data
-    const movementsRaw = movementsRes.data || []
-    const catIds = [...new Set(movementsRaw.map((m: any) => m.category_id).filter(Boolean))] as string[]
+    const catIds = [...new Set(movements.map((m: any) => m.category_id).filter(Boolean))] as string[]
     let catMap = new Map<string, any>()
     if (catIds.length > 0) {
-      const { data: cats } = await supabase.from('categories').select('id, name, icon, color').in('id', catIds)
+      const cats = await prisma.categories.findMany({ where: { id: { in: catIds } }, select: { id: true, name: true, icon: true, color: true } })
       if (cats) catMap = new Map(cats.map((c: any) => [c.id, c]))
     }
 
-    const recentMovements = rowsToCamel(movementsRaw).map((m: any) => ({
+    const recentMovements = rowsToCamel(movements).map((m: any) => ({
       ...m,
       category: m.categoryId ? keysToCamel(catMap.get(m.categoryId) || {}) : null,
     }))
 
-    // Monthly data: last 6 months — computed client-side from fetched data
     const monthlyData: { month: string; income: number; expenses: number }[] = []
     for (let i = 5; i >= 0; i--) {
       const monthDate = subMonths(now, i)
@@ -78,14 +66,14 @@ export async function GET(request: NextRequest) {
       monthlyData.push({
         month: monthLabel,
         income: Number(sumField(
-          (monthlyIncomeRes.data || []).filter((r: any) => {
+          monthlyIncomes.filter((r: any) => {
             const d = new Date(r.date)
             return d >= start && d <= end
           }),
           'amount'
         ).toFixed(2)),
         expenses: Number(sumField(
-          (monthlyExpenseRes.data || []).filter((r: any) => {
+          monthlyExpenses.filter((r: any) => {
             const d = new Date(r.date)
             return d >= start && d <= end
           }),
@@ -94,17 +82,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Category breakdown: expenses grouped by category
     const catAmountMap = new Map<string, number>()
-    for (const e of expenseRes.data || []) {
+    for (const e of expenses) {
       const catId = e.category_id || 'uncategorized'
       catAmountMap.set(catId, (catAmountMap.get(catId) || 0) + (e.amount || 0))
     }
 
-    const uniqueCatIds = [...new Set(expenseRes.data?.map((e: any) => e.category_id).filter(Boolean) || [])] as string[]
+    const uniqueCatIds = [...new Set(expenses.map((e: any) => e.category_id).filter(Boolean))] as string[]
     let allCats = new Map<string, any>()
     if (uniqueCatIds.length > 0) {
-      const { data: cats } = await supabase.from('categories').select('id, name, icon, color').in('id', uniqueCatIds)
+      const cats = await prisma.categories.findMany({ where: { id: { in: uniqueCatIds } }, select: { id: true, name: true, icon: true, color: true } })
       if (cats) allCats = new Map(cats.map((c: any) => [c.id, c]))
     }
 
@@ -119,8 +106,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Savings progress
-    const savingsGoals = rowsToCamel(savingsRes.data || []).map((goal: any) => ({
+    const savingsProgress = rowsToCamel(savingsGoals).map((goal: any) => ({
       ...goal,
       progress: goal.targetAmount > 0
         ? Number(((goal.savedAmount / goal.targetAmount) * 100).toFixed(1))
@@ -139,7 +125,7 @@ export async function GET(request: NextRequest) {
       recentMovements,
       monthlyData,
       categoryBreakdown,
-      savingsProgress: savingsGoals,
+      savingsProgress,
     })
   } catch (error) {
     console.error('Dashboard error:', error)

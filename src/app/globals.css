@@ -127,6 +127,16 @@
   }
 }
 
+.bg-public-animated {
+  position: relative;
+  isolation: isolate;
+}
+
+.bg-public-animated > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Glassmorphism utilities */
 .glass {
   background: rgba(255, 255, 255, 0.1);
@@ -259,6 +269,117 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes gridDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -12px, 0) scale(1.01); }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes orbitSlow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(28px, -16px, 0) scale(1.07); }
+}
+
+@keyframes orbitMedium {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-24px, 18px, 0) scale(1.08); }
+}
+
+@keyframes orbitFast {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(18px, -22px, 0) scale(1.1); }
+}
+
+@keyframes waveDrift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); }
+}
+
+@keyframes pingSlow {
+  0% { transform: scale(0.7); opacity: 0.65; }
+  70% { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(0.7); opacity: 0; }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -18px, 0) scale(1.04); }
+}
+
+@keyframes floatMedium {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-12px, 14px, 0) scale(1.06); }
+}
+
+@keyframes trackSweep {
+  0% { transform: translateX(-12%); opacity: 0.35; }
+  50% { opacity: 0.55; }
+  100% { transform: translateX(12%); opacity: 0.35; }
+}
+
+@keyframes trackRise {
+  0%, 100% { transform: scaleY(0.96); opacity: 0.35; }
+  50% { transform: scaleY(1.04); opacity: 0.65; }
+}
+
+@keyframes barRise {
+  0%, 100% { transform: scaleY(0.82); opacity: 0.55; }
+  50% { transform: scaleY(1.08); opacity: 1; }
+}
+
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.015); }
+}
+
+.animate-grid-drift { animation: gridDrift 20s ease-in-out infinite; }
+.animate-pulse-slow { animation: pulseSlow 10s ease-in-out infinite; }
+.animate-orbit-slow { animation: orbitSlow 22s ease-in-out infinite; }
+.animate-orbit-medium { animation: orbitMedium 18s ease-in-out infinite; }
+.animate-orbit-fast { animation: orbitFast 14s ease-in-out infinite; }
+.animate-wave-drift { animation: waveDrift 16s ease-in-out infinite; }
+.animate-ping-slow { animation: pingSlow 3.2s ease-out infinite; }
+.animate-float-slow { animation: floatSlow 14s ease-in-out infinite; }
+.animate-float-medium { animation: floatMedium 18s ease-in-out infinite; }
+.animate-track-sweep { animation: trackSweep 12s ease-in-out infinite; }
+.animate-track-rise { animation: trackRise 9s ease-in-out infinite; }
+.animate-bar-rise { animation: barRise 3.8s ease-in-out infinite; }
+.animate-grid-pulse { animation: gridPulse 12s ease-in-out infinite; }
+
+/* === Finance background animations (FinanceBackground.tsx) === */
+@keyframes financeDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, 30px) scale(1.08); }
+}
+@keyframes financeDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, 40px) scale(1.1); }
+}
+@keyframes financeDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, -30px) scale(1.05); }
+}
+@keyframes financeLineDraw {
+  0%          { stroke-dasharray: 1400; stroke-dashoffset: 1400; }
+  60%, 100%   { stroke-dasharray: 1400; stroke-dashoffset: 0; }
+}
+@keyframes financeParticleRise {
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  10%  { opacity: var(--particle-opacity, 0.5); }
+  90%  { opacity: var(--particle-opacity, 0.5); }
+  100% { transform: translateY(-100vh) scale(1); opacity: 0; }
+}
+
+.animate-finance-drift-1 { animation: financeDrift1 18s ease-in-out infinite; }
+.animate-finance-drift-2 { animation: financeDrift2 22s ease-in-out infinite; }
+.animate-finance-drift-3 { animation: financeDrift3 26s ease-in-out infinite; }
+.animate-finance-line-draw { animation: financeLineDraw 8s ease-in-out infinite; }
+.animate-finance-particle { animation: financeParticleRise linear infinite; }
 
 /* Animations */
 @keyframes fadeIn {
@@ -741,7 +862,12 @@ input:focus, select:focus, textarea:focus {
   .animate-float,
   .animate-card-float,
   .animate-count-up,
-  .animate-pulse-dot {
+  .animate-pulse-dot,
+  .animate-finance-drift-1,
+  .animate-finance-drift-2,
+  .animate-finance-drift-3,
+  .animate-finance-line-draw,
+  .animate-finance-particle {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -763,7 +889,8 @@ input:focus, select:focus, textarea:focus {
     animation: none !important;
     background: var(--muted);
   }
-}
+
+  }
 
 /* Print-optimized layout for Monthly Report */
 @media print {

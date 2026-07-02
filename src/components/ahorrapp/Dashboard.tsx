@@ -802,7 +802,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="relative w-28 h-28 sm:w-36 sm:h-36 shrink-0 hidden sm:block">
-                <Image src="/images/dashboard-welcome.png" alt="Bienvenida" fill className="object-contain drop-shadow-lg" priority />
+                <Image src="/images/dashboard-welcome.png" alt="Bienvenida" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-contain drop-shadow-lg" priority />
               </div>
             </div>
             {/* Decorative dots */}
@@ -853,7 +853,7 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="flex">
                 <div className="relative w-24 sm:w-32 shrink-0 hidden sm:block">
-                  <Image src="/images/financial-tips.png" alt="Consejo" fill className="object-cover" />
+                  <Image src="/images/financial-tips.png" alt="Consejo" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" />
                 </div>
                 <div className="p-4 flex-1">
                   <div className="flex items-center gap-2 mb-2">

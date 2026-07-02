@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, Component, type ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { useAppStore, type Module } from '@/lib/store'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Menu, Heart } from 'lucide-react'
@@ -11,22 +12,43 @@ import LandingPage from '@/components/ahorrapp/LandingPage'
 import { Loading } from '@/components/ui/loading'
 import AppSidebar from '@/components/ahorrapp/AppSidebar'
 import Dashboard from '@/components/ahorrapp/Dashboard'
-import IncomeModule from '@/components/ahorrapp/IncomeModule'
-import ExpenseModule from '@/components/ahorrapp/ExpenseModule'
-import SavingsModule from '@/components/ahorrapp/SavingsModule'
-import DebtModule from '@/components/ahorrapp/DebtModule'
-import BudgetModule from '@/components/ahorrapp/BudgetModule'
-import AIAssistant from '@/components/ahorrapp/AIAssistant'
-import NotificationsPanel from '@/components/ahorrapp/NotificationsPanel'
-import DependentsModule from '@/components/ahorrapp/DependentsModule'
-import SettingsPanel from '@/components/ahorrapp/SettingsPanel'
-import UnexpectedModule from '@/components/ahorrapp/UnexpectedModule'
-import TransactionCenter from '@/components/ahorrapp/TransactionCenter'
-import TipsModule from '@/components/ahorrapp/TipsModule'
-import MonthlyReport from '@/components/ahorrapp/MonthlyReport'
-import AchievementsModule from '@/components/ahorrapp/AchievementsModule'
-import AnnualSummary from '@/components/ahorrapp/AnnualSummary'
-import RecurringBills from '@/components/ahorrapp/RecurringBills'
+import FinanceBackground from '@/components/ahorrapp/FinanceBackground'
+
+const IncomeModule = dynamic(() => import('@/components/ahorrapp/IncomeModule'), { loading: () => <Loading /> })
+const ExpenseModule = dynamic(() => import('@/components/ahorrapp/ExpenseModule'), { loading: () => <Loading /> })
+const SavingsModule = dynamic(() => import('@/components/ahorrapp/SavingsModule'), { loading: () => <Loading /> })
+const DebtModule = dynamic(() => import('@/components/ahorrapp/DebtModule'), { loading: () => <Loading /> })
+const BudgetModule = dynamic(() => import('@/components/ahorrapp/BudgetModule'), { loading: () => <Loading /> })
+const AIAssistant = dynamic(() => import('@/components/ahorrapp/AIAssistant'), { loading: () => <Loading /> })
+const NotificationsPanel = dynamic(() => import('@/components/ahorrapp/NotificationsPanel'), { loading: () => <Loading /> })
+const DependentsModule = dynamic(() => import('@/components/ahorrapp/DependentsModule'), { loading: () => <Loading /> })
+const SettingsPanel = dynamic(() => import('@/components/ahorrapp/SettingsPanel'), { loading: () => <Loading /> })
+const UnexpectedModule = dynamic(() => import('@/components/ahorrapp/UnexpectedModule'), { loading: () => <Loading /> })
+const TransactionCenter = dynamic(() => import('@/components/ahorrapp/TransactionCenter'), { loading: () => <Loading /> })
+const TipsModule = dynamic(() => import('@/components/ahorrapp/TipsModule'), { loading: () => <Loading /> })
+const MonthlyReport = dynamic(() => import('@/components/ahorrapp/MonthlyReport'), { loading: () => <Loading /> })
+const AchievementsModule = dynamic(() => import('@/components/ahorrapp/AchievementsModule'), { loading: () => <Loading /> })
+const AnnualSummary = dynamic(() => import('@/components/ahorrapp/AnnualSummary'), { loading: () => <Loading /> })
+const RecurringBills = dynamic(() => import('@/components/ahorrapp/RecurringBills'), { loading: () => <Loading /> })
+const AdminPanel = dynamic(() => import('@/components/ahorrapp/AdminPanel'), { loading: () => <Loading /> })
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null }
+  static getDerivedStateFromError(error: Error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground gap-2">
+          <p className="text-sm">Algo salió mal al cargar este módulo</p>
+          <button className="text-xs underline hover:text-foreground" onClick={() => this.setState({ error: null })}>
+            Intentar de nuevo
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 const moduleComponents: Record<Module, React.ComponentType> = {
   dashboard: Dashboard,
@@ -46,6 +68,7 @@ const moduleComponents: Record<Module, React.ComponentType> = {
   achievements: AchievementsModule,
   'annual-summary': AnnualSummary,
   settings: SettingsPanel,
+  admin: AdminPanel,
 }
 
 const moduleTitles: Record<Module, string> = {
@@ -66,6 +89,7 @@ const moduleTitles: Record<Module, string> = {
   achievements: 'Logros',
   'annual-summary': 'Resumen Anual',
   settings: 'Configuración',
+  admin: 'Administración',
 }
 
 export default function Home() {
@@ -77,9 +101,11 @@ export default function Home() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const res = await fetch('/api/auth/me')
+        const res = await fetch('/api/auth/me', {
+          credentials: 'include',
+        })
         if (res.ok) {
-          const data = await res.json()
+          const data: { user: { id: string; email: string; name: string; role?: string } | null } = await res.json()
           if (data.user) {
             login({
               id: data.user.id,
@@ -95,7 +121,8 @@ export default function Home() {
     restoreSession()
   }, [login])
 
-  // Fetch notification count periodically
+  // Fetch notification count — only when authenticated
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   useEffect(() => {
     if (!isAuthenticated) return
 
@@ -104,16 +131,18 @@ export default function Home() {
         const res = await fetch(`/api/notifications?accountId=${user?.id}`)
         if (res.ok) {
           const data = await res.json()
-          const list = (data.notifications || data || []).map((n: Record<string, unknown>) => n.isRead ?? n.read ?? false)
-          setUnreadCount(list.filter((read: boolean) => !read).length)
+          const list: { isRead?: boolean; read?: boolean }[] = data.notifications ?? data ?? []
+          if (Array.isArray(list)) {
+            setUnreadCount(list.filter((n) => !(n.isRead ?? n.read ?? false)).length)
+          }
         }
       } catch { /* ok */ }
     }
 
-    const interval = setInterval(pollNotifications, 30000)
-    const timeout = setTimeout(pollNotifications, 0)
+    pollNotifications()
+    pollRef.current = setInterval(pollNotifications, 30000)
 
-    return () => { clearInterval(interval); clearTimeout(timeout) }
+    return () => { if (pollRef.current !== undefined) clearInterval(pollRef.current) }
   }, [isAuthenticated, setUnreadCount, user?.id])
 
   if (checkingAuth) {
@@ -134,11 +163,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-background">
+      <FinanceBackground />
       {/* Sidebar */}
       <AppSidebar />
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 flex flex-col">
+      <main className="relative z-10 flex-1 min-w-0 flex flex-col">
         {/* Mobile Header */}
         <header className="lg:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
           <div className="flex items-center justify-between px-4 h-14">
@@ -183,7 +213,9 @@ export default function Home() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
             >
-              <ActiveModuleComponent />
+              <ErrorBoundary>
+                <ActiveModuleComponent />
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { keysToCamel, rowsToCamel } from '@/lib/supabase-utils'
+import prisma from '@/lib/prisma'
+import { keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
@@ -21,26 +21,22 @@ export async function GET(
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { data, error } = await supabase
-      .from('unexpecteds')
-      .select('*')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
+    const data = await prisma.unexpecteds.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    if (error || !data) {
+    if (!data) {
       return NextResponse.json({ error: 'Unexpected expense not found' }, { status: 404 })
     }
 
-    // Fetch related category and dependent
     let category = null
     let dependent = null
     if (data.category_id) {
-      const { data: cat } = await supabase.from('categories').select('id, name, icon, color').eq('id', data.category_id).single()
+      const cat = await prisma.categories.findUnique({ where: { id: data.category_id }, select: { id: true, name: true, icon: true, color: true } })
       if (cat) category = keysToCamel(cat)
     }
     if (data.dependent_id) {
-      const { data: dep } = await supabase.from('dependents').select('id, name, relationship').eq('id', data.dependent_id).single()
+      const dep = await prisma.dependents.findUnique({ where: { id: data.dependent_id }, select: { id: true, name: true, relationship: true } })
       if (dep) dependent = keysToCamel(dep)
     }
 
@@ -64,6 +60,15 @@ export async function PUT(
     const body = await request.json()
     const parsed = unexpectedUpdateSchema.parse(body)
 
+    const existing = await prisma.unexpecteds.findFirst({
+      where: { id, account_id: accountId },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Unexpected expense not found' }, { status: 404 })
+    }
+
     const updateData: Record<string, unknown> = {}
     if (parsed.amount !== undefined) updateData.amount = parsed.amount
     if (parsed.description !== undefined) updateData.description = parsed.description
@@ -72,27 +77,19 @@ export async function PUT(
     if (parsed.dependentId !== undefined) updateData.dependent_id = parsed.dependentId
     if (parsed.resolved !== undefined) updateData.resolved = parsed.resolved
 
-    const { data, error } = await supabase
-      .from('unexpecteds')
-      .update(updateData)
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .select()
-      .single()
+    const data = await prisma.unexpecteds.update({
+      where: { id },
+      data: updateData,
+    })
 
-    if (error || !data) {
-      return NextResponse.json({ error: 'Unexpected expense not found' }, { status: 404 })
-    }
-
-    // Fetch related data
     let category = null
     let dependent = null
     if (data.category_id) {
-      const { data: cat } = await supabase.from('categories').select('id, name, icon, color').eq('id', data.category_id).single()
+      const cat = await prisma.categories.findUnique({ where: { id: data.category_id }, select: { id: true, name: true, icon: true, color: true } })
       if (cat) category = keysToCamel(cat)
     }
     if (data.dependent_id) {
-      const { data: dep } = await supabase.from('dependents').select('id, name, relationship').eq('id', data.dependent_id).single()
+      const dep = await prisma.dependents.findUnique({ where: { id: data.dependent_id }, select: { id: true, name: true, relationship: true } })
       if (dep) dependent = keysToCamel(dep)
     }
 
@@ -116,12 +113,17 @@ export async function DELETE(
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { error } = await supabase.from('unexpecteds').delete().eq('id', id).eq('account_id', accountId)
 
-    if (error) {
-      console.error('Delete unexpected error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const existing = await prisma.unexpecteds.findFirst({
+      where: { id, account_id: accountId },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Unexpected expense not found' }, { status: 404 })
     }
+
+    await prisma.unexpecteds.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

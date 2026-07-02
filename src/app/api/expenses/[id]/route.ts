@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { createAuditLog } from '@/lib/security'
 
 const expenseUpdateSchema = z.object({
   amount: z.number().positive().optional(),
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { data, error } = await supabase.from('expenses').select('*').eq('id', id).eq('account_id', accountId).single()
-    if (error || !data) return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+    const data = await prisma.expenses.findFirst({ where: { id, account_id: accountId } })
+    if (!data) return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
     return NextResponse.json({ expense: keysToCamel(data) })
   } catch (error) {
     console.error('Get expense error:', error)
@@ -36,6 +37,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json()
     const parsed = expenseUpdateSchema.parse(body)
 
+    const existing = await prisma.expenses.findFirst({ where: { id, account_id: accountId } })
+    if (!existing) return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+
     const u: Record<string, any> = {}
     if (parsed.amount !== undefined) u.amount = parsed.amount
     if (parsed.description !== undefined) u.description = parsed.description
@@ -45,8 +49,16 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (parsed.isRecurring !== undefined) u.is_recurring = parsed.isRecurring
     if (parsed.frequency !== undefined) u.frequency = parsed.frequency
 
-    const { data, error } = await supabase.from('expenses').update(u).eq('id', id).eq('account_id', accountId).select().single()
-    if (error) return NextResponse.json({ error: 'Failed to update expense' }, { status: 400 })
+    const data = await prisma.expenses.update({ where: { id }, data: u })
+
+    createAuditLog({
+      action: 'UPDATE',
+      entity: 'expense',
+      entityId: id,
+      details: `Gasto actualizado`,
+      accountId,
+    })
+
     return NextResponse.json({ expense: keysToCamel(data) })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -62,8 +74,20 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { error } = await supabase.from('expenses').delete().eq('id', id).eq('account_id', accountId)
-    if (error) return NextResponse.json({ error: 'Failed to delete expense' }, { status: 500 })
+
+    const existing = await prisma.expenses.findFirst({ where: { id, account_id: accountId } })
+    if (!existing) return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
+
+    await prisma.expenses.delete({ where: { id } })
+
+    createAuditLog({
+      action: 'DELETE',
+      entity: 'expense',
+      entityId: id,
+      details: `Gasto eliminado: $${existing.amount} - ${existing.description}`,
+      accountId,
+    })
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete expense error:', error)

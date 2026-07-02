@@ -53,7 +53,8 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="relative min-h-screen bg-background overflow-x-hidden">
+      <div className="relative z-10">
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
@@ -264,6 +265,7 @@ export default function LandingPage({ onLogin }: { onLogin: () => void }) {
           <span className="flex items-center gap-1">Hecho para finanzas inteligentes</span>
         </div>
       </footer>
+      </div>
     </div>
   )
 }

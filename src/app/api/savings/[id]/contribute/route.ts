@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 import { z } from 'zod'
 
@@ -30,38 +30,31 @@ export async function POST(
     const body = await request.json()
     const parsed = contributeSchema.parse(body)
 
-    // Fetch current goal
-    const { data: goal, error: goalError } = await supabase
-      .from('savings_goals')
-      .select('*')
-      .eq('id', id)
-      .single()
+    const goal = await prisma.savings_goals.findFirst({
+      where: { id },
+    })
 
-    if (goalError || !goal) {
+    if (!goal) {
       return NextResponse.json({ error: 'Savings goal not found' }, { status: 404 })
     }
 
     if (goal.account_id !== accountId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    // Insert contribution
-    const { data: contribution, error: contribError } = await supabase
-      .from('savings_contributions')
-      .insert({
+    const contribution = await prisma.savings_contributions.create({
+      data: {
         amount: parsed.amount,
-        date: parsed.date || new Date().toISOString().split('T')[0],
+        date: new Date(parsed.date || new Date().toISOString().split('T')[0]),
         note: parsed.note || null,
         goal_id: id,
         account_id: goal.account_id,
-      })
-      .select()
-      .single()
+      },
+    })
 
-    if (contribError) {
-      console.error('Create contribution error:', contribError)
+    if (!contribution) {
+      console.error('Create contribution error:')
       return NextResponse.json({ error: 'Failed to create contribution' }, { status: 500 })
     }
 
-    // Update goal's saved amount with optimistic lock
     const originalSavedAmount = Number(goal.saved_amount)
     const newSavedAmount = originalSavedAmount + parsed.amount
     let newStatus = goal.status
@@ -71,22 +64,19 @@ export async function POST(
       newStatus = 'active'
     }
 
-    const { data: updatedGoal, error: updateError } = await supabase
-      .from('savings_goals')
-      .update({
-        saved_amount: newSavedAmount,
-        status: newStatus,
-      })
-      .eq('id', id)
-      .eq('saved_amount', originalSavedAmount)
-      .select()
-      .single()
+    const result = await prisma.savings_goals.updateMany({
+      where: { id, saved_amount: originalSavedAmount },
+      data: { saved_amount: newSavedAmount, status: newStatus },
+    })
 
-    if (updateError || !updatedGoal) {
-      await supabase.from('savings_contributions').delete().eq('id', contribution.id)
-      if (updateError) console.error('Update savings goal error:', updateError)
+    if (result.count === 0) {
+      await prisma.savings_contributions.delete({ where: { id: contribution.id } })
       return NextResponse.json({ error: 'Conflict, please retry' }, { status: 409 })
     }
+
+    const updatedGoal = await prisma.savings_goals.findFirst({
+      where: { id },
+    })
 
     const camelGoal = snakeToCamel(updatedGoal as unknown as Record<string, unknown>) as {
       targetAmount: number

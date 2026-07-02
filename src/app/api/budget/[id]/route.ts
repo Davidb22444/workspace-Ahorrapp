@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
@@ -31,25 +31,20 @@ export async function GET(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    const { data: budget, error: budgetError } = await supabase
-      .from('budgets')
-      .select('*')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
+    const budget = await prisma.budgets.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    if (budgetError || !budget) {
+    if (!budget) {
       return NextResponse.json({ error: 'Budget not found' }, { status: 404 })
     }
 
-    const { data: periods, error: periodsError } = await supabase
-      .from('budget_periods')
-      .select('*')
-      .eq('budget_id', id)
-      .order('start_date', { ascending: false })
+    const periods = await prisma.budget_periods.findMany({
+      where: { budget_id: id },
+      orderBy: { start_date: 'desc' },
+    })
 
-    if (periodsError) {
-      console.error('Get budget periods error:', periodsError)
+    if (!periods) {
       return NextResponse.json({ error: 'Failed to fetch budget periods' }, { status: 500 })
     }
 
@@ -80,6 +75,14 @@ export async function PUT(
     const body = await request.json()
     const parsed = budgetUpdateSchema.parse(body)
 
+    const existing = await prisma.budgets.findFirst({
+      where: { id, account_id: accountId },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Budget not found' }, { status: 404 })
+    }
+
     const updateData: Record<string, unknown> = {}
     if (parsed.name !== undefined) updateData.name = parsed.name
     if (parsed.totalAmount !== undefined) updateData.total_amount = parsed.totalAmount
@@ -89,25 +92,15 @@ export async function PUT(
     if (parsed.cycle !== undefined) updateData.cycle = parsed.cycle
     if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive
 
-    const { data: budget, error } = await supabase
-      .from('budgets')
-      .update(updateData)
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .select()
-      .single()
+    const budget = await prisma.budgets.update({
+      where: { id },
+      data: updateData,
+    })
 
-    if (error) {
-      console.error('Update budget error:', error)
-      return NextResponse.json({ error: 'Failed to update budget' }, { status: 500 })
-    }
-
-    // Fetch periods for response
-    const { data: periods } = await supabase
-      .from('budget_periods')
-      .select('*')
-      .eq('budget_id', id)
-      .order('start_date', { ascending: false })
+    const periods = await prisma.budget_periods.findMany({
+      where: { budget_id: id },
+      orderBy: { start_date: 'desc' },
+    })
 
     const camelBudget = snakeToCamel(budget as unknown as Record<string, unknown>)
 
@@ -137,15 +130,16 @@ export async function DELETE(
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
 
-    // Delete periods first
-    await supabase.from('budget_periods').delete().eq('budget_id', id)
+    const existing = await prisma.budgets.findFirst({
+      where: { id, account_id: accountId },
+    })
 
-    const { error } = await supabase.from('budgets').delete().eq('id', id).eq('account_id', accountId)
-
-    if (error) {
-      console.error('Delete budget error:', error)
-      return NextResponse.json({ error: 'Failed to delete budget' }, { status: 500 })
+    if (!existing) {
+      return NextResponse.json({ error: 'Budget not found' }, { status: 404 })
     }
+
+    await prisma.budget_periods.deleteMany({ where: { budget_id: id } })
+    await prisma.budgets.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

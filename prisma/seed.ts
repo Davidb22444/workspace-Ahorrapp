@@ -1,8 +1,16 @@
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 import { hash } from 'bcryptjs'
-import { subMonths, subDays, startOfMonth, format } from 'date-fns'
+import { subMonths, subDays, startOfMonth } from 'date-fns'
 
-const prisma = new PrismaClient()
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL!,
+  ssl: { rejectUnauthorized: false },
+})
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 const DEFAULT_CATEGORIES = [
   { name: 'Salario', icon: 'Briefcase', color: '#10b981', type: 'income' },
@@ -38,6 +46,13 @@ async function main() {
     where: { email: 'demo@ahorrapp.com' },
     update: {},
     create: { email: 'demo@ahorrapp.com', name: 'Usuario Demo', password: hashedPassword, role: 'user' },
+  })
+
+  const adminPassword = await hash('admin123', 12)
+  await prisma.accounts.upsert({
+    where: { email: 'admin@ahorrapp.com' },
+    update: {},
+    create: { email: 'admin@ahorrapp.com', name: 'Administrador', password: adminPassword, role: 'admin' },
   })
 
   for (const cat of DEFAULT_CATEGORIES) {
@@ -116,7 +131,7 @@ async function main() {
   const budget = await safeCreate<{ id: string }>(prisma.budgets, { name: 'Presupuesto Mensual 50/30/20', total_amount: 5450, needs_percent: 50, wants_percent: 30, savings_percent: 20, cycle: 'monthly', is_active: true, account_id: user.id })
   if (budget) {
     await safeCreate(prisma.budget_periods, {
-      start_date: monthStart(0), endDate: new Date(),
+      start_date: monthStart(0), end_date: new Date(),
       planned_income: 5450, planned_needs: 2725, planned_wants: 1635, planned_savings: 1090,
       actual_income: 5250, actual_needs: 2100, actual_wants: 350, actual_savings: 800,
       budget_id: budget.id, account_id: user.id,
@@ -135,6 +150,7 @@ async function main() {
 
   console.log('✅ Seed completed!')
   console.log(`📧 Demo account: demo@ahorrapp.com / demo123`)
+  console.log(`🔧 Admin account: admin@ahorrapp.com / admin123`)
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())

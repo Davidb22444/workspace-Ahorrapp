@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromCookie } from '@/lib/auth-utils'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 
@@ -24,43 +24,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    let query = supabase
-      .from('unexpecteds')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('date', { ascending: false })
-
+    const where: any = { account_id: accountId }
     if (resolved !== null) {
-      query = query.eq('resolved', resolved === 'true')
+      where.resolved = resolved === 'true'
     }
     if (categoryId) {
-      query = query.eq('category_id', categoryId)
+      where.category_id = categoryId
     }
 
-    const { data: rawUnexpecteds, error } = await query
+    const rawUnexpecteds = await prisma.unexpecteds.findMany({
+      where,
+      orderBy: { date: 'desc' },
+    })
 
-    if (error) {
-      console.error('List unexpected error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    const unexpecteds = rowsToCamel(rawUnexpecteds)
 
-    const unexpecteds = rowsToCamel(rawUnexpecteds || [])
-
-    // Fetch related categories and dependents for enrichment
     const categoryIds = [...new Set(unexpecteds.map((u: any) => u.categoryId).filter(Boolean))] as string[]
     const dependentIds = [...new Set(unexpecteds.map((u: any) => u.dependentId).filter(Boolean))] as string[]
 
-    const [catRes, depRes] = await Promise.all([
+    const [cats, deps] = await Promise.all([
       categoryIds.length > 0
-        ? supabase.from('categories').select('id, name, icon, color').in('id', categoryIds)
-        : { data: [] },
+        ? prisma.categories.findMany({ where: { id: { in: categoryIds } }, select: { id: true, name: true, icon: true, color: true } })
+        : Promise.resolve([]),
       dependentIds.length > 0
-        ? supabase.from('dependents').select('id, name, relationship').in('id', dependentIds)
-        : { data: [] },
+        ? prisma.dependents.findMany({ where: { id: { in: dependentIds } }, select: { id: true, name: true, relationship: true } })
+        : Promise.resolve([]),
     ])
 
-    const catMap = new Map((catRes.data || []).map((c: any) => [c.id, c]))
-    const depMap = new Map((depRes.data || []).map((d: any) => [d.id, d]))
+    const catMap = new Map(cats.map((c: any) => [c.id, c]))
+    const depMap = new Map(deps.map((d: any) => [d.id, d]))
 
     const enriched = unexpecteds.map((u: any) => ({
       ...u,
@@ -85,38 +77,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = unexpectedCreateSchema.parse(body)
 
-    const insertData: Record<string, unknown> = {
-      amount: parsed.amount,
-      description: parsed.description,
-      date: parsed.date || new Date().toISOString(),
-      resolved: parsed.resolved,
-      account_id: accountId,
-    }
-    if (parsed.categoryId) insertData.category_id = parsed.categoryId
-    if (parsed.dependentId) insertData.dependent_id = parsed.dependentId
-
-    const { data, error } = await supabase
-      .from('unexpecteds')
-      .insert(insertData)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create unexpected error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    const { error: movError } = await supabase.from('movements').insert({
-      type: 'unexpected',
-      amount: data.amount,
-      description: `Imprevisto: ${data.description}`,
-      date: data.date,
-      category_id: data.category_id,
-      account_id: data.account_id,
+    const data = await prisma.unexpecteds.create({
+      data: {
+        amount: parsed.amount,
+        description: parsed.description,
+        date: parsed.date || new Date().toISOString(),
+        resolved: parsed.resolved,
+        ...(parsed.categoryId && { category_id: parsed.categoryId }),
+        ...(parsed.dependentId && { dependent_id: parsed.dependentId }),
+        account_id: accountId,
+      },
     })
 
-    if (movError) {
-      await supabase.from('unexpecteds').delete().eq('id', data.id)
+    try {
+      await prisma.movements.create({
+        data: {
+          type: 'unexpected',
+          amount: data.amount,
+          description: `Imprevisto: ${data.description}`,
+          date: data.date,
+          category_id: data.category_id,
+          account_id: data.account_id,
+        },
+      })
+    } catch (movError) {
+      await prisma.unexpecteds.delete({ where: { id: data.id } })
       console.error('Create movement error:', movError)
       return NextResponse.json({ error: 'Failed to create movement' }, { status: 500 })
     }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
 export async function DELETE(
@@ -10,14 +10,12 @@ export async function DELETE(
     const accountId = getAuthFromCookie(request)
     if (!accountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const { id } = await params
-    const { data: category, error: fetchError } = await supabase
-      .from('categories')
-      .select('is_default')
-      .eq('id', id)
-      .eq('account_id', accountId)
-      .single()
 
-    if (fetchError || !category) {
+    const category = await prisma.categories.findFirst({
+      where: { id, account_id: accountId },
+    })
+
+    if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
@@ -28,12 +26,7 @@ export async function DELETE(
       )
     }
 
-    const { error } = await supabase.from('categories').delete().eq('id', id).eq('account_id', accountId)
-
-    if (error) {
-      console.error('Delete category error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    await prisma.categories.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

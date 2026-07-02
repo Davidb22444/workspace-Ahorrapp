@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromCookie } from '@/lib/auth-utils'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 
 const savingsCreateSchema = z.object({
@@ -30,41 +30,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    let query = supabase
-      .from('savings_goals')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('created_at', { ascending: false })
+    const where: Record<string, unknown> = { account_id: accountId }
+    if (status) where.status = status
 
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    const { data: goals, error: goalsError } = await query
-
-    if (goalsError) {
-      console.error('List savings error:', goalsError)
-      return NextResponse.json({ error: 'Failed to fetch savings goals' }, { status: 500 })
-    }
+    const goals = await prisma.savings_goals.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    })
 
     if (!goals || goals.length === 0) {
       return NextResponse.json({ savingsGoals: [] })
     }
 
-    // Fetch last 10 contributions per goal
     const goalIds = goals.map((g) => g.id)
-    const { data: contributions, error: contribError } = await supabase
-      .from('savings_contributions')
-      .select('*')
-      .in('goal_id', goalIds)
-      .order('date', { ascending: false })
+    const contributions = await prisma.savings_contributions.findMany({
+      where: { goal_id: { in: goalIds } },
+      orderBy: { date: 'desc' },
+    })
 
-    if (contribError) {
-      console.error('List savings contributions error:', contribError)
+    if (!contributions) {
       return NextResponse.json({ error: 'Failed to fetch contributions' }, { status: 500 })
     }
 
-    // Group contributions by goal_id, take first 10
     const contribMap: Record<string, unknown[]> = {}
     if (contributions) {
       for (const c of contributions) {
@@ -108,25 +95,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = savingsCreateSchema.parse(body)
 
-    const { data: goal, error } = await supabase
-      .from('savings_goals')
-      .insert({
+    const goal = await prisma.savings_goals.create({
+      data: {
         name: parsed.name,
         target_amount: parsed.targetAmount,
         icon: parsed.icon,
         color: parsed.color,
-        deadline: parsed.deadline || null,
+        deadline: parsed.deadline ? new Date(parsed.deadline) : null,
         account_id: accountId,
         saved_amount: 0,
         status: 'active',
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create savings error:', error)
-      return NextResponse.json({ error: 'Failed to create savings goal' }, { status: 500 })
-    }
+      },
+    })
 
     const camelGoal = snakeToCamel(goal as unknown as Record<string, unknown>)
 

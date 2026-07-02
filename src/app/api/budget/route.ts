@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
 
@@ -32,41 +32,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    let query = supabase
-      .from('budgets')
-      .select('*')
-      .eq('account_id', accountId)
-      .order('created_at', { ascending: false })
-
+    const where: Record<string, unknown> = { account_id: accountId }
     if (isActive !== null) {
-      query = query.eq('is_active', isActive === 'true')
+      where.is_active = isActive === 'true'
     }
 
-    const { data: budgets, error: budgetsError } = await query
-
-    if (budgetsError) {
-      console.error('List budgets error:', budgetsError)
-      return NextResponse.json({ error: 'Failed to fetch budgets' }, { status: 500 })
-    }
+    const budgets = await prisma.budgets.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    })
 
     if (!budgets || budgets.length === 0) {
       return NextResponse.json({ budgets: [] })
     }
 
-    // Fetch all periods for these budgets
     const budgetIds = budgets.map((b) => b.id)
-    const { data: periods, error: periodsError } = await supabase
-      .from('budget_periods')
-      .select('*')
-      .in('budget_id', budgetIds)
-      .order('start_date', { ascending: false })
+    const periods = await prisma.budget_periods.findMany({
+      where: { budget_id: { in: budgetIds } },
+      orderBy: { start_date: 'desc' },
+    })
 
-    if (periodsError) {
-      console.error('List budget periods error:', periodsError)
+    if (!periods) {
       return NextResponse.json({ error: 'Failed to fetch budget periods' }, { status: 500 })
     }
 
-    // Group periods by budget_id
     const periodMap: Record<string, unknown[]> = {}
     if (periods) {
       for (const p of periods) {
@@ -96,9 +85,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = budgetCreateSchema.parse(body)
 
-    const { data: budget, error } = await supabase
-      .from('budgets')
-      .insert({
+    const budget = await prisma.budgets.create({
+      data: {
         name: parsed.name,
         total_amount: parsed.totalAmount,
         needs_percent: parsed.needsPercent,
@@ -107,14 +95,8 @@ export async function POST(request: NextRequest) {
         cycle: parsed.cycle,
         is_active: parsed.isActive,
         account_id: accountId,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create budget error:', error)
-      return NextResponse.json({ error: 'Failed to create budget' }, { status: 500 })
-    }
+      },
+    })
 
     const camelBudget = snakeToCamel(budget as unknown as Record<string, unknown>)
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import prisma from '@/lib/prisma'
 import { rowsToCamel, keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
@@ -21,21 +21,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    let query = supabase
-      .from('categories')
-      .select('*')
-      .eq('account_id', accountId)
-
+    const where: Record<string, any> = { account_id: accountId }
     if (type) {
-      query = query.eq('type', type)
+      where.type = type
     }
 
-    const { data, error } = await query
-
-    if (error) {
-      console.error('List categories error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+    const data = await prisma.categories.findMany({ where })
 
     const categories = rowsToCamel(data || [])
 
@@ -60,23 +51,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = categoryCreateSchema.parse(body)
 
-    const { data, error } = await supabase
-      .from('categories')
-      .insert({
+    const data = await prisma.categories.create({
+      data: {
         name: parsed.name,
         icon: parsed.icon,
         color: parsed.color,
         type: parsed.type,
         is_default: false,
         account_id: accountId,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Create category error:', error)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
+      },
+    })
 
     const category = keysToCamel(data)
 

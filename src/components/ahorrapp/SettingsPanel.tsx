@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { User, Mail, Moon, Sun, DollarSign, Shield, LogOut, Plus, X, Tags, Loader2 } from 'lucide-react'
+import { User, Mail, Moon, Sun, DollarSign, Shield, Plus, X, Tags, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +20,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
+import LogoutButton from '@/components/ahorrapp/LogoutButton'
 
 const CURRENCIES = [
   { value: 'USD', label: 'USD ($)', symbol: '$' },
@@ -366,10 +367,7 @@ export default function SettingsPanel() {
           <CardDescription>Zona de peligro - estas acciones son irreversibles</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={logout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Cerrar Sesión
-          </Button>
+          <LogoutButton onClick={logout} />
         </CardContent>
       </Card>
 
@@ -449,3 +447,4 @@ export default function SettingsPanel() {
     </div>
   )
 }
+
