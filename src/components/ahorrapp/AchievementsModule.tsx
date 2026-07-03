@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { motion } from 'framer-motion'
 import {
   Trophy, Target, DollarSign, PiggyBank, Shield, BarChart3,
@@ -107,7 +107,7 @@ export default function AchievementsModule() {
           transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
           className="hidden sm:block"
         >
-          <Image src="/images/achievements.png" alt="Logros" width={80} height={80} className="h-20 w-20 object-contain" />
+          <span className="text-6xl inline-block" role="img" aria-label="Logros">🏆</span>
         </motion.div>
       </div>
 
@@ -198,7 +198,7 @@ export default function AchievementsModule() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt="Sin logros" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+            <span className="text-6xl mb-2 inline-block">📭</span>
           </motion.div>
           <p className="text-lg font-medium">Sin logros aún</p>
           <p className="text-sm mt-1">Comienza a usar la app para desbloquear tu primer logro</p>

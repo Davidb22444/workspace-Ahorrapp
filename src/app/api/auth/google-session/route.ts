@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseUser = data.user
-    const email = supabaseUser.email
+    const email = supabaseUser.email!
     const name =
       supabaseUser.user_metadata?.full_name ||
       supabaseUser.user_metadata?.name ||

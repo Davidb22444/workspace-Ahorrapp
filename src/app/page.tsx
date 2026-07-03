@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, Component, type ReactNode } from 'react'
+import { Suspense, useEffect, useState, useRef, Component, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppStore, type Module } from '@/lib/store'
@@ -14,7 +14,6 @@ import LandingPage from '@/components/ahorrapp/LandingPage'
 import { Loading } from '@/components/ui/loading'
 import AppSidebar from '@/components/ahorrapp/AppSidebar'
 import Dashboard from '@/components/ahorrapp/Dashboard'
-import FinanceBackground from '@/components/ahorrapp/FinanceBackground'
 
 const IncomeModule = dynamic(() => import('@/components/ahorrapp/IncomeModule'), { loading: () => <Loading /> })
 const ExpenseModule = dynamic(() => import('@/components/ahorrapp/ExpenseModule'), { loading: () => <Loading /> })
@@ -94,7 +93,7 @@ const moduleTitles: Record<Module, string> = {
   admin: 'Administración',
 }
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, activeModule, setUnreadCount, user, unreadCount, setSidebarOpen, login } = useAppStore()
@@ -187,7 +186,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <FinanceBackground />
       {/* Sidebar */}
       <AppSidebar />
 
@@ -251,5 +249,19 @@ export default function Home() {
         </footer>
       </main>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <Loading />
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   )
 }

@@ -23,6 +23,166 @@ const SYSTEM_PROMPT = `Eres AhorrApp AI, un asistente financiero personal expert
 
 Siempre responde en español, de forma clara y concisa. Si el usuario comparte datos financieros, úsalos para dar consejos personalizados.`
 
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function isGreetingMessage(question: string) {
+  const text = normalizeText(question)
+  return /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos|ola)([!.?,\s]*)$/.test(text)
+    || /^(hola|buenas|hey|saludos)\b/.test(text)
+}
+
+function isShortNonFinancialMessage(question: string) {
+  const text = normalizeText(question)
+  if (text.length > 20) return false
+  return ['hola', 'buenas', 'hey', 'gracias', 'ok', 'vale', 'listo', 'si', 'no'].includes(text)
+}
+
+function isHelpOrCapabilitiesMessage(question: string) {
+  const text = normalizeText(question)
+  return [
+    'que puedes hacer',
+    'que haces',
+    'como me ayudas',
+    'ayudame',
+    'ayuda',
+    'no se que preguntar',
+    'que puedo preguntarte',
+    'como funciona',
+    'explicame',
+    'necesito ayuda',
+  ].some((phrase) => text === phrase || text.startsWith(`${phrase} `))
+}
+
+function isCasualSmallTalk(question: string) {
+  const text = normalizeText(question)
+  return [
+    'como estas',
+    'que tal',
+    'todo bien',
+    'buen dia',
+    'buen dia,',
+    'buenas como estas',
+    'que onda',
+  ].some((phrase) => text === phrase || text.startsWith(`${phrase} `))
+}
+
+function isFinancialIntent(question: string) {
+  const text = normalizeText(question)
+  return [
+    'gasto',
+    'gastos',
+    'ingreso',
+    'ingresos',
+    'ahorrar',
+    'ahorro',
+    'presupuesto',
+    'deuda',
+    'deudas',
+    'invertir',
+    'inversion',
+    'inversiones',
+    'meta',
+    'metas',
+    'balance',
+    'analiza',
+    'analizar',
+    'revisa',
+    'revisar',
+    'plan',
+    'planificar',
+    'suscripcion',
+    'suscripciones',
+  ].some((term) => text.includes(term))
+}
+
+function getFallbackResponse(question: string, financialContext: string) {
+  if (financialContext) {
+    return `## 💡 Perspectiva Financiera
+
+Basándome en tus datos financieros:
+
+${financialContext}
+
+### Recomendaciones personalizadas:
+1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar
+2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan
+3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos
+4. **Paga primero las deudas con alto interés** - El método avalancha es el más eficiente
+
+¿Te gustaría que analice un aspecto específico de tus finanzas?`
+  }
+
+  if (isGreetingMessage(question) || isShortNonFinancialMessage(question) || isHelpOrCapabilitiesMessage(question) || isCasualSmallTalk(question)) {
+    return '¡Hola! Soy tu asistente financiero. Puedo ayudarte a revisar gastos, ahorrar más, ordenar tu presupuesto, pagar deudas o analizar tus metas. Si quieres, dime qué necesitas o pregúntame algo como "analiza mis gastos" o "cómo puedo ahorrar más".'
+  }
+
+  if (isFinancialIntent(question)) {
+    return `## 💡 Te puedo ayudar con eso
+
+Puedo analizar tu situación financiera y darte recomendaciones sobre:
+1. **Gastos e ingresos**
+2. **Ahorro y metas**
+3. **Presupuesto**
+4. **Deudas**
+5. **Inversiones básicas**
+
+Si quieres, prueba con una pregunta más concreta como:
+- "Analiza mis gastos"
+- "Cómo puedo ahorrar más"
+- "Ayúdame a hacer un presupuesto"`
+  }
+
+  return 'No pude generar una respuesta útil en este momento. Prueba a hacer la pregunta de otra forma o usa una de las preguntas rápidas.'
+}
+
+function getSuggestedPrompts(question: string) {
+  const text = normalizeText(question)
+
+  if (isGreetingMessage(question) || isShortNonFinancialMessage(question) || isCasualSmallTalk(question)) {
+    return [
+      'Analiza mis gastos',
+      'Cómo puedo ahorrar más',
+      'Ayúdame con mi presupuesto',
+    ]
+  }
+
+  if (isHelpOrCapabilitiesMessage(question)) {
+    return [
+      'Qué puedes hacer',
+      'Analiza mis gastos',
+      'Recomiéndame un presupuesto',
+    ]
+  }
+
+  if (text.includes('deuda') || text.includes('deudas')) {
+    return [
+      'Estrategia para pagar deudas',
+      'Cómo priorizar mis deudas',
+      'Conviene pagar primero la deuda más cara',
+    ]
+  }
+
+  if (text.includes('ahorr')) {
+    return [
+      'Cómo ahorrar más',
+      'Metas de ahorro realistas',
+      'Cómo crear un fondo de emergencia',
+    ]
+  }
+
+  return [
+    'Analiza mis gastos',
+    'Ayúdame con un presupuesto',
+    'Cómo puedo ahorrar más',
+  ]
+}
+
 export async function POST(request: NextRequest) {
   try {
     const accountId = getAuthFromCookie(request)
@@ -30,6 +190,20 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const parsed = aiRequestSchema.parse(body)
+
+    if (
+      isGreetingMessage(parsed.question) ||
+      isShortNonFinancialMessage(parsed.question) ||
+      isHelpOrCapabilitiesMessage(parsed.question) ||
+      isCasualSmallTalk(parsed.question)
+    ) {
+      return NextResponse.json({
+        response:
+          '¡Hola! Soy tu asistente financiero. Puedo ayudarte a revisar gastos, ahorrar más, ordenar tu presupuesto, pagar deudas o analizar tus metas. Si quieres, dime qué necesitas o pregúntame algo como "analiza mis gastos" o "cómo puedo ahorrar más".',
+        kind: 'onboarding',
+        suggestions: getSuggestedPrompts(parsed.question),
+      })
+    }
 
     let financialContext = ''
 
@@ -73,7 +247,7 @@ Resumen financiero del usuario:
       const zai = await ZAI.create()
       const completion = await zai.chat.completions.create({
         messages: [
-          { role: 'assistant', content: SYSTEM_PROMPT },
+          { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userMessage },
         ],
         thinking: { type: 'disabled' },
@@ -84,19 +258,26 @@ Resumen financiero del usuario:
     }
 
     if (!response) {
-      if (financialContext) {
-        response = `## 💡 Perspectiva Financiera\n\nBasándome en tus datos financieros:\n\n${financialContext}\n\n### Recomendaciones personalizadas:\n1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar\n2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan\n3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos\n4. **Paga primero las deudas con alto interés** - El método avalancha es el más eficiente\n\n¿Te gustaría que analice un aspecto específico de tus finanzas?`
-      } else {
-        response = `## 💡 Consejos Financieros Generales\n\n1. **Rastrea cada gasto** - La conciencia es el primer paso para mejorar\n2. **Revisa tus suscripciones** - Los pequeños costos recurrentes se acumulan\n3. **Construye un fondo de emergencia** - Apunta a tener 3-6 meses de gastos\n4. **Paga primero las deudas con alto interés** - El método avalancha es el que más ahorra\n\n¿Te gustaría que analice un aspecto específico de tus finanzas? ¡Prueba una de las preguntas rápidas!`
-      }
+      console.warn('AI assistant returned empty response', {
+        accountId,
+        includeFinancialData: parsed.includeFinancialData,
+      })
+      response = getFallbackResponse(parsed.question, financialContext)
     }
 
-    return NextResponse.json({ response })
+    return NextResponse.json({
+      response,
+      kind: isFinancialIntent(parsed.question) ? 'financial' : 'general',
+      suggestions: getSuggestedPrompts(parsed.question),
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation failed', details: error.issues }, { status: 400 })
     }
     console.error('AI assistant error:', error)
-    return NextResponse.json({ response: 'Lo siento, hubo un error al procesar tu pregunta. Por favor intenta de nuevo.' })
+    return NextResponse.json(
+      { response: 'No pude conectar con el asistente en este momento. Revisa la configuración del proveedor de IA y vuelve a intentarlo.' },
+      { status: 500 }
+    )
   }
 }

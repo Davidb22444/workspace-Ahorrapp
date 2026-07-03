@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import Image from 'next/image'
+
 import {
   Search, ArrowUpRight, ArrowDownRight, Filter, ChevronDown,
   ChevronLeft, ChevronRight, Calendar, DollarSign,
@@ -439,7 +439,7 @@ export default function TransactionCenter() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt={hasActiveFilters ? "Sin resultados" : "Sin transacciones"} width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+            <span className="text-6xl mb-2 inline-block">📭</span>
           </motion.div>
           <h3 className="text-lg font-semibold text-foreground mb-1">
             {hasActiveFilters ? 'Sin transacciones encontradas' : 'Sin transacciones aún'}

@@ -18,6 +18,12 @@ interface Message {
   timestamp: Date
 }
 
+interface AssistantSuggestion {
+  label: string
+}
+
+let messageIdCounter = 0
+
 const QUICK_QUESTIONS = [
   { icon: '💰', label: '¿Cómo puedo ahorrar más?' },
   { icon: '📊', label: 'Analiza mis gastos' },
@@ -40,15 +46,70 @@ function timeAgo(date: Date): string {
   return `hace ${days}d`
 }
 
+function createMessageId() {
+  messageIdCounter += 1
+  return `msg-${messageIdCounter}`
+}
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function isGreetingOrHelp(text: string) {
+  const normalized = normalizeText(text)
+  return (
+    /^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|saludos|ola)([!.?,\s]*)$/.test(normalized) ||
+    /^(hola|buenas|hey|saludos)\b/.test(normalized) ||
+    [
+      'que puedes hacer',
+      'que haces',
+      'como me ayudas',
+      'ayudame',
+      'ayuda',
+      'no se que preguntar',
+      'que puedo preguntarte',
+      'como funciona',
+      'explicame',
+      'necesito ayuda',
+      'como estas',
+      'que tal',
+      'todo bien',
+      'buen dia',
+      'que onda',
+      'gracias',
+      'ok',
+      'vale',
+      'listo',
+      'si',
+      'no',
+    ].includes(normalized)
+  )
+}
+
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [shareData, setShareData] = useState(false)
+  const [assistantSuggestions, setAssistantSuggestions] = useState<AssistantSuggestion[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const mountedRef = useRef(true)
-  const { user } = useAppStore()
+  const { user, dashboardData } = useAppStore()
   const hasUserMessages = messages.some((m) => m.role === 'user')
+  const hasDebt = typeof dashboardData?.totalDebt === 'number' && dashboardData.totalDebt > 0
+  const hasSavingsGoals = Array.isArray(dashboardData?.savingsGoals) && dashboardData.savingsGoals.length > 0
+  const hasNegativeBalance = typeof dashboardData?.balance === 'number' && dashboardData.balance < 0
+  const onboardingQuestions = hasDebt
+    ? QUICK_QUESTIONS.filter((q) => /deudas|presupuesto|ahorrar/i.test(q.label)).slice(0, 3)
+    : hasNegativeBalance
+      ? QUICK_QUESTIONS.filter((q) => /gastos|presupuesto|ahorrar/i.test(q.label)).slice(0, 3)
+      : hasSavingsGoals
+        ? QUICK_QUESTIONS.filter((q) => /ahorro|invers/i.test(q.label) || /metas/i.test(q.label)).slice(0, 3)
+        : QUICK_QUESTIONS.slice(0, 3)
 
   useEffect(() => {
     return () => { mountedRef.current = false }
@@ -63,8 +124,12 @@ export default function AIAssistant() {
   const sendMessage = async (content: string) => {
     if (!content.trim()) return
 
+    const localQuickReply = isGreetingOrHelp(content)
+      ? '¡Hola! Soy tu asistente financiero. Puedo ayudarte a revisar gastos, ahorrar más, ordenar tu presupuesto, pagar deudas o analizar tus metas. Si quieres, dime qué necesitas o pregúntame algo como "analiza mis gastos" o "cómo puedo ahorrar más".'
+      : ''
+
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: createMessageId(),
       role: 'user',
       content: content.trim(),
       timestamp: new Date(),
@@ -72,6 +137,24 @@ export default function AIAssistant() {
 
     setMessages((prev) => [...prev, userMsg])
     setInput('')
+    setAssistantSuggestions([])
+
+    if (localQuickReply) {
+      const assistantMsg: Message = {
+        id: createMessageId(),
+        role: 'assistant',
+        content: localQuickReply,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, assistantMsg])
+      setAssistantSuggestions([
+        { label: 'Analiza mis gastos' },
+        { label: 'Cómo puedo ahorrar más' },
+        { label: 'Ayúdame con mi presupuesto' },
+      ])
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -82,8 +165,11 @@ export default function AIAssistant() {
       })
       if (res.ok) {
         const data = await res.json()
+        if (Array.isArray(data.suggestions)) {
+          setAssistantSuggestions(data.suggestions.map((label: string) => ({ label })))
+        }
         const assistantMsg: Message = {
-          id: (Date.now() + 1).toString(),
+          id: createMessageId(),
           role: 'assistant',
           content: data.response || data.message || 'No pude procesar esa solicitud.',
           timestamp: new Date(),
@@ -96,7 +182,7 @@ export default function AIAssistant() {
 
     // Fallback error message
     const assistantMsg: Message = {
-      id: (Date.now() + 1).toString(),
+      id: createMessageId(),
       role: 'assistant',
       content: 'Lo siento, no pude conectarme con el asistente. Intenta de nuevo más tarde.',
       timestamp: new Date(),
@@ -111,33 +197,65 @@ export default function AIAssistant() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] min-h-[640px]">
       <div className="flex-shrink-0 mb-4">
         <div className="module-header">
-          <h1 className="text-2xl font-bold text-gradient">Asistente IA</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Tu asesor financiero impulsado por IA</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gradient">Asistente IA</h1>
+          <p className="text-muted-foreground text-sm sm:text-base mt-0.5">Tu asesor financiero impulsado por IA</p>
         </div>
       </div>
 
-      <Card className="flex-1 flex flex-col min-h-0">
+      <Card className="flex-1 flex flex-col min-h-0 w-full overflow-hidden">
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
           {/* Messages or Empty State */}
-          <ScrollArea className="flex-1 p-4" ref={scrollRef as any}>
+          {/* ScrollArea does not forward refs in this wrapper, so we keep the existing cast here. */}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <ScrollArea className="flex-1 min-h-0 px-3 py-4 sm:px-4" ref={scrollRef as any}>
             {!hasUserMessages && !loading ? (
               /* Welcome Empty State */
-              <div className="flex flex-col items-center justify-center h-full max-w-md mx-auto text-center">
+              <div className="flex flex-col items-center justify-center min-h-full w-full max-w-2xl mx-auto text-center py-6 sm:py-10">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   className="mb-6"
                 >
-                  <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
                     <Wallet className="w-10 h-10 text-primary" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">Pregúntame lo que quieras sobre tus finanzas</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 leading-tight px-2">
+                    {user?.name ? `Hola, ${user.name}` : 'Pregúntame lo que quieras sobre tus finanzas'}
+                  </h2>
+                  <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto px-2">
                     Puedo ayudarte con estrategias de ahorro, análisis de gastos, planificación de presupuesto y más.
                   </p>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.12 }}
+                  className="w-full max-w-2xl"
+                >
+                  <div className="rounded-2xl border border-border bg-muted/60 p-4 text-left">
+                    <p className="text-sm font-semibold text-foreground">
+                      {user?.name ? 'Empieza con una ruta rápida' : 'Empieza con una opción rápida'}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Elige una acción para que te guíe paso a paso.
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {onboardingQuestions.map((q) => (
+                        <button
+                          key={q.label}
+                          onClick={() => sendMessage(q.label)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm text-left transition-colors hover:bg-accent"
+                        >
+                          <span className="text-base shrink-0">{q.icon}</span>
+                          <span className="font-medium leading-snug">{q.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
 
                 <motion.div
@@ -149,20 +267,20 @@ export default function AIAssistant() {
                   <p className="text-xs font-medium text-muted-foreground mb-3 flex items-center justify-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5" /> Prueba una pregunta rápida
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full">
                     {QUICK_QUESTIONS.map((q) => (
                       <button
                         key={q.label}
                         onClick={() => sendMessage(q.label)}
-                        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-muted hover:bg-accent text-sm text-foreground transition-colors border border-border hover:border-primary/30 text-left"
+                        className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-muted hover:bg-accent text-sm text-foreground transition-colors border border-border hover:border-primary/30 text-left min-h-16 w-full"
                       >
-                        <span className="text-lg">{q.icon}</span>
-                        <span className="font-medium">{q.label}</span>
+                        <span className="text-lg shrink-0">{q.icon}</span>
+                        <span className="font-medium leading-snug">{q.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-6 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                  <div className="mt-6 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 w-full">
                     <div className="flex items-start gap-3">
                       <Shield className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
@@ -188,7 +306,7 @@ export default function AIAssistant() {
               </div>
             ) : (
               /* Chat Messages */
-              <div className="space-y-4 max-w-3xl mx-auto">
+              <div className="space-y-4 max-w-3xl mx-auto w-full">
                 {messages.map((msg) => (
                   <motion.div
                     key={msg.id}
@@ -201,9 +319,9 @@ export default function AIAssistant() {
                         <Bot className="w-4 h-4 text-primary" />
                       </div>
                     )}
-                    <div className="max-w-[80%]">
+                    <div className="max-w-[92%] sm:max-w-[80%] min-w-0">
                       <div className={cn(
-                        'px-4 py-3',
+                        'px-4 py-3 break-words overflow-hidden',
                         msg.role === 'user'
                           ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm'
                           : 'bg-muted rounded-2xl rounded-tl-sm'
@@ -266,9 +384,29 @@ export default function AIAssistant() {
             )}
           </ScrollArea>
 
+          {assistantSuggestions.length > 0 && !loading && (
+            <div className="px-3 sm:px-4 pb-3">
+              <div className="rounded-2xl border border-border bg-muted/60 p-3 sm:p-4">
+                <p className="text-xs font-semibold text-foreground">Puedes continuar con esto</p>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {assistantSuggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.label}
+                      type="button"
+                      onClick={() => sendMessage(suggestion.label)}
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-left transition-colors hover:bg-accent"
+                    >
+                      {suggestion.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Quick Questions (show after first message) */}
           {hasUserMessages && !loading && (
-            <div className="px-4 pb-3 border-t border-border">
+            <div className="px-3 sm:px-4 pb-3 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                 <Lightbulb className="w-3 h-3" /> Preguntas rápidas
               </p>
@@ -277,10 +415,10 @@ export default function AIAssistant() {
                   <button
                     key={q.label}
                     onClick={() => sendMessage(q.label)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-sm text-foreground transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-accent text-sm text-foreground transition-colors max-w-full"
                   >
                     <span>{q.icon}</span>
-                    <span>{q.label}</span>
+                    <span className="whitespace-normal text-left">{q.label}</span>
                   </button>
                 ))}
               </div>
@@ -288,19 +426,19 @@ export default function AIAssistant() {
           )}
 
           {/* Input */}
-          <div className="flex-shrink-0 p-4 border-t border-border">
-            <form onSubmit={handleSubmit} className="flex gap-2 max-w-3xl mx-auto">
+          <div className="flex-shrink-0 p-3 sm:p-4 border-t border-border">
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 max-w-3xl mx-auto w-full">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Escribe tu mensaje..."
-                className="flex-1"
+                className="flex-1 w-full"
                 disabled={loading}
               />
               <Button
                 type="submit"
                 size="icon"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 w-full sm:w-10"
                 disabled={loading || !input.trim()}
               >
                 <Send className="w-4 h-4" />
@@ -310,7 +448,7 @@ export default function AIAssistant() {
               <button
                 type="button"
                 onClick={() => setShareData(!shareData)}
-                className="inline-flex items-center gap-1 text-[10px] transition-colors"
+                className="inline-flex items-center gap-1 text-[10px] transition-colors text-left"
               >
                 {shareData ? (
                   <>

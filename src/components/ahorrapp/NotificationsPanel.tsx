@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle2, XCircle, Trash2, PartyPopper } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -123,7 +123,7 @@ export default function NotificationsPanel() {
         <Loading />
       ) : notifications.length === 0 ? (
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
-          <Image src="/images/empty-state.png" alt="Sin notificaciones" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto mb-3 opacity-70" />
+          <span className="text-6xl mb-2 inline-block">📭</span>
           <p className="text-lg font-medium">Sin notificaciones</p>
           <p className="text-sm mt-1">Estás al día. ¡Todo en orden!</p>
         </div>

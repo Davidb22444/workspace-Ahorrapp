@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, TrendingUp, Trash2, Edit2, Filter, ArrowUpRight, Search, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/ui/amount-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -241,7 +242,7 @@ export default function IncomeModule() {
                   transition={{ duration: 0.5 }}
                   className="mb-4"
                 >
-                  <Image src="/images/empty-state.png" alt="Sin ingresos" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+                  <span className="text-6xl mb-2 inline-block">📭</span>
                 </motion.div>
                 <h3 className="text-lg font-semibold text-foreground mb-1">Sin ingresos aún</h3>
                 <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
@@ -328,7 +329,7 @@ export default function IncomeModule() {
             </div>
             <div className="space-y-2">
               <Label>Monto ($)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              <AmountInput placeholder="0.00" value={form.amount} onChange={(val) => setForm({ ...form, amount: val })} />
             </div>
             <div className="space-y-2">
               <Label>Descripción</Label>

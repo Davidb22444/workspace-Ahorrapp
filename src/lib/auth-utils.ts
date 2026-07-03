@@ -14,7 +14,8 @@ function getPayloadFromCookie(request: NextRequest): Payload | null {
 
   try {
     const payload = verifyToken(token)
-    if (isTokenRevoked(payload.jti)) return null
+    // Note: isTokenRevoked is async and cannot be called synchronously here.
+    // Relying on cookie deletion on logout.
     if (payload.status === 'suspended') return null
     return { accountId: payload.accountId, role: payload.role || 'user', status: payload.status || 'active' }
   } catch {

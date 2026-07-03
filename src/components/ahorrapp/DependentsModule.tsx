@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, Users, Trash2, Edit2, DollarSign, UserCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -196,7 +196,7 @@ export default function DependentsModule() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt="Sin dependientes" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+            <span className="text-6xl mb-2 inline-block">📭</span>
           </motion.div>
           <p className="text-lg font-medium">Sin dependientes aún</p>
           <p className="text-sm mt-1">Agrega a los miembros de tu familia para rastrear el gasto por dependiente</p>

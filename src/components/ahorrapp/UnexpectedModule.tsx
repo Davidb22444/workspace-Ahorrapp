@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, AlertTriangle, Trash2, Edit2, ArrowDownRight, Search } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { AmountInput } from '@/components/ui/amount-input'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -227,7 +228,7 @@ export default function UnexpectedModule() {
                 transition={{ duration: 0.5 }}
                 className="mb-4"
               >
-                <Image src="/images/empty-state.png" alt="Sin gastos imprevistos" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+                <span className="text-6xl mb-2 inline-block">📭</span>
               </motion.div>
               <p>No se encontraron gastos imprevistos</p>
               <p className="text-sm mt-1">Registra gastos imprevistos para identificar patrones</p>
@@ -294,7 +295,7 @@ export default function UnexpectedModule() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Monto ($)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              <AmountInput placeholder="0.00" value={form.amount} onChange={(val) => setForm({ ...form, amount: val })} />
             </div>
             <div className="space-y-2">
               <Label>Descripción</Label>

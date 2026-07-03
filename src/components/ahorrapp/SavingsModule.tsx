@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, PiggyBank, Trash2, Calendar, DollarSign, History, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ import { Progress } from '@/components/ui/progress'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AmountInput } from '@/components/ui/amount-input'
 import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -204,7 +206,7 @@ export default function SavingsModule() {
             <h1 className="text-2xl font-bold text-gradient">Ahorros</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Sigue tus metas de ahorro</p>
           </div>
-          <Image src="/images/savings-illustration.png" alt="Ahorros" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
+          <span className="text-6xl hidden sm:inline-block">💰</span>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" /> Agregar Meta
@@ -255,7 +257,7 @@ export default function SavingsModule() {
               transition={{ duration: 0.5 }}
               className="mb-4"
             >
-              <Image src="/images/empty-state.png" alt="Sin metas de ahorro" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+              <span className="text-6xl mb-2 inline-block">📭</span>
             </motion.div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Sin metas de ahorro aún</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
@@ -464,7 +466,7 @@ export default function SavingsModule() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Monto Objetivo ($)</Label>
-                <Input type="number" step="0.01" min="0" placeholder="0.00" value={goalForm.target} onChange={(e) => setGoalForm({ ...goalForm, target: e.target.value })} />
+                <AmountInput placeholder="0.00" value={goalForm.target} onChange={(val) => setGoalForm({ ...goalForm, target: val })} />
               </div>
               <div className="space-y-2">
                 <Label>Fecha Límite (opcional)</Label>
@@ -494,7 +496,7 @@ export default function SavingsModule() {
             </div>
             <div className="space-y-2">
               <Label>Monto ($)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0.00" value={contributeForm.amount} onChange={(e) => setContributeForm({ ...contributeForm, amount: e.target.value })} />
+              <AmountInput placeholder="0.00" value={contributeForm.amount} onChange={(val) => setContributeForm({ ...contributeForm, amount: val })} />
             </div>
             <div className="space-y-2">
               <Label>Nota (opcional)</Label>

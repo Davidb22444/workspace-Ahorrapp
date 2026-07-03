@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -51,6 +51,67 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' } },
 } as const
 
+// SVG definitions for falling icons (neobrutalist style)
+const ICONS_SVG = [
+  // 1. Coin (Moneda)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <circle cx="50" cy="50" r="40" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+    <circle cx="50" cy="50" r="28" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-dasharray="6 4" />
+    <text x="50" y="63" font-family="sans-serif" font-weight="900" font-size="38" fill="#1A1A1A" text-anchor="middle">$</text>
+  </svg>`,
+  // 2. Bar Chart (Gráfica de barras)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <rect x="15" y="55" width="18" height="30" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" rx="2" />
+    <rect x="41" y="30" width="18" height="55" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" rx="2" />
+    <rect x="67" y="15" width="18" height="70" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" rx="2" />
+    <line x1="5" y1="85" x2="95" y2="85" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+  </svg>`,
+  // 3. Piggy Bank (Alcancía)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <ellipse cx="50" cy="55" rx="35" ry="25" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+    <polygon points="35,35 45,20 55,32" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+    <rect x="80" y="47" width="10" height="16" rx="3" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+    <circle cx="68" cy="48" r="4" fill="#1A1A1A" />
+    <rect x="32" y="78" width="10" height="12" fill="#1A1A1A" rx="2" />
+    <rect x="58" y="78" width="10" height="12" fill="#1A1A1A" rx="2" />
+    <line x1="45" y1="30" x2="55" y2="30" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+    <path d="M 15,55 Q 8,50 12,42" fill="none" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+  </svg>`,
+  // 4. Wallet (Billetera)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <rect x="15" y="28" width="70" height="50" rx="6" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+    <path d="M 50,38 L 85,38 L 85,68 L 50,68 Z" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+    <circle cx="68" cy="53" r="6" fill="#1A1A1A" />
+    <rect x="25" y="15" width="40" height="15" rx="2" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+    <line x1="35" y1="23" x2="55" y2="23" stroke="#1A1A1A" stroke-width="3" />
+  </svg>`,
+  // 5. Percentage (Porcentaje)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <circle cx="30" cy="30" r="14" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+    <circle cx="70" cy="70" r="14" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+    <line x1="80" y1="20" x2="20" y2="80" stroke="#1A1A1A" stroke-width="7" stroke-linecap="round" />
+  </svg>`,
+  // 6. Trend Arrow (Flecha de tendencia)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <path d="M 15,80 L 45,50 L 60,62 L 85,25" fill="none" stroke="#1A1A1A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 15,80 L 45,50 L 60,62 L 85,25" fill="none" stroke="#3DDC97" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+    <polygon points="85,15 88,38 65,30" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round" />
+  </svg>`,
+  // 7. Money Bag (Saco de dinero)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <path d="M 35,28 C 25,45 20,75 35,85 C 50,90 65,85 70,75 C 75,65 65,45 55,28" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+    <ellipse cx="45" cy="32" rx="12" ry="6" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+    <path d="M 35,28 C 30,18 40,13 45,23 C 50,13 60,18 55,28" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+    <text x="46" y="65" font-family="sans-serif" font-weight="900" font-size="28" fill="#1A1A1A" text-anchor="middle">$</text>
+  </svg>`,
+  // 8. Bank Card (Tarjeta bancaria)
+  `<svg viewBox="0 0 100 100" width="100%" height="100%">
+    <rect x="12" y="25" width="76" height="50" rx="6" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+    <rect x="12" y="35" width="76" height="12" fill="#1A1A1A" />
+    <rect x="22" y="55" width="16" height="12" rx="2" fill="#F5C518" stroke="#1A1A1A" stroke-width="3" />
+  </svg>`
+]
+
 export default function AuthScreen() {
   const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
@@ -70,6 +131,184 @@ export default function AuthScreen() {
   const [otpValue, setOtpValue] = useState('')
   const [verifyingCode, setVerifyingCode] = useState(false)
   const login = useAppStore((s) => s.login)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const numIcons = 8
+    const iconsArray: any[] = []
+    let activeDragIcon: any = null
+    let dragStartX = 0
+    let dragStartY = 0
+    let iconStartX = 0
+    let iconStartY = 0
+
+    class FallingIconInstance {
+      element: HTMLDivElement
+      size: number
+      speed: number
+      rotationSpeed: number
+      x!: number
+      y!: number
+      rotation!: number
+      isDragging: boolean
+
+      constructor(svgMarkup: string) {
+        this.element = document.createElement('div')
+        this.element.style.position = 'absolute'
+        this.element.style.pointerEvents = 'auto'
+        this.element.style.cursor = 'grab'
+        this.element.style.touchAction = 'none'
+        this.element.style.filter = 'drop-shadow(5px 5px 0px #1A1A1A)'
+        this.element.style.willChange = 'transform'
+        
+        this.element.addEventListener('mousedown', () => {
+          this.element.style.cursor = 'grabbing'
+          this.element.style.filter = 'drop-shadow(8px 8px 0px #1A1A1A)'
+        })
+        this.element.addEventListener('mouseup', () => {
+          this.element.style.cursor = 'grab'
+          this.element.style.filter = 'drop-shadow(5px 5px 0px #1A1A1A)'
+        })
+
+        this.element.innerHTML = svgMarkup
+        container!.appendChild(this.element)
+
+        this.isDragging = false
+        this.size = Math.random() * (90 - 55) + 55
+        this.speed = Math.random() * (0.45 - 0.15) + 0.15
+        this.rotationSpeed = (Math.random() * 2 - 1) * 0.2
+
+        this.element.style.width = `${this.size}px`
+        this.element.style.height = `${this.size}px`
+
+        this.resetPosition(true)
+        this.setupEvents()
+      }
+
+      resetPosition(initial = false) {
+        this.x = Math.random() * (window.innerWidth - this.size)
+        if (initial) {
+          this.y = Math.random() * (window.innerHeight + this.size) - this.size
+        } else {
+          this.y = -this.size - 20
+        }
+        this.rotation = Math.random() * 360
+        this.updateTransform()
+      }
+
+      updateTransform() {
+        this.element.style.transform = `translate3d(${this.x}px, ${this.y}px, 0) rotate(${this.rotation}deg)`
+      }
+
+      update() {
+        if (this.isDragging) return
+
+        this.y += this.speed
+        this.rotation += this.rotationSpeed
+
+        if (this.y > window.innerHeight) {
+          this.resetPosition(false)
+        } else {
+          this.updateTransform()
+        }
+      }
+
+      setupEvents() {
+        const startDrag = (clientX: number, clientY: number) => {
+          this.isDragging = true
+          activeDragIcon = this
+          dragStartX = clientX
+          dragStartY = clientY
+          iconStartX = this.x
+          iconStartY = this.y
+        }
+
+        this.element.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          startDrag(e.clientX, e.clientY)
+        })
+
+        this.element.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            startDrag(e.touches[0].clientX, e.touches[0].clientY)
+          }
+        }, { passive: true })
+      }
+    }
+
+    for (let i = 0; i < numIcons; i++) {
+      const svgMarkup = ICONS_SVG[i % ICONS_SVG.length]
+      iconsArray.push(new FallingIconInstance(svgMarkup))
+    }
+
+    const handleMove = (clientX: number, clientY: number) => {
+      if (!activeDragIcon) return
+      const dx = clientX - dragStartX
+      const dy = clientY - dragStartY
+      activeDragIcon.x = iconStartX + dx
+      activeDragIcon.y = iconStartY + dy
+      activeDragIcon.updateTransform()
+    }
+
+    const stopDrag = () => {
+      if (activeDragIcon) {
+        activeDragIcon.element.style.cursor = 'grab'
+        activeDragIcon.element.style.filter = 'drop-shadow(5px 5px 0px #1A1A1A)'
+        activeDragIcon.isDragging = false
+        activeDragIcon = null
+      }
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      handleMove(e.clientX, e.clientY)
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY)
+      }
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('mouseup', stopDrag)
+    window.addEventListener('touchend', stopDrag)
+
+    let animationId: number
+    const animate = () => {
+      for (let i = 0; i < iconsArray.length; i++) {
+        iconsArray[i].update()
+      }
+      animationId = requestAnimationFrame(animate)
+    }
+    animate()
+
+    const handleResize = () => {
+      iconsArray.forEach(icon => {
+        if (icon.x > window.innerWidth) {
+          icon.x = Math.random() * (window.innerWidth - icon.size)
+        }
+      })
+    }
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      cancelAnimationFrame(animationId)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('mouseup', stopDrag)
+      window.removeEventListener('touchend', stopDrag)
+      window.removeEventListener('resize', handleResize)
+      iconsArray.forEach(icon => {
+        if (icon.element && container.contains(icon.element)) {
+          container.removeChild(icon.element)
+        }
+      })
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -228,7 +467,7 @@ export default function AuthScreen() {
           },
         },
         skipBrowserRedirect: true,
-      })
+      } as any)
 
       if (error) {
         throw error
@@ -261,10 +500,9 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col lg:flex-row animate-fade-in overflow-hidden">
-      <div className="relative z-10 flex min-h-screen flex-col lg:flex-row w-full">
-      {/* ───────────────────────────── LEFT: Hero Panel ───────────────────────────── */}
-      <div className="relative w-full lg:w-[52%] xl:w-[55%] min-h-[220px] lg:min-h-0 overflow-hidden bg-gradient-auth">
+    <div className="relative min-h-screen flex flex-col lg:flex-row animate-fade-in overflow-hidden bg-background">
+      {/* Left Panel Background Gradient & blobs (behind falling icons) */}
+      <div className="absolute top-0 left-0 h-full w-full lg:w-[52%] xl:w-[55%] bg-gradient-auth z-0 hidden lg:block overflow-hidden">
         <div
           aria-hidden="true"
           className="absolute inset-0 opacity-[0.07]"
@@ -274,84 +512,69 @@ export default function AuthScreen() {
             backgroundSize: '28px 28px',
           }}
         />
-
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -left-20 w-[420px] h-[420px] rounded-full bg-emerald-400/20 blur-[100px] animate-[blobMove1_20s_ease-in-out_infinite]" />
           <div className="absolute -bottom-24 -right-16 w-[360px] h-[360px] rounded-full bg-teal-400/20 blur-[100px] animate-[blobMove2_18s_ease-in-out_infinite]" />
           <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan-400/15 blur-[100px] animate-[blobMove3_22s_ease-in-out_infinite]" />
         </div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/20 via-background to-teal-950/15" />
+      </div>
 
-        <Image
-          src="/images/auth-hero.png"
-          alt="AhorrApp – Tu compañero financiero inteligente"
-          fill
-          sizes="(max-width: 1024px) 100vw, 55vw"
-          className="object-cover object-center opacity-30 mix-blend-luminosity select-none"
-          priority
-        />
+      {/* Background Falling Icons */}
+      <div 
+        ref={containerRef} 
+        className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-10"
+      />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-transparent" />
+      <div className="relative z-20 flex min-h-screen flex-col lg:flex-row w-full pointer-events-none">
+        <div className="relative w-full lg:w-[52%] xl:w-[55%] min-h-[220px] lg:min-h-0 overflow-hidden bg-gradient-auth-responsive pointer-events-auto">
 
-        <motion.div
+<motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="relative z-10 flex flex-col justify-end lg:justify-center h-full min-h-[220px] lg:min-h-0 px-6 sm:px-10 lg:px-12 xl:px-16 py-8 lg:py-12"
+          className="relative z-10 flex flex-col justify-center items-center h-full min-h-[220px] lg:min-h-0 px-6 sm:px-10 lg:px-12 xl:px-16 py-8 lg:py-12"
         >
+          {/* Animated Piggy Bank Loader */}
+          <div className="hidden lg:block piggy-wrapper scale-90 xl:scale-100 mb-6">
+            <div className="piggy-wrap">
+              <div className="piggy">
+                <div className="nose" />
+                <div className="mouth" />
+                <div className="ear" />
+                <div className="tail">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="eye" />
+                <div className="hole" />
+              </div>
+            </div>
+            <div className="coin-wrap">
+              <div className="coin">$</div>
+            </div>
+            <div className="legs" />
+            <div className="legs back" />
+          </div>
+
           <motion.div
             variants={itemVariants}
-            className="flex items-center gap-3 mb-6 lg:mb-8"
+            className="flex items-center gap-3"
           >
             <div className="inline-flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/15 backdrop-blur-xl animate-pulse-emerald">
-              <Wallet className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
+              <Wallet className="w-6 h-6 lg:w-7 lg:h-7 text-emerald-400" />
             </div>
-            <span className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+            <span className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
               AhorrApp
             </span>
           </motion.div>
-
-          <motion.h2
-            variants={itemVariants}
-            className="text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl font-extrabold text-white leading-tight max-w-lg"
-          >
-            Tu futuro financiero{' '}
-            <span className="bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent">
-              comienza aquí
-            </span>
-          </motion.h2>
-
-          <motion.p
-            variants={itemVariants}
-            className="mt-3 text-base lg:text-lg text-white/75 max-w-md leading-relaxed"
-          >
-            Organiza tus ingresos, controla tus gastos y alcanza tus metas de ahorro
-            con inteligencia artificial.
-          </motion.p>
-
-          <motion.ul
-            variants={containerVariants}
-            className="mt-8 space-y-3"
-          >
-            {features.map((f) => (
-              <motion.li
-                key={f.label}
-                variants={itemVariants}
-                className="flex items-center gap-3"
-              >
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm text-base select-none">
-                  {f.emoji}
-                </span>
-                <span className="text-sm lg:text-[0.95rem] text-white/90 font-medium">
-                  {f.label}
-                </span>
-              </motion.li>
-            ))}
-          </motion.ul>
         </motion.div>
       </div>
 
       {/* ───────────────────────────── RIGHT: Form Panel ───────────────────────────── */}
-      <div className="relative w-full lg:w-[48%] xl:w-[45%] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-background">
+      <div className="relative w-full lg:w-[48%] xl:w-[45%] flex items-center justify-center p-4 sm:p-6 lg:p-10 bg-transparent pointer-events-auto">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full bg-emerald-400/8 blur-[120px]" />
           <div className="absolute -top-24 -right-24 w-[320px] h-[320px] rounded-full bg-teal-400/6 blur-[100px]" />

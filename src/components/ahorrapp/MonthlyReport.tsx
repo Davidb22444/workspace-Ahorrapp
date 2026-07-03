@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import Image from 'next/image'
+
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown,
   Printer, PiggyBank, CreditCard, ArrowUpRight,
@@ -465,7 +465,7 @@ export default function MonthlyReport() {
                   transition={{ duration: 0.5 }}
                   className="py-6 text-center"
                 >
-                  <Image src="/images/empty-state.png" alt="Sin ingresos" width={96} height={96} className="h-24 w-24 object-contain rounded-2xl mx-auto mb-3 opacity-80" />
+                  <span className="text-5xl mb-2 inline-block">📭</span>
                   <p className="text-sm text-muted-foreground">Sin ingresos este mes</p>
                 </motion.div>
               ) : (
@@ -536,7 +536,7 @@ export default function MonthlyReport() {
                   transition={{ duration: 0.5 }}
                   className="py-6 text-center"
                 >
-                  <Image src="/images/empty-state.png" alt="Sin gastos" width={96} height={96} className="h-24 w-24 object-contain rounded-2xl mx-auto mb-3 opacity-80" />
+                  <span className="text-5xl mb-2 inline-block">📭</span>
                   <p className="text-sm text-muted-foreground">Sin gastos este mes</p>
                 </motion.div>
               ) : (

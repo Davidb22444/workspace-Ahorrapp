@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, CreditCard, Trash2, DollarSign, Calendar, Percent, ChevronDown, ChevronUp, History, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { AmountInput } from '@/components/ui/amount-input'
 import { Loading } from '@/components/ui/loading'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
@@ -204,7 +205,7 @@ export default function DebtModule() {
             <h1 className="text-2xl font-bold text-gradient">Deudas</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Rastrea y gestiona tus deudas</p>
           </div>
-          <Image src="/images/debt-freedom.png" alt="Deudas" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
+          <span className="text-6xl hidden sm:inline-block">💳</span>
         </div>
         <Button onClick={() => setAddDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Plus className="w-4 h-4 mr-2" /> Agregar Deuda
@@ -263,7 +264,7 @@ export default function DebtModule() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt="Sin deudas" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+            <span className="text-6xl mb-2 inline-block">📭</span>
           </motion.div>
           <p className="text-lg font-medium">Sin deudas registradas</p>
           <p className="text-sm mt-1">Agrega tu primera deuda para comenzar a rastrear</p>
@@ -422,7 +423,7 @@ export default function DebtModule() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Monto Total ($)</Label>
-                <Input type="number" step="0.01" min="0" placeholder="0.00" value={debtForm.totalAmount} onChange={(e) => setDebtForm({ ...debtForm, totalAmount: e.target.value })} />
+                <AmountInput placeholder="0.00" value={debtForm.totalAmount} onChange={(val) => setDebtForm({ ...debtForm, totalAmount: val })} />
               </div>
               <div className="space-y-2">
                 <Label>Tasa de Interés (%)</Label>
@@ -472,7 +473,7 @@ export default function DebtModule() {
             </div>
             <div className="space-y-2">
               <Label>Monto del Pago ($)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0.00" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
+              <AmountInput placeholder="0.00" value={paymentForm.amount} onChange={(val) => setPaymentForm({ ...paymentForm, amount: val })} />
             </div>
             <div className="space-y-2">
               <Label>Nota (opcional)</Label>

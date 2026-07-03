@@ -181,140 +181,159 @@ export default function SettingsPanel() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6">
       <div className="module-header">
         <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Gestiona tu cuenta y preferencias</p>
       </div>
 
-      {/* Profile */}
+      {/* Top row: Profile full width */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Perfil</CardTitle>
-          <CardDescription>Tu información personal</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
-                {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold text-foreground">{user?.name || 'Usuario'}</h3>
-              <p className="text-sm text-muted-foreground">{user?.email || ''}</p>
-              <Badge variant="secondary" className="mt-1">{user?.role || 'user'}</Badge>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="settings-name">Nombre Completo</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="settings-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="settings-email">Correo Electrónico</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="settings-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              Guardar Cambios
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Appearance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Apariencia</CardTitle>
-          <CardDescription>Personaliza la apariencia de AhorrApp</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {theme === 'dark' ? (
-                <Moon className="w-5 h-5 text-primary" />
-              ) : (
-                <Sun className="w-5 h-5 text-primary" />
-              )}
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Avatar + info */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 shrink-0">
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-semibold">
+                  {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
               <div>
-                <p className="text-sm font-medium text-foreground">Modo Oscuro</p>
-                <p className="text-xs text-muted-foreground">Alterna entre tema claro y oscuro</p>
+                <h3 className="text-lg font-semibold text-foreground">{user?.name || 'Usuario'}</h3>
+                <p className="text-sm text-muted-foreground">{user?.email || ''}</p>
+                <Badge variant="secondary" className="mt-1">{user?.role || 'user'}</Badge>
               </div>
             </div>
-            <Switch
-              checked={theme === 'dark'}
-              onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-            />
-          </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-foreground">Tema del Sistema</p>
-              <p className="text-xs text-muted-foreground">Usa el esquema de colores de tu sistema</p>
+            {/* Editable fields */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-name">Nombre Completo</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="settings-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="settings-email">Correo Electrónico</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="settings-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+              <Button onClick={handleSaveProfile} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
+                Guardar Cambios
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTheme('system')}
-            >
-              Usar Sistema
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Preferencias</CardTitle>
-          <CardDescription>Personaliza tu experiencia</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Moneda</Label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Select value={currency} onValueChange={(v) => { setCurrency(v); setStoreCurrency(v); toast.success(`Moneda configurada a ${v}`) }}>
-                <SelectTrigger className="pl-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      {/* Middle row: Appearance + Preferences side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Appearance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Apariencia</CardTitle>
+            <CardDescription>Personaliza la apariencia de AhorrApp</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {theme === 'dark' ? (
+                  <Moon className="w-5 h-5 text-primary" />
+                ) : (
+                  <Sun className="w-5 h-5 text-primary" />
+                )}
+                <div>
+                  <p className="text-sm font-medium text-foreground">Modo Oscuro</p>
+                  <p className="text-xs text-muted-foreground">Alterna entre tema claro y oscuro</p>
+                </div>
+              </div>
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
             </div>
-            <p className="text-xs text-muted-foreground">Esto afecta cómo se muestran los montos en toda la aplicación.</p>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Manage Categories */}
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Tema del Sistema</p>
+                <p className="text-xs text-muted-foreground">Usa el esquema de colores de tu sistema</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTheme('system')}
+              >
+                Usar Sistema
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preferences */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-semibold">Preferencias</CardTitle>
+            <CardDescription>Personaliza tu experiencia</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Moneda</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Select value={currency} onValueChange={(v) => { setCurrency(v); setStoreCurrency(v); toast.success(`Moneda configurada a ${v}`) }}>
+                  <SelectTrigger className="pl-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">Esto afecta cómo se muestran los montos en toda la aplicación.</p>
+            </div>
+
+            <Separator />
+
+            {/* Danger zone inline */}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <p className="text-sm font-medium text-destructive">Cerrar Sesión</p>
+                <p className="text-xs text-muted-foreground">Salir de tu cuenta actual</p>
+              </div>
+              <LogoutButton
+                onClick={async () => {
+                  await logout()
+                  router.replace('/')
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom: Categories full width */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -333,10 +352,10 @@ export default function SettingsPanel() {
           {catLoading ? (
             <Loading />
           ) : (
-            <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Income Categories */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Badge className="bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-0 text-xs font-medium">
                     Ingresos
                   </Badge>
@@ -345,11 +364,9 @@ export default function SettingsPanel() {
                 {renderCategoryList(incomeCategories, 'Ingresos')}
               </div>
 
-              <Separator />
-
               {/* Expense Categories */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-3">
                   <Badge className="bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-300 border-0 text-xs font-medium">
                     Gastos
                   </Badge>
@@ -359,22 +376,6 @@ export default function SettingsPanel() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Account */}
-      <Card className="border-destructive/20">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold text-destructive">Cuenta</CardTitle>
-          <CardDescription>Zona de peligro - estas acciones son irreversibles</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LogoutButton
-            onClick={async () => {
-              await logout()
-              router.replace('/')
-            }}
-          />
         </CardContent>
       </Card>
 
@@ -454,4 +455,3 @@ export default function SettingsPanel() {
     </div>
   )
 }
-

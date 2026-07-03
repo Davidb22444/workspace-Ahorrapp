@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
+
 import { Plus, PieChart, ArrowUpRight, ArrowDownRight, RefreshCw, CheckCircle2, AlertTriangle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -185,7 +185,7 @@ export default function BudgetModule() {
             <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Configura tu regla de presupuesto 50/30/20</p>
           </div>
-          <Image src="/images/budget-planning.png" alt="Presupuesto" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
+          <span className="text-6xl hidden sm:inline-block">📊</span>
         </div>
         <div className="empty-state rounded-xl text-center py-16 px-6 text-muted-foreground">
           <motion.div
@@ -194,7 +194,7 @@ export default function BudgetModule() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt="Sin presupuesto" width={128} height={128} className="h-32 w-32 object-contain rounded-2xl mx-auto" />
+            <span className="text-7xl mb-2 inline-block">📭</span>
           </motion.div>
           <p className="text-lg font-medium">Sin presupuesto configurado</p>
           <p className="text-sm mt-1 mb-6">Crea tu primer presupuesto usando la regla 50/30/20</p>
@@ -281,7 +281,7 @@ export default function BudgetModule() {
             <h1 className="text-2xl font-bold text-gradient">Presupuesto</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Regla de presupuesto 50/30/20</p>
           </div>
-          <Image src="/images/budget-planning.png" alt="Presupuesto" width={96} height={96} className="h-24 w-24 object-contain rounded-xl opacity-80 hidden sm:block" />
+          <span className="text-6xl hidden sm:inline-block">📊</span>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>

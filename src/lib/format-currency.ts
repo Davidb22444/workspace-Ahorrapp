@@ -1,31 +1,25 @@
 import { useAppStore } from '@/lib/store'
 
-const CURRENCY_LOCALE: Record<string, string> = {
-  USD: 'en-US',
-  EUR: 'es-ES',
-  GBP: 'en-GB',
-  MXN: 'es-MX',
-  COP: 'es-CO',
-  ARS: 'es-AR',
-}
-
 export function useFormatCurrency() {
   const currency = useAppStore((s) => s.currency)
 
   return (amount: number) => {
-    const locale = CURRENCY_LOCALE[currency] || 'en-US'
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-    }).format(amount)
+    return formatWithDots(amount, currency)
   }
 }
 
 export function formatCurrency(amount: number): string {
   const currency = useAppStore.getState().currency
-  const locale = CURRENCY_LOCALE[currency] || 'en-US'
-  return new Intl.NumberFormat(locale, {
+  return formatWithDots(amount, currency)
+}
+
+function formatWithDots(amount: number, currency: string) {
+  // Use en-US to guarantee commas for thousands and dots for decimals
+  const formatted = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
   }).format(amount)
+  
+  // Swap commas and dots: replace ',' with 'X', '.' with ',', 'X' with '.'
+  return formatted.replace(/,/g, 'X').replace(/\./g, ',').replace(/X/g, '.')
 }

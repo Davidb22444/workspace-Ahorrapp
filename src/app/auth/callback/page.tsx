@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import supabase from '@/lib/supabase'
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const code = searchParams.get('code')
@@ -76,14 +76,85 @@ export default function AuthCallbackPage() {
   }, [code, next, router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="flex flex-col items-center gap-4 text-center max-w-sm">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--comic-bg, #FBF1DE)' }}
+    >
+      <div
+        className="flex flex-col items-center gap-4 text-center max-w-sm p-8 rounded-2xl"
+        style={{
+          background: 'var(--comic-white, #FFFFFF)',
+          border: '3px solid var(--comic-outline, #1A1A2E)',
+          boxShadow: '6px 6px 0 var(--comic-outline, #1A1A2E)',
+        }}
+      >
+        <Loader2
+          className="w-10 h-10 animate-spin"
+          style={{ color: 'var(--comic-mint, #3DDCA1)' }}
+        />
         <div>
-          <p className="text-lg font-semibold">Iniciando sesión</p>
-          <p className="text-sm text-muted-foreground mt-1">{message}</p>
+          <p
+            className="text-xl"
+            style={{
+              fontFamily: 'var(--font-display, Fredoka, sans-serif)',
+              fontWeight: 600,
+              color: 'var(--comic-text, #1A1A2E)',
+            }}
+          >
+            Iniciando sesión
+          </p>
+          <p
+            className="text-sm mt-1"
+            style={{
+              fontFamily: 'var(--font-body, Nunito, sans-serif)',
+              color: 'var(--comic-text-muted, #6B7280)',
+            }}
+          >
+            {message}
+          </p>
         </div>
       </div>
     </div>
+  )
+}
+
+function AuthCallbackFallback() {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--comic-bg, #FBF1DE)' }}
+    >
+      <div
+        className="flex flex-col items-center gap-4 text-center max-w-sm p-8 rounded-2xl"
+        style={{
+          background: 'var(--comic-white, #FFFFFF)',
+          border: '3px solid var(--comic-outline, #1A1A2E)',
+          boxShadow: '6px 6px 0 var(--comic-outline, #1A1A2E)',
+        }}
+      >
+        <Loader2
+          className="w-10 h-10 animate-spin"
+          style={{ color: 'var(--comic-mint, #3DDCA1)' }}
+        />
+        <p
+          className="text-xl"
+          style={{
+            fontFamily: 'var(--font-display, Fredoka, sans-serif)',
+            fontWeight: 600,
+            color: 'var(--comic-text, #1A1A2E)',
+          }}
+        >
+          Cargando...
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<AuthCallbackFallback />}>
+      <AuthCallbackContent />
+    </Suspense>
   )
 }

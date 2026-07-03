@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import Image from 'next/image'
+
 import { motion } from 'framer-motion'
 import {
   Repeat, DollarSign, Calendar, Plus, Trash2, Edit2, Clock,
@@ -10,6 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AmountInput } from '@/components/ui/amount-input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Loading } from '@/components/ui/loading'
@@ -325,7 +326,7 @@ export default function RecurringBills() {
             transition={{ duration: 0.5 }}
             className="mb-4"
           >
-            <Image src="/images/empty-state.png" alt="Sin pagos recurrentes" width={112} height={112} className="h-28 w-28 object-contain rounded-2xl mx-auto" />
+            <span className="text-6xl mb-2 inline-block">📭</span>
           </motion.div>
           <p className="text-lg font-medium">Sin pagos recurrentes</p>
           <p className="text-sm mt-1 mb-6">Agrega tus suscripciones y pagos recurrentes para rastrearlos</p>
@@ -532,10 +533,10 @@ export default function RecurringBills() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Monto ($)</Label>
-                <Input
-                  type="number" step="0.01" min="0" placeholder="0.00"
+                <AmountInput
+                  placeholder="0.00"
                   value={billForm.amount}
-                  onChange={(e) => setBillForm({ ...billForm, amount: e.target.value })}
+                  onChange={(val) => setBillForm({ ...billForm, amount: val })}
                 />
               </div>
               <div className="space-y-2">
