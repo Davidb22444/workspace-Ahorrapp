@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AhorrApp - Animación Neobrutalista</title>
+  <style>
+    /* Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+
+    :root {
+      --color-mint: #3DDC97;
+      --color-yellow: #F5C518;
+      --color-black: #1A1A1A;
+      --color-cream: #FBF0DB;
+      --border-width: 3px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    body {
+      background-color: var(--color-cream);
+      font-family: 'Outfit', sans-serif;
+      color: var(--color-black);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Background Animation Container */
+    #animation-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Falling Icon Style */
+    .falling-icon {
+      position: absolute;
+      pointer-events: auto;
+      cursor: grab;
+      touch-action: none;
+      filter: drop-shadow(5px 5px 0px var(--color-black));
+      will-change: transform;
+    }
+
+    .falling-icon:active {
+      cursor: grabbing;
+      filter: drop-shadow(8px 8px 0px var(--color-black));
+    }
+
+    /* Landing Page Content */
+    #content-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      pointer-events: none; /* Let clicks pass through empty areas to background icons */
+    }
+
+    header {
+      width: 100%;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--color-mint);
+      padding: 10px 20px;
+      border: var(--border-width) solid var(--color-black);
+      box-shadow: 4px 4px 0px var(--color-black);
+      pointer-events: auto;
+      transform: rotate(-1deg);
+    }
+
+    .logo-text {
+      font-weight: 900;
+      font-size: 24px;
+      letter-spacing: -0.5px;
+    }
+
+    .btn {
+      background: var(--color-mint);
+      color: var(--color-black);
+      border: var(--border-width) solid var(--color-black);
+      padding: 12px 24px;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0px var(--color-black);
+      transition: all 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px var(--color-black);
+    }
+
+    .btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--color-black);
+    }
+
+    .btn-yellow {
+      background: var(--color-yellow);
+    }
+
+    /* Hero Section */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .hero-badge {
+      background: var(--color-yellow);
+      padding: 8px 16px;
+      border: var(--border-width) solid var(--color-black);
+      box-shadow: 3px 3px 0px var(--color-black);
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 24px;
+      transform: rotate(1deg);
+      pointer-events: auto;
+    }
+
+    .hero-title {
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      max-width: 800px;
+      pointer-events: auto;
+    }
+
+    .hero-title span {
+      background: var(--color-mint);
+      padding: 4px 15px;
+      border: var(--border-width) solid var(--color-black);
+      box-shadow: 6px 6px 0px var(--color-black);
+      display: inline-block;
+      transform: rotate(-1deg);
+      margin: 5px 0;
+    }
+
+    .hero-description {
+      font-size: 20px;
+      font-weight: 700;
+      max-width: 600px;
+      margin-bottom: 40px;
+      background: white;
+      padding: 16px;
+      border: var(--border-width) solid var(--color-black);
+      box-shadow: 5px 5px 0px var(--color-black);
+      pointer-events: auto;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 20px;
+      pointer-events: auto;
+    }
+
+    /* Mobile Responsive adjustments */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 40px;
+      }
+      .hero-description {
+        font-size: 16px;
+      }
+      header {
+        padding: 15px;
+      }
+      .logo-text {
+        font-size: 20px;
+      }
+      .cta-group {
+        flex-direction: column;
+        width: 100%;
+        max-width: 300px;
+      }
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background animation layer -->
+  <div id="animation-container"></div>
+
+  <!-- Landing page content layer -->
+  <div id="content-container">
+    <header>
+      <div class="logo-container">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(-10deg);">
+          <rect x="2" y="4" width="20" height="16" rx="2" fill="var(--color-yellow)"/>
+          <line x1="12" y1="10" x2="12" y2="10" stroke-width="4"/>
+        </svg>
+        <span class="logo-text">AhorrApp</span>
+      </div>
+      <div>
+        <a href="#" class="btn">Iniciar Sesión</a>
+      </div>
+    </header>
+
+    <main>
+      <div class="hero-badge">⚡ Tu asistente financiero personal</div>
+      <h1 class="hero-title">
+        Controla tus finanzas <br>
+        <span>de forma divertida</span>
+      </h1>
+      <p class="hero-description">
+        Registra tus gastos, planifica presupuestos, y alcanza tus metas de ahorro con una interfaz simple e interactiva. ¡Prueba a arrastrar los íconos del fondo!
+      </p>
+      <div class="cta-group">
+        <a href="#" class="btn btn-yellow">Comenzar Gratis &rarr;</a>
+        <a href="#" class="btn">Saber Más</a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const container = document.getElementById('animation-container');
+
+    // Inline SVG Icons
+    const ICONS_SVG = [
+      // 1. Coin (Moneda)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="50" cy="50" r="40" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+        <circle cx="50" cy="50" r="28" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-dasharray="6 4" />
+        <text x="50" y="63" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="38" fill="#1A1A1A" text-anchor="middle">$</text>
+      </svg>`,
+      // 2. Bar Chart (Gráfica de barras)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <rect x="15" y="55" width="18" height="30" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" rx="2" />
+        <rect x="41" y="30" width="18" height="55" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" rx="2" />
+        <rect x="67" y="15" width="18" height="70" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" rx="2" />
+        <line x1="5" y1="85" x2="95" y2="85" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+      </svg>`,
+      // 3. Piggy Bank (Alcancía)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <ellipse cx="50" cy="55" rx="35" ry="25" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+        <polygon points="35,35 45,20 55,32" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+        <rect x="80" y="47" width="10" height="16" rx="3" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+        <circle cx="68" cy="48" r="4" fill="#1A1A1A" />
+        <rect x="32" y="78" width="10" height="12" fill="#1A1A1A" rx="2" />
+        <rect x="58" y="78" width="10" height="12" fill="#1A1A1A" rx="2" />
+        <line x1="45" y1="30" x2="55" y2="30" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+        <path d="M 15,55 Q 8,50 12,42" fill="none" stroke="#1A1A1A" stroke-width="5" stroke-linecap="round" />
+      </svg>`,
+      // 4. Wallet (Billetera)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <rect x="15" y="28" width="70" height="50" rx="6" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+        <path d="M 50,38 L 85,38 L 85,68 L 50,68 Z" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+        <circle cx="68" cy="53" r="6" fill="#1A1A1A" />
+        <rect x="25" y="15" width="40" height="15" rx="2" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+        <line x1="35" y1="23" x2="55" y2="23" stroke="#1A1A1A" stroke-width="3" />
+      </svg>`,
+      // 5. Percentage (Porcentaje)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <circle cx="30" cy="30" r="14" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+        <circle cx="70" cy="70" r="14" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+        <line x1="80" y1="20" x2="20" y2="80" stroke="#1A1A1A" stroke-width="7" stroke-linecap="round" />
+      </svg>`,
+      // 6. Trend Arrow (Flecha de tendencia)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <path d="M 15,80 L 45,50 L 60,62 L 85,25" fill="none" stroke="#1A1A1A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M 15,80 L 45,50 L 60,62 L 85,25" fill="none" stroke="#3DDC97" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+        <polygon points="85,15 88,38 65,30" fill="#1A1A1A" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round" />
+      </svg>`,
+      // 7. Money Bag (Saco de dinero)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <path d="M 35,28 C 25,45 20,75 35,85 C 50,90 65,85 70,75 C 75,65 65,45 55,28" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" stroke-linejoin="round" />
+        <ellipse cx="45" cy="32" rx="12" ry="6" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+        <path d="M 35,28 C 30,18 40,13 45,23 C 50,13 60,18 55,28" fill="#F5C518" stroke="#1A1A1A" stroke-width="5" />
+        <text x="46" y="65" font-family="'Outfit', 'Arial Black', sans-serif" font-weight="900" font-size="28" fill="#1A1A1A" text-anchor="middle">$</text>
+      </svg>`,
+      // 8. Bank Card (Tarjeta bancaria)
+      `<svg viewBox="0 0 100 100" width="100%" height="100%">
+        <rect x="12" y="25" width="76" height="50" rx="6" fill="#3DDC97" stroke="#1A1A1A" stroke-width="5" />
+        <rect x="12" y="35" width="76" height="12" fill="#1A1A1A" />
+        <rect x="22" y="55" width="16" height="12" rx="2" fill="#F5C518" stroke="#1A1A1A" stroke-width="3" />
+      </svg>`
+    ];
+
+    // Configuration
+    const NUM_ICONS = 8;
+    const iconsArray = [];
+    
+    // Drag State
+    let activeDragIcon = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let iconStartX = 0;
+    let iconStartY = 0;
+
+    class FallingIcon {
+      constructor(svgMarkup, index) {
+        this.element = document.createElement('div');
+        this.element.className = 'falling-icon';
+        this.element.innerHTML = svgMarkup;
+        container.appendChild(this.element);
+
+        this.index = index;
+        this.isDragging = false;
+        
+        // Random properties
+        this.size = Math.random() * (90 - 55) + 55; // size between 55px and 90px
+        this.speed = Math.random() * (0.45 - 0.15) + 0.15; // slow speed: 0.15 to 0.45px per frame
+        this.rotationSpeed = (Math.random() * 2 - 1) * 0.2; // slow rotation
+
+        this.element.style.width = `${this.size}px`;
+        this.element.style.height = `${this.size}px`;
+
+        this.resetPosition(true);
+        this.setupEvents();
+      }
+
+      resetPosition(initial = false) {
+        this.x = Math.random() * (window.innerWidth - this.size);
+        if (initial) {
+          this.y = Math.random() * (window.innerHeight + this.size) - this.size;
+        } else {
+          this.y = -this.size - 20;
+        }
+        this.rotation = Math.random() * 360;
+        this.updateTransform();
+      }
+
+      updateTransform() {
+        this.element.style.transform = `translate3d(${this.x}px, ${this.y}px, 0) rotate(${this.rotation}deg)`;
+      }
+
+      update() {
+        if (this.isDragging) return;
+
+        this.y += this.speed;
+        this.rotation += this.rotationSpeed;
+
+        // Reset if icon goes off the bottom of the screen
+        if (this.y > window.innerHeight) {
+          this.resetPosition(false);
+        } else {
+          this.updateTransform();
+        }
+      }
+
+      setupEvents() {
+        // Drag handlers helper
+        const startDrag = (clientX, clientY) => {
+          this.isDragging = true;
+          activeDragIcon = this;
+          
+          dragStartX = clientX;
+          dragStartY = clientY;
+          iconStartX = this.x;
+          iconStartY = this.y;
+        };
+
+        // Mouse events
+        this.element.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          startDrag(e.clientX, e.clientY);
+        });
+
+        // Touch events
+        this.element.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }, { passive: true });
+      }
+    }
+
+    // Initialize Icons
+    for (let i = 0; i < NUM_ICONS; i++) {
+      const svgMarkup = ICONS_SVG[i % ICONS_SVG.length];
+      iconsArray.push(new FallingIcon(svgMarkup, i));
+    }
+
+    // Global drag move and up listeners
+    const handleMove = (clientX, clientY) => {
+      if (!activeDragIcon) return;
+      const dx = clientX - dragStartX;
+      const dy = clientY - dragStartY;
+      
+      activeDragIcon.x = iconStartX + dx;
+      activeDragIcon.y = iconStartY + dy;
+      activeDragIcon.updateTransform();
+    };
+
+    const stopDrag = () => {
+      if (activeDragIcon) {
+        activeDragIcon.isDragging = false;
+        activeDragIcon = null;
+      }
+    };
+
+    window.addEventListener('mousemove', (e) => {
+      if (activeDragIcon) {
+        handleMove(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (activeDragIcon && e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: false });
+
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+
+    // Animation loop using requestAnimationFrame
+    function animate() {
+      for (let i = 0; i < iconsArray.length; i++) {
+        iconsArray[i].update();
+      }
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // Handle viewport resize
+    window.addEventListener('resize', () => {
+      iconsArray.forEach(icon => {
+        // If resize pushes icon outside view, clamp or reset
+        if (icon.x > window.innerWidth) {
+          icon.x = Math.random() * (window.innerWidth - icon.size);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
