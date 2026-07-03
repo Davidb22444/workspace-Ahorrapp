@@ -53,8 +53,8 @@ export async function GET(
     return NextResponse.json({
       budget: {
         ...camelBudget,
-        periods: (periods || []).map((p) =>
-          snakeToCamel(p as unknown as Record<string, unknown>)
+        periods: (periods || []).map((p: Record<string, unknown>) =>
+          snakeToCamel(p)
         ),
       },
     })
@@ -107,8 +107,8 @@ export async function PUT(
     return NextResponse.json({
       budget: {
         ...camelBudget,
-        periods: (periods || []).map((p) =>
-          snakeToCamel(p as unknown as Record<string, unknown>)
+        periods: (periods || []).map((p: Record<string, unknown>) =>
+          snakeToCamel(p)
         ),
       },
     })

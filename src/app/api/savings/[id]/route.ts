@@ -61,8 +61,8 @@ export async function GET(
           ? Number(((savedAmount / targetAmount) * 100).toFixed(1))
           : 0,
         remaining: Number(Math.max(0, targetAmount - savedAmount).toFixed(2)),
-        contributions: (contributions || []).map((c) =>
-          snakeToCamel(c as unknown as Record<string, unknown>)
+        contributions: (contributions || []).map((c: Record<string, unknown>) =>
+          snakeToCamel(c)
         ),
       },
     })

@@ -62,8 +62,8 @@ export async function GET(
         progress: totalAmount > 0
           ? Number(((paidAmount / totalAmount) * 100).toFixed(1))
           : 0,
-        payments: (payments || []).map((p) =>
-          snakeToCamel(p as unknown as Record<string, unknown>)
+        payments: (payments || []).map((p: Record<string, unknown>) =>
+          snakeToCamel(p)
         ),
       },
     })
