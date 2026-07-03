@@ -161,6 +161,7 @@ export default function AIAssistant() {
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ question: content, accountId: user?.id, includeFinancialData: shareData }),
       })
       if (res.ok) {
