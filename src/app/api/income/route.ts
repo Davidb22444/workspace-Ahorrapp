@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { keysToCamel } from '@/lib/supabase-utils'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDate } from '@/lib/utils'
 
 const incomeCreateSchema = z.object({
   source: z.string().min(1),
@@ -29,8 +30,8 @@ export async function GET(request: NextRequest) {
     if (frequency) where.frequency = frequency
     if (from || to) {
       where.date = {}
-      if (from) where.date.gte = new Date(from)
-      if (to) where.date.lte = new Date(to)
+      if (from) { const d = new Date(from); if (!isNaN(d.getTime())) where.date.gte = d }
+      if (to) { const d = new Date(to); if (!isNaN(d.getTime())) where.date.lte = d }
     }
 
     const data = await prisma.incomes.findMany({
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
         amount: parsed.amount,
         description: parsed.description || null,
         frequency: parsed.frequency,
-        date: parsed.date ? new Date(parsed.date) : new Date(),
+        date: safeDate(parsed.date),
         category_id: parsed.categoryId || null,
         account_id: accountId,
       },
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
           type: 'income',
           amount: parsed.amount,
           description: `Ingreso: ${parsed.source}`,
-          date: parsed.date ? new Date(parsed.date) : new Date(),
+          date: safeDate(parsed.date),
           category_id: parsed.categoryId || null,
           account_id: accountId,
         },

@@ -144,6 +144,19 @@ function HomeContent() {
     }
   }, [checkingAuth, isAuthenticated, showAuthScreen])
 
+  // Periodically refresh session token before it expires (15 min TTL)
+  const refreshRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const refreshSession = async () => {
+      try {
+        await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
+      } catch { /* ok */ }
+    }
+    refreshRef.current = setInterval(refreshSession, 10 * 60 * 1000)
+    return () => { if (refreshRef.current !== undefined) clearInterval(refreshRef.current) }
+  }, [isAuthenticated])
+
   // Fetch notification count — only when authenticated
   const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   useEffect(() => {

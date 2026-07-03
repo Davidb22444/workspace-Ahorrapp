@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDate } from '@/lib/utils'
 import prisma from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
         target_amount: parsed.targetAmount,
         icon: parsed.icon,
         color: parsed.color,
-        deadline: parsed.deadline ? new Date(parsed.deadline) : null,
+        deadline: parsed.deadline ? safeDate(parsed.deadline) : null,
         account_id: accountId,
         saved_amount: 0,
         status: 'active',

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDateISO } from '@/lib/utils'
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = []
@@ -93,10 +94,11 @@ const ALLOWED_EXTENSIONS = ['.csv']
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File | null
     const cookieAccountId = getAuthFromCookie(request)
     if (!cookieAccountId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+    const formData = await request.formData()
+    const file = formData.get('file') as File | null
     const typeParam = formData.get('type') as string | null
 
     if (!file) {
@@ -192,7 +194,7 @@ export async function POST(request: NextRequest) {
             source,
             amount,
             description: description || null,
-            date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
+            date: safeDateISO(dateStr),
             frequency,
             account_id: cookieAccountId,
           })
@@ -265,7 +267,7 @@ export async function POST(request: NextRequest) {
           expenseRows.push({
             description,
             amount,
-            date: dateStr ? new Date(dateStr).toISOString() : new Date().toISOString(),
+            date: safeDateISO(dateStr),
             category_id: categoryId,
             is_recurring: isRecurring,
             account_id: cookieAccountId,

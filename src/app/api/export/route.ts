@@ -26,10 +26,9 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get('from')
     const to = searchParams.get('to')
 
-    const dateFilter = {
-      ...(from ? { gte: new Date(from) as Date | undefined } : {}),
-      ...(to ? { lte: new Date(to) as Date | undefined } : {}),
-    }
+    const dateFilter: Record<string, Date> = {}
+    if (from) { const d = new Date(from); if (!isNaN(d.getTime())) dateFilter.gte = d }
+    if (to) { const d = new Date(to); if (!isNaN(d.getTime())) dateFilter.lte = d }
     const hasDateFilter = from || to
 
     let csvContent = ''

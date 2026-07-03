@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { z } from 'zod'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDate } from '@/lib/utils'
 
 const debtCreateSchema = z.object({
   name: z.string().min(1),
@@ -109,8 +110,8 @@ export async function POST(request: NextRequest) {
         total_amount: parsed.totalAmount,
         paid_amount: 0,
         interest_rate: parsed.interestRate ?? null,
-        start_date: new Date(parsed.startDate || new Date().toISOString().split('T')[0]),
-        due_date: parsed.dueDate ? new Date(parsed.dueDate) : null,
+        start_date: safeDate(parsed.startDate),
+        due_date: parsed.dueDate ? safeDate(parsed.dueDate) : null,
         type: parsed.type,
         installments: parsed.installments ?? null,
         account_id: accountId,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDate } from '@/lib/utils'
 import { z } from 'zod'
 
 const paySchema = z.object({
@@ -52,7 +53,7 @@ export async function POST(
     const payment = await prisma.debt_payments.create({
       data: {
         amount: parsed.amount,
-        date: new Date(parsed.date || new Date().toISOString().split('T')[0]),
+        date: safeDate(parsed.date),
         note: parsed.note || null,
         debt_id: id,
         account_id: debt.account_id,

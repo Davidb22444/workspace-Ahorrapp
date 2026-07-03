@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getAuthFromCookie } from '@/lib/auth-utils'
+import { safeDate } from '@/lib/utils'
 import { z } from 'zod'
 
 const contributeSchema = z.object({
@@ -43,7 +44,7 @@ export async function POST(
     const contribution = await prisma.savings_contributions.create({
       data: {
         amount: parsed.amount,
-        date: new Date(parsed.date || new Date().toISOString().split('T')[0]),
+        date: safeDate(parsed.date),
         note: parsed.note || null,
         goal_id: id,
         account_id: goal.account_id,

@@ -77,15 +77,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = unexpectedCreateSchema.parse(body)
 
+    let dateValue: string
+    if (parsed.date) {
+      const d = parsed.date.includes('T') ? new Date(parsed.date) : new Date(parsed.date + 'T00:00:00.000Z')
+      dateValue = isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString()
+    } else {
+      dateValue = new Date().toISOString()
+    }
+
     const data = await prisma.unexpecteds.create({
       data: {
         amount: parsed.amount,
         description: parsed.description,
-        date: parsed.date
-          ? parsed.date.includes('T')
-            ? parsed.date
-            : new Date(parsed.date + 'T00:00:00.000Z').toISOString()
-          : new Date().toISOString(),
+        date: dateValue,
         resolved: parsed.resolved,
         ...(parsed.categoryId && { category_id: parsed.categoryId }),
         ...(parsed.dependentId && { dependent_id: parsed.dependentId }),
