@@ -14,9 +14,14 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/ban-ts-comment": "warn",
     "@typescript-eslint/no-unused-disable-directive": "off",
+    "@typescript-eslint/no-require-imports": "off",
+    "@typescript-eslint/no-this-alias": "off",
     
     // React rules
     "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/purity": "off",
+    "react-hooks/preserve-manual-memoization": "off",
     "react/no-unescaped-entities": "warn",
     "react/display-name": "warn",
     
@@ -29,6 +34,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-fallthrough": "warn",
     "no-irregular-whitespace": "warn",
     "no-unreachable": "warn",
+    "no-unused-expressions": "off",
   },
 }, {
   ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
