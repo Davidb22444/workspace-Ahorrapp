@@ -64,8 +64,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = debts.map((debt) => {
-      const camel = snakeToCamel(debt as unknown as Record<string, unknown>) as {
+    const enriched = debts.map((debt: Record<string, unknown>) => {
+      const camel = snakeToCamel(debt) as {
         totalAmount: number
         paidAmount: number
       } & Record<string, unknown>
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     })
 
     const totalDebt = debts.reduce(
-      (sum, d) => sum + (Number(d.total_amount) - Number(d.paid_amount)),
+      (sum: number, d: { total_amount: number; paid_amount: number }) => sum + (Number(d.total_amount) - Number(d.paid_amount)),
       0
     )
 

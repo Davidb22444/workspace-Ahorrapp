@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = goals.map((goal) => {
-      const camel = snakeToCamel(goal as unknown as Record<string, unknown>) as {
+    const enriched = goals.map((goal: Record<string, unknown>) => {
+      const camel = snakeToCamel(goal) as {
         targetAmount: number
         savedAmount: number
       } & Record<string, unknown>
