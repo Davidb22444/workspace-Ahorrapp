@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = budgets.map((budget: Record<string, unknown>) => {
+    const enriched = budgets.map((budget: Record<string, any>) => {
       const camel = snakeToCamel(budget)
       return {
         ...camel,

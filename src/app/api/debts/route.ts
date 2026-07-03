@@ -64,11 +64,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const enriched = debts.map((debt: Record<string, unknown>) => {
+    const enriched = debts.map((debt: Record<string, any>) => {
       const camel = snakeToCamel(debt) as {
         totalAmount: number
         paidAmount: number
-      } & Record<string, unknown>
+      } & Record<string, any>
       const totalAmount = Number(camel.totalAmount)
       const paidAmount = Number(camel.paidAmount)
       return {
