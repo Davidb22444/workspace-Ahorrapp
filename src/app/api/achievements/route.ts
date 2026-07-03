@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     let emergencyUnlocked = false
     if (emergencyGoals && emergencyGoals.length > 0) {
       const totalEmergencySaved = emergencyGoals.reduce(
-        (sum, g) => sum + (g.saved_amount || 0),
+        (sum: number, g) => sum + (g.saved_amount || 0),
         0
       )
       let totalMonthlyExpenses = 0
