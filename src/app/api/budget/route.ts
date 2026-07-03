@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ budgets: [] })
     }
 
-    const budgetIds = budgets.map((b) => b.id)
+    const budgetIds = budgets.map((b: { id: string }) => b.id)
     const periods = await prisma.budget_periods.findMany({
       where: { budget_id: { in: budgetIds } },
       orderBy: { start_date: 'desc' },

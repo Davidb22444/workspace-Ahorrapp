@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ debts: [], totalDebt: 0 })
     }
 
-    const debtIds = debts.map((d) => d.id)
+    const debtIds = debts.map((d: { id: string }) => d.id)
     const payments = await prisma.debt_payments.findMany({
       where: { debt_id: { in: debtIds } },
       orderBy: { date: 'desc' },

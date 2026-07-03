@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ savingsGoals: [] })
     }
 
-    const goalIds = goals.map((g) => g.id)
+    const goalIds = goals.map((g: { id: string }) => g.id)
     const contributions = await prisma.savings_contributions.findMany({
       where: { goal_id: { in: goalIds } },
       orderBy: { date: 'desc' },
