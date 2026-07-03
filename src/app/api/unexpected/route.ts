@@ -81,7 +81,11 @@ export async function POST(request: NextRequest) {
       data: {
         amount: parsed.amount,
         description: parsed.description,
-        date: parsed.date || new Date().toISOString(),
+        date: parsed.date
+          ? parsed.date.includes('T')
+            ? parsed.date
+            : new Date(parsed.date + 'T00:00:00.000Z').toISOString()
+          : new Date().toISOString(),
         resolved: parsed.resolved,
         ...(parsed.categoryId && { category_id: parsed.categoryId }),
         ...(parsed.dependentId && { dependent_id: parsed.dependentId }),
